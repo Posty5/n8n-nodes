@@ -7,7 +7,7 @@ All N8N community nodes for Posty5 have been successfully implemented.
 ## 📁 Project Structure
 
 ```
-n8n-nodes/
+n8n-nodes-posty5/
 ├── credentials/
 │   └── Posty5Api.credentials.ts         # API key authentication
 ├── nodes/
@@ -65,7 +65,7 @@ n8n-nodes/
 ### 1. Build the Project
 
 ```bash
-cd n8n-nodes
+cd n8n-nodes-posty5
 npm install
 npm run build
 ```
@@ -77,7 +77,7 @@ Link the package for local testing:
 ```bash
 npm link
 cd ~/.n8n/nodes
-npm link n8n-nodes
+npm link n8n-nodes-posty5
 ```
 
 Restart N8N to see the nodes.

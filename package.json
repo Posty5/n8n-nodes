@@ -1,9 +1,10 @@
 {
-    "name": "n8n-nodes",
-    "version": "1.0.0",
+    "name": "n8n-nodes-posty5",
+    "version": "1.0.2",
     "description": "N8N community nodes for Posty5 - URL shortening, QR codes, HTML hosting, and social media publishing",
     "keywords": [
         "n8n-community-node-package",
+        "n8n-community-node",
         "n8n",
         "posty5",
         "url-shortener",
@@ -53,7 +54,7 @@
         "@typescript-eslint/eslint-plugin": "^6.19.0",
         "@typescript-eslint/parser": "^6.19.0",
         "eslint": "^8.56.0",
-        "eslint-plugin-n8n-nodes-base": "^1.16.1",
+        "eslint-plugin-n8n-nodes-posty5-base": "^1.16.1",
         "n8n-workflow": "^1.25.0",
         "prettier": "^3.2.4",
         "typescript": "^5.3.3"
