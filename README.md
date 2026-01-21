@@ -1,4 +1,4 @@
-# n8n-nodes-posty5
+# n8n-nodes
 
 ![Posty5](https://posty5.com/logo.png)
 
@@ -19,14 +19,14 @@ Posty5 is a comprehensive platform for digital content management and distributi
 ### Via NPM
 
 ```bash
-npm install n8n-nodes-posty5
+npm install n8n-nodes
 ```
 
 ### Via N8N Community Nodes
 
 1. Open N8N
 2. Go to **Settings** → **Community Nodes**
-3. Search for `n8n-nodes-posty5`
+3. Search for `n8n-nodes`
 4. Click **Install**
 
 ## 🔑 Setup
@@ -330,13 +330,13 @@ Common errors:
 - [Posty5 Studio](https://studio.posty5.com)
 - [Get API Key](https://studio.posty5.com/account/settings?tab=APIKeys)
 - [N8N Documentation](https://docs.n8n.io)
-- [GitHub Repository](https://github.com/posty5/n8n-nodes-posty5)
+- [GitHub Repository](https://github.com/posty5/n8n-nodes)
 
 ## 🤝 Support
 
 - **Email:** support@posty5.com
 - **Documentation:** https://guide.posty5.com/
-- **GitHub Issues:** https://github.com/posty5/n8n-nodes-posty5/issues
+- **GitHub Issues:** https://github.com/posty5/n8n-nodes/issues
 
 ## 📝 License
 

@@ -77,7 +77,7 @@ Link the package for local testing:
 ```bash
 npm link
 cd ~/.n8n/nodes
-npm link n8n-nodes-posty5
+npm link n8n-nodes
 ```
 
 Restart N8N to see the nodes.
