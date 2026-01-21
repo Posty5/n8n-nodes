@@ -1,0 +1,74 @@
+{
+    "name": "n8n-nodes-posty5",
+    "version": "1.0.0",
+    "description": "N8N community nodes for Posty5 - URL shortening, QR codes, HTML hosting, and social media publishing",
+    "keywords": [
+        "n8n-community-node-package",
+        "n8n",
+        "posty5",
+        "url-shortener",
+        "qr-code",
+        "social-media",
+        "automation"
+    ],
+    "license": "MIT",
+    "homepage": "https://posty5.com",
+    "author": {
+        "name": "Posty5",
+        "email": "support@posty5.com"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/posty5/n8n-nodes-posty5.git"
+    },
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc --watch",
+        "format": "prettier --write \"**/*.ts\"",
+        "lint": "eslint . --ext .ts",
+        "prepare": "npm run build"
+    },
+    "files": [
+        "dist"
+    ],
+    "n8n": {
+        "n8nNodesApiVersion": 1,
+        "credentials": [
+            "dist/credentials/Posty5Api.credentials.js"
+        ],
+        "nodes": [
+            "dist/nodes/Posty5ShortLink/Posty5ShortLink.node.js",
+            "dist/nodes/Posty5QrCode/Posty5QrCode.node.js",
+            "dist/nodes/Posty5HtmlHosting/Posty5HtmlHosting.node.js",
+            "dist/nodes/Posty5HtmlHostingVariables/Posty5HtmlHostingVariables.node.js",
+            "dist/nodes/Posty5FormSubmission/Posty5FormSubmission.node.js",
+            "dist/nodes/Posty5SocialPublisherWorkspace/Posty5SocialPublisherWorkspace.node.js",
+            "dist/nodes/Posty5SocialPublisherTask/Posty5SocialPublisherTask.node.js"
+        ]
+    },
+    "devDependencies": {
+        "@types/node": "^20.11.0",
+        "@typescript-eslint/eslint-plugin": "^6.19.0",
+        "@typescript-eslint/parser": "^6.19.0",
+        "eslint": "^8.56.0",
+        "eslint-plugin-n8n-nodes-base": "^1.16.1",
+        "n8n-workflow": "^1.25.0",
+        "prettier": "^3.2.4",
+        "typescript": "^5.3.3"
+    },
+    "peerDependencies": {
+        "n8n-workflow": ">=1.0.0"
+    },
+    "dependencies": {
+        "@posty5/core": "^1.0.2",
+        "@posty5/html-hosting": "^1.0.0",
+        "@posty5/html-hosting-form-submission": "^1.0.0",
+        "@posty5/html-hosting-variables": "^1.0.0",
+        "@posty5/qr-code": "^1.0.0",
+        "@posty5/short-link": "^1.0.0",
+        "@posty5/social-publisher-task": "^1.0.0",
+        "@posty5/social-publisher-workspace": "^1.0.0"
+    }
+}
