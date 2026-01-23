@@ -457,7 +457,6 @@ export class Posty5QrCode implements INodeType {
 		const { HttpClient } = await import('@posty5/core');
 		const http = new HttpClient({
 			apiKey: credentials.apiKey as string,
-			baseUrl: 'https://api.posty5.com',
 		});
 		const client = new QRCodeClient(http);
 

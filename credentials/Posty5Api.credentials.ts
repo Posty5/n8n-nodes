@@ -35,7 +35,6 @@ export class Posty5Api implements ICredentialType {
 
 	test: ICredentialTestRequest = {
 		request: {
-			baseURL: 'https://api.posty5.com',
 			url: '/api/short-link',
 			method: 'GET',
 			qs: {
