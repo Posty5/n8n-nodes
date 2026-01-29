@@ -52,6 +52,12 @@ export class Posty5FormSubmission implements INodeType {
 						action: 'Get adjacent submissions',
 					},
 					{
+						name: 'Change Status',
+						value: 'changeStatus',
+						description: 'Change the status of a form submission',
+						action: 'Change form submission status',
+					},
+					{
 						name: 'List',
 						value: 'list',
 						description: 'List all form submissions',
@@ -69,11 +75,50 @@ export class Posty5FormSubmission implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['get', 'delete', 'getAdjacent'],
+						operation: ['get', 'delete', 'getAdjacent', 'changeStatus'],
 					},
 				},
 				default: '',
 				description: 'The ID of the form submission',
+			},
+
+			// Change Status operation fields
+			{
+				displayName: 'Status',
+				name: 'status',
+				type: 'string',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['changeStatus'],
+					},
+				},
+				default: '',
+				description: 'The new status value for the submission',
+			},
+			{
+				displayName: 'Rejected Reason',
+				name: 'rejectedReason',
+				type: 'string',
+				displayOptions: {
+					show: {
+						operation: ['changeStatus'],
+					},
+				},
+				default: '',
+				description: 'Reason for rejection (optional)',
+			},
+			{
+				displayName: 'Notes',
+				name: 'notes',
+				type: 'string',
+				displayOptions: {
+					show: {
+						operation: ['changeStatus'],
+					},
+				},
+				default: '',
+				description: 'Additional notes about the status change (optional)',
 			},
 
 			// List operation fields
@@ -178,6 +223,17 @@ export class Posty5FormSubmission implements INodeType {
 				} else if (operation === 'getAdjacent') {
 					const submissionId = this.getNodeParameter('submissionId', i) as string;
 					responseData = await client.getNextPrevious(submissionId);
+				} else if (operation === 'changeStatus') {
+					const submissionId = this.getNodeParameter('submissionId', i) as string;
+					const status = this.getNodeParameter('status', i) as string;
+					const rejectedReason = this.getNodeParameter('rejectedReason', i, '') as string;
+					const notes = this.getNodeParameter('notes', i, '') as string;
+
+					responseData = await client.changeStatus(submissionId, {
+						status,
+						rejectedReason: rejectedReason || undefined,
+						notes: notes || undefined,
+					});
 				} else if (operation === 'delete') {
 					const submissionId = this.getNodeParameter('submissionId', i) as string;
 					responseData = await client.delete(submissionId);
