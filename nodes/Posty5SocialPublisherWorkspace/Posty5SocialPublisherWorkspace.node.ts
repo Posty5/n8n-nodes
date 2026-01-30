@@ -63,6 +63,12 @@ export class Posty5SocialPublisherWorkspace implements INodeType {
 						description: 'Update a workspace',
 						action: 'Update a workspace',
 					},
+					{
+						name: 'Get For New Task',
+						value: 'getForNewTask',
+						description: 'Get workspace details for creating new task',
+						action: 'Get workspace for new task',
+					},
 				],
 				default: 'create',
 			},
@@ -114,7 +120,7 @@ export class Posty5SocialPublisherWorkspace implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['get', 'update', 'delete'],
+						operation: ['get', 'update', 'delete', 'getForNewTask'],
 					},
 				},
 				default: '',
@@ -211,6 +217,9 @@ export class Posty5SocialPublisherWorkspace implements INodeType {
 				} else if (operation === 'delete') {
 					const workspaceId = this.getNodeParameter('workspaceId', i) as string;
 					responseData = await client.delete(workspaceId);
+				} else if (operation === 'getForNewTask') {
+					const workspaceId = this.getNodeParameter('workspaceId', i) as string;
+					responseData = await client.getForNewTask(workspaceId);
 				} else if (operation === 'list') {
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
 
