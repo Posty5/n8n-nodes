@@ -362,6 +362,27 @@ export class Posty5QrCode implements INodeType {
 						default: '',
 						description: 'QR code template/style ID',
 					},
+					{
+						displayName: 'Enable Monetization',
+						name: 'isEnableMonetization',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to enable monetization for this QR code',
+					},
+					{
+						displayName: 'Page Title',
+						name: 'pageTitle',
+						type: 'string',
+						default: '',
+						description: 'Landing page title',
+					},
+					{
+						displayName: 'Page Description',
+						name: 'pageDescription',
+						type: 'string',
+						default: '',
+						description: 'Landing page description',
+					},
 				],
 			},
 
@@ -474,6 +495,15 @@ export class Posty5QrCode implements INodeType {
 					if (additionalFields.tag) baseParams.tag = additionalFields.tag;
 					if (additionalFields.refId) baseParams.refId = additionalFields.refId;
 					if (additionalFields.templateId) baseParams.templateId = additionalFields.templateId;
+					if (additionalFields.isEnableMonetization !== undefined) {
+						baseParams.isEnableMonetization = additionalFields.isEnableMonetization;
+					}
+					if (additionalFields.pageTitle || additionalFields.pageDescription) {
+						baseParams.pageInfo = {
+							title: additionalFields.pageTitle || '',
+							description: additionalFields.pageDescription || '',
+						};
+					}
 
 					switch (qrType) {
 						case 'url': {
@@ -547,6 +577,15 @@ export class Posty5QrCode implements INodeType {
 					if (additionalFields.tag) baseParams.tag = additionalFields.tag;
 					if (additionalFields.refId) baseParams.refId = additionalFields.refId;
 					if (additionalFields.templateId) baseParams.templateId = additionalFields.templateId;
+					if (additionalFields.isEnableMonetization !== undefined) {
+						baseParams.isEnableMonetization = additionalFields.isEnableMonetization;
+					}
+					if (additionalFields.pageTitle || additionalFields.pageDescription) {
+						baseParams.pageInfo = {
+							title: additionalFields.pageTitle || '',
+							description: additionalFields.pageDescription || '',
+						};
+					}
 
 					switch (qrType) {
 						case 'url': {
