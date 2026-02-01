@@ -1,6 +1,6 @@
 {
-    "name": "n8n-nodes-posty5",
-    "version": "1.0.2",
+    "name": "@posty5/n8n-nodes-posty5",
+    "version": "2.0.0",
     "description": "N8N community nodes for Posty5 - URL shortening, QR codes, HTML hosting, and social media publishing",
     "keywords": [
         "n8n-community-node-package",
@@ -63,13 +63,13 @@
         "n8n-workflow": ">=1.0.0"
     },
     "dependencies": {
-        "@posty5/core": "^1.0.2",
-        "@posty5/html-hosting": "^1.0.0",
-        "@posty5/html-hosting-form-submission": "^1.0.0",
-        "@posty5/html-hosting-variables": "^1.0.0",
-        "@posty5/qr-code": "^1.0.0",
-        "@posty5/short-link": "^1.0.0",
-        "@posty5/social-publisher-task": "^1.0.0",
-        "@posty5/social-publisher-workspace": "^1.0.0"
+        "@posty5/core": "^2.0.0",
+        "@posty5/html-hosting": "^2.0.0",
+        "@posty5/html-hosting-form-submission": "^2.0.0",
+        "@posty5/html-hosting-variables": "^2.0.0",
+        "@posty5/qr-code": "^2.0.0",
+        "@posty5/short-link": "^2.0.0",
+        "@posty5/social-publisher-task": "^2.0.0",
+        "@posty5/social-publisher-workspace": "^2.0.0"
     }
 }
