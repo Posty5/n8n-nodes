@@ -4,7 +4,7 @@ import {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { HtmlHostingFormSubmissionClient } from '@posty5/html-hosting-form-submission';
+import { HtmlHostingFormSubmissionClient, IFormStatusType } from '@posty5/html-hosting-form-submission';
 
 export class Posty5FormSubmission implements INodeType {
 	description: INodeTypeDescription = {
@@ -86,14 +86,27 @@ export class Posty5FormSubmission implements INodeType {
 			{
 				displayName: 'Status',
 				name: 'status',
-				type: 'string',
+				type: 'options',
+				options: [
+					{ name: 'New', value: 'new' },
+					{ name: 'Pending Review', value: 'pendingReview' },
+					{ name: 'In Progress', value: 'inProgress' },
+					{ name: 'On Hold', value: 'onHold' },
+					{ name: 'Need More Info', value: 'needMoreInfo' },
+					{ name: 'Approved', value: 'approved' },
+					{ name: 'Partially Approved', value: 'partiallyApproved' },
+					{ name: 'Rejected', value: 'rejected' },
+					{ name: 'Completed', value: 'completed' },
+					{ name: 'Archived', value: 'archived' },
+					{ name: 'Cancelled', value: 'cancelled' },
+				],
 				required: true,
 				displayOptions: {
 					show: {
 						operation: ['changeStatus'],
 					},
 				},
-				default: '',
+				default: 'new',
 				description: 'The new status value for the submission',
 			},
 			{
@@ -183,8 +196,16 @@ export class Posty5FormSubmission implements INodeType {
 						type: 'options',
 						options: [
 							{ name: 'New', value: 'new' },
-							{ name: 'Read', value: 'read' },
+							{ name: 'Pending Review', value: 'pendingReview' },
+							{ name: 'In Progress', value: 'inProgress' },
+							{ name: 'On Hold', value: 'onHold' },
+							{ name: 'Need More Info', value: 'needMoreInfo' },
+							{ name: 'Approved', value: 'approved' },
+							{ name: 'Partially Approved', value: 'partiallyApproved' },
+							{ name: 'Rejected', value: 'rejected' },
+							{ name: 'Completed', value: 'completed' },
 							{ name: 'Archived', value: 'archived' },
+							{ name: 'Cancelled', value: 'cancelled' },
 						],
 						default: '',
 						description: 'Filter by submission status',
@@ -225,7 +246,7 @@ export class Posty5FormSubmission implements INodeType {
 					responseData = await client.getNextPrevious(submissionId);
 				} else if (operation === 'changeStatus') {
 					const submissionId = this.getNodeParameter('submissionId', i) as string;
-					const status = this.getNodeParameter('status', i) as string;
+				const status = this.getNodeParameter('status', i) as IFormStatusType;
 					const rejectedReason = this.getNodeParameter('rejectedReason', i, '') as string;
 					const notes = this.getNodeParameter('notes', i, '') as string;
 
