@@ -522,7 +522,7 @@ export class Posty5QrCode implements INodeType {
 							const body = this.getNodeParameter('emailBody', i, '') as string;
 							responseData = await client.createEmail({
 								...baseParams,
-								emailInfo: { email, subject, body },
+								email: { email, subject, body },
 							});
 							break;
 						}
@@ -532,7 +532,7 @@ export class Posty5QrCode implements INodeType {
 							const password = this.getNodeParameter('wifiPassword', i, '') as string;
 							responseData = await client.createWifi({
 								...baseParams,
-								wifiInfo: { name: wifiName, authenticationType, password },
+								wifi: { name: wifiName, authenticationType, password },
 							});
 							break;
 						}
@@ -540,7 +540,7 @@ export class Posty5QrCode implements INodeType {
 							const phoneNumber = this.getNodeParameter('phoneNumber', i) as string;
 							responseData = await client.createCall({
 								...baseParams,
-								callInfo: { phoneNumber },
+								call: { phoneNumber },
 							});
 							break;
 						}
@@ -549,7 +549,7 @@ export class Posty5QrCode implements INodeType {
 							const message = this.getNodeParameter('smsMessage', i, '') as string;
 							responseData = await client.createSMS({
 								...baseParams,
-								smsInfo: { phoneNumber, message },
+								sms: { phoneNumber, message },
 							});
 							break;
 						}
@@ -558,7 +558,7 @@ export class Posty5QrCode implements INodeType {
 							const longitude = this.getNodeParameter('longitude', i) as number;
 							responseData = await client.createGeolocation({
 								...baseParams,
-								geolocationInfo: { latitude, longitude },
+								geolocation: { latitude, longitude },
 							});
 							break;
 						}
@@ -604,7 +604,7 @@ export class Posty5QrCode implements INodeType {
 							const body = this.getNodeParameter('emailBody', i, '') as string;
 							responseData = await client.updateEmail(qrCodeId, {
 								...baseParams,
-								emailInfo: { email, subject, body },
+								email: { email, subject, body },
 							});
 							break;
 						}
@@ -614,7 +614,7 @@ export class Posty5QrCode implements INodeType {
 							const password = this.getNodeParameter('wifiPassword', i, '') as string;
 							responseData = await client.updateWifi(qrCodeId, {
 								...baseParams,
-								wifiInfo: { name: wifiName, authenticationType, password },
+								wifi: { name: wifiName, authenticationType, password },
 							});
 							break;
 						}
@@ -622,7 +622,7 @@ export class Posty5QrCode implements INodeType {
 							const phoneNumber = this.getNodeParameter('phoneNumber', i) as string;
 							responseData = await client.updateCall(qrCodeId, {
 								...baseParams,
-								callInfo: { phoneNumber },
+								call: { phoneNumber },
 							});
 							break;
 						}
@@ -631,7 +631,7 @@ export class Posty5QrCode implements INodeType {
 							const message = this.getNodeParameter('smsMessage', i, '') as string;
 							responseData = await client.updateSMS(qrCodeId, {
 								...baseParams,
-								smsInfo: { phoneNumber, message },
+								sms: { phoneNumber, message },
 							});
 							break;
 						}
@@ -640,7 +640,7 @@ export class Posty5QrCode implements INodeType {
 							const longitude = this.getNodeParameter('longitude', i) as number;
 							responseData = await client.updateGeolocation(qrCodeId, {
 								...baseParams,
-								geolocationInfo: { latitude, longitude },
+								geolocation: { latitude, longitude },
 							});
 							break;
 						}
