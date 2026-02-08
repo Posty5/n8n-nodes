@@ -34,18 +34,6 @@ export class Posty5SocialPublisherWorkspace implements INodeType {
 				noDataExpression: true,
 				options: [
 					{
-						name: 'Create',
-						value: 'create',
-						description: 'Create a new workspace',
-						action: 'Create a workspace',
-					},
-					{
-						name: 'Delete',
-						value: 'delete',
-						description: 'Delete a workspace',
-						action: 'Delete a workspace',
-					},
-					{
 						name: 'Get',
 						value: 'get',
 						description: 'Get a workspace',
@@ -58,61 +46,16 @@ export class Posty5SocialPublisherWorkspace implements INodeType {
 						action: 'List workspaces',
 					},
 					{
-						name: 'Update',
-						value: 'update',
-						description: 'Update a workspace',
-						action: 'Update a workspace',
-					},
-					{
 						name: 'Get For New Task',
 						value: 'getForNewTask',
 						description: 'Get workspace details for creating new task',
 						action: 'Get workspace for new task',
 					},
 				],
-				default: 'create',
+				default: 'list',
 			},
 
-			// Create/Update operation fields
-			{
-				displayName: 'Workspace Name',
-				name: 'name',
-				type: 'string',
-				required: true,
-				displayOptions: {
-					show: {
-						operation: ['create', 'update'],
-					},
-				},
-				default: '',
-				description: 'Name of the workspace',
-			},
-			{
-				displayName: 'Description',
-				name: 'description',
-				type: 'string',
-				displayOptions: {
-					show: {
-						operation: ['create', 'update'],
-					},
-				},
-				default: '',
-				description: 'Description of the workspace',
-			},
-			{
-				displayName: 'Logo',
-				name: 'logo',
-				type: 'string',
-				displayOptions: {
-					show: {
-						operation: ['create', 'update'],
-					},
-				},
-				default: 'data',
-				description: 'Name of the binary property containing the logo image (optional)',
-			},
-
-			// Workspace ID for get/update/delete operations
+			// Workspace ID for get/getForNewTask operations
 			{
 				displayName: 'Workspace ID',
 				name: 'workspaceId',
@@ -120,7 +63,7 @@ export class Posty5SocialPublisherWorkspace implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['get', 'update', 'delete', 'getForNewTask'],
+						operation: ['get', 'getForNewTask'],
 					},
 				},
 				default: '',
@@ -176,47 +119,9 @@ export class Posty5SocialPublisherWorkspace implements INodeType {
 			try {
 				let responseData: any = {};
 
-				if (operation === 'create') {
-					const name = this.getNodeParameter('name', i) as string;
-					const description = this.getNodeParameter('description', i, '') as string;
-					const logoBinaryProperty = this.getNodeParameter('logo', i, '') as string;
-
-					const params: any = { name };
-					if (description) params.description = description;
-
-					// Handle optional logo upload
-					let logoFile: File | undefined;
-					if (logoBinaryProperty && items[i].binary?.[logoBinaryProperty]) {
-						const logoBuffer = await this.helpers.getBinaryDataBuffer(i, logoBinaryProperty);
-						const logoBlob = new Blob([logoBuffer], { type: 'image/png' });
-						logoFile = new File([logoBlob], 'logo.png', { type: 'image/png' });
-					}
-
-					responseData = await client.create(params, logoFile);
-				} else if (operation === 'get') {
+				if (operation === 'get') {
 					const workspaceId = this.getNodeParameter('workspaceId', i) as string;
 					responseData = await client.get(workspaceId);
-				} else if (operation === 'update') {
-					const workspaceId = this.getNodeParameter('workspaceId', i) as string;
-					const name = this.getNodeParameter('name', i) as string;
-					const description = this.getNodeParameter('description', i, '') as string;
-					const logoBinaryProperty = this.getNodeParameter('logo', i, '') as string;
-
-					const params: any = { name };
-					if (description) params.description = description;
-
-					// Handle optional logo upload
-					let logoFile: File | undefined;
-					if (logoBinaryProperty && items[i].binary?.[logoBinaryProperty]) {
-						const logoBuffer = await this.helpers.getBinaryDataBuffer(i, logoBinaryProperty);
-						const logoBlob = new Blob([logoBuffer], { type: 'image/png' });
-						logoFile = new File([logoBlob], 'logo.png', { type: 'image/png' });
-					}
-
-					responseData = await client.update(workspaceId, params, logoFile);
-				} else if (operation === 'delete') {
-					const workspaceId = this.getNodeParameter('workspaceId', i) as string;
-					responseData = await client.delete(workspaceId);
 				} else if (operation === 'getForNewTask') {
 					const workspaceId = this.getNodeParameter('workspaceId', i) as string;
 					responseData = await client.getForNewTask(workspaceId);

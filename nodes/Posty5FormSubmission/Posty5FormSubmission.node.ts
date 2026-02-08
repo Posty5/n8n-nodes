@@ -4,7 +4,10 @@ import {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { HtmlHostingFormSubmissionClient, IFormStatusType } from '@posty5/html-hosting-form-submission';
+import {
+	HtmlHostingFormSubmissionClient,
+	IFormStatusType,
+} from '@posty5/html-hosting-form-submission';
 
 export class Posty5FormSubmission implements INodeType {
 	description: INodeTypeDescription = {
@@ -33,12 +36,6 @@ export class Posty5FormSubmission implements INodeType {
 				type: 'options',
 				noDataExpression: true,
 				options: [
-					{
-						name: 'Delete',
-						value: 'delete',
-						description: 'Delete a form submission',
-						action: 'Delete a form submission',
-					},
 					{
 						name: 'Get',
 						value: 'get',
@@ -75,7 +72,7 @@ export class Posty5FormSubmission implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['get', 'delete', 'getAdjacent', 'changeStatus'],
+						operation: ['get', 'getAdjacent', 'changeStatus'],
 					},
 				},
 				default: '',
@@ -246,7 +243,7 @@ export class Posty5FormSubmission implements INodeType {
 					responseData = await client.getNextPrevious(submissionId);
 				} else if (operation === 'changeStatus') {
 					const submissionId = this.getNodeParameter('submissionId', i) as string;
-				const status = this.getNodeParameter('status', i) as IFormStatusType;
+					const status = this.getNodeParameter('status', i) as IFormStatusType;
 					const rejectedReason = this.getNodeParameter('rejectedReason', i, '') as string;
 					const notes = this.getNodeParameter('notes', i, '') as string;
 
@@ -255,9 +252,6 @@ export class Posty5FormSubmission implements INodeType {
 						rejectedReason: rejectedReason || undefined,
 						notes: notes || undefined,
 					});
-				} else if (operation === 'delete') {
-					const submissionId = this.getNodeParameter('submissionId', i) as string;
-					responseData = await client.delete(submissionId);
 				} else if (operation === 'list') {
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
 					const filters = this.getNodeParameter('filters', i, {}) as any;
