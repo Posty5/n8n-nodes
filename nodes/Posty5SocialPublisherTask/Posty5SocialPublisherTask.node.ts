@@ -4,7 +4,8 @@ import {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { SocialPublisherTaskClient } from '@posty5/social-publisher-task';
+import { makeApiRequest, makePaginatedRequest, uploadFile } from '../../utils/api.helpers';
+import { API_ENDPOINTS } from '../../utils/constants';
 
 export class Posty5SocialPublisherTask implements INodeType {
 	description: INodeTypeDescription = {
@@ -443,11 +444,7 @@ export class Posty5SocialPublisherTask implements INodeType {
 		const operation = this.getNodeParameter('operation', 0) as string;
 
 		const credentials = await this.getCredentials('posty5Api');
-		const { HttpClient } = await import('@posty5/core');
-		const http = new HttpClient({
-			apiKey: credentials.apiKey as string,
-		});
-		const client = new SocialPublisherTaskClient(http);
+		const apiKey = credentials.apiKey as string;
 
 		for (let i = 0; i < items.length; i++) {
 			try {
@@ -460,55 +457,98 @@ export class Posty5SocialPublisherTask implements INodeType {
 					const thumbnailSource = this.getNodeParameter('thumbnailSource', i, 'none') as string;
 					const scheduledPublishTime = this.getNodeParameter('scheduledPublishTime', i) as string;
 
-					const params: any = { workspaceId, platforms };
+					let videoURL: string;
+					let thumbURL: string | undefined;
+					let source: string;
 
 					// Handle video
 					if (videoSource === 'binary') {
 						const videoBinaryProperty = this.getNodeParameter('videoBinaryProperty', i) as string;
 						const videoBuffer = await this.helpers.getBinaryDataBuffer(i, videoBinaryProperty);
-						const videoBlob = new Blob([videoBuffer], { type: 'video/mp4' });
-						const videoFile = new File([videoBlob], 'video.mp4', { type: 'video/mp4' });
-						params.video = videoFile;
+
+						// Generate upload URLs
+						const uploadUrlsResponse: any = await makeApiRequest.call(this, apiKey, {
+							method: 'POST',
+							endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_TASK}/generate-upload-urls`,
+							body: {
+								videoFileType: 'mp4',
+								thumbFileType: 'jpg',
+							},
+						});
+
+						// Upload video
+						await uploadFile.call(this, uploadUrlsResponse.video.uploadFileURL, videoBuffer);
+						videoURL = uploadUrlsResponse.video.uploadFileURL.split('?')[0];
+						source = 'video-upload';
+
+						// Handle thumbnail
+						if (thumbnailSource === 'binary') {
+							const thumbnailBinaryProperty = this.getNodeParameter(
+								'thumbnailBinaryProperty',
+								i,
+							) as string;
+							if (items[i].binary?.[thumbnailBinaryProperty]) {
+								const thumbnailBuffer = await this.helpers.getBinaryDataBuffer(
+									i,
+									thumbnailBinaryProperty,
+								);
+								await uploadFile.call(
+									this,
+									uploadUrlsResponse.thumb.uploadFileURL,
+									thumbnailBuffer,
+								);
+								thumbURL = uploadUrlsResponse.thumb.uploadFileURL.split('?')[0];
+							}
+						} else if (thumbnailSource === 'url') {
+							thumbURL = this.getNodeParameter('thumbnailUrl', i) as string;
+						}
 					} else {
-						params.video = this.getNodeParameter('videoUrl', i) as string;
+						// URL-based video
+						videoURL = this.getNodeParameter('videoUrl', i) as string;
+
+						// Detect source type from URL pattern
+						if (videoURL.includes('facebook.com') || videoURL.includes('fb.watch')) {
+							source = 'facebook-video';
+						} else if (videoURL.includes('tiktok.com')) {
+							source = 'tiktok-video';
+						} else if (videoURL.includes('youtube.com') || videoURL.includes('youtu.be')) {
+							source = 'youtube-video';
+						} else {
+							source = 'video-url';
+						}
+
+						if (thumbnailSource === 'url') {
+							thumbURL = this.getNodeParameter('thumbnailUrl', i) as string;
+						}
 					}
 
-					// Handle thumbnail
-					if (thumbnailSource === 'binary') {
-						const thumbnailBinaryProperty = this.getNodeParameter(
-							'thumbnailBinaryProperty',
-							i,
-						) as string;
-						if (items[i].binary?.[thumbnailBinaryProperty]) {
-							const thumbnailBuffer = await this.helpers.getBinaryDataBuffer(
-								i,
-								thumbnailBinaryProperty,
-							);
-							const thumbnailBlob = new Blob([thumbnailBuffer], { type: 'image/jpeg' });
-							const thumbnailFile = new File([thumbnailBlob], 'thumbnail.jpg', {
-								type: 'image/jpeg',
-							});
-							params.thumbnail = thumbnailFile;
-						}
-					} else if (thumbnailSource === 'url') {
-						params.thumbnail = this.getNodeParameter('thumbnailUrl', i) as string;
+					// Prepare task body
+					const taskBody: any = {
+						workspaceId,
+						videoURL,
+						source,
+						platforms,
+					};
+
+					if (thumbURL) {
+						taskBody.thumbURL = thumbURL;
 					}
 
 					// Handle scheduling
 					if (scheduledPublishTime === 'later') {
 						const scheduleDate = this.getNodeParameter('scheduleDate', i) as string;
-						params.scheduledPublishTime = new Date(scheduleDate);
+						taskBody.scheduledPublishTime = new Date(scheduleDate).toISOString();
 					} else {
-						params.scheduledPublishTime = 'now';
+						taskBody.scheduledPublishTime = 'now';
 					}
 
 					// Platform-specific settings
 					if (platforms.includes('youtube')) {
 						const youtubeSettings = this.getNodeParameter('youtubeSettings', i, {}) as any;
 						if (Object.keys(youtubeSettings).length > 0) {
-							params.youtubeSettings = youtubeSettings;
+							taskBody.youtubeConfig = { ...youtubeSettings };
 							if (youtubeSettings.tags && typeof youtubeSettings.tags === 'string') {
-								params.youtubeSettings.tags = youtubeSettings.tags
+								taskBody.youtubeConfig.tags = youtubeSettings.tags
 									.split(',')
 									.map((t: string) => t.trim());
 							}
@@ -518,57 +558,61 @@ export class Posty5SocialPublisherTask implements INodeType {
 					if (platforms.includes('tiktok')) {
 						const tiktokSettings = this.getNodeParameter('tiktokSettings', i, {}) as any;
 						if (Object.keys(tiktokSettings).length > 0) {
-							params.tiktokSettings = tiktokSettings;
+							taskBody.tiktokConfig = tiktokSettings;
 						}
 					}
 
 					if (platforms.includes('facebook')) {
 						const facebookSettings = this.getNodeParameter('facebookSettings', i, {}) as any;
 						if (Object.keys(facebookSettings).length > 0) {
-							params.facebookSettings = facebookSettings;
+							taskBody.facebookPageConfig = facebookSettings;
 						}
 					}
 
 					if (platforms.includes('instagram')) {
 						const instagramSettings = this.getNodeParameter('instagramSettings', i, {}) as any;
 						if (Object.keys(instagramSettings).length > 0) {
-							params.instagramSettings = instagramSettings;
+							taskBody.instagramConfig = instagramSettings;
 						}
 					}
 
-					responseData = await client.publishShortVideo(params);
+					// Create task
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'POST',
+						endpoint: API_ENDPOINTS.SOCIAL_PUBLISHER_TASK,
+						body: taskBody,
+					});
 				} else if (operation === 'getTaskStatus') {
 					const taskId = this.getNodeParameter('taskId', i) as string;
-					responseData = await client.getStatus(taskId);
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'GET',
+						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_TASK}/${taskId}/status`,
+					});
 				} else if (operation === 'listTasks') {
 					const workspaceId = this.getNodeParameter('listWorkspaceId', i) as string;
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
 
-					const params: any = {
-						workspaceId,
-						page: 1,
-						pageSize: returnAll ? 100 : this.getNodeParameter('limit', i, 50),
-					};
-
 					if (returnAll) {
-						let allResults: any[] = [];
-						let page = 1;
-						let hasMore = true;
-
-						while (hasMore) {
-							const result = await client.list({}, { page, pageSize: params.pageSize });
-							allResults = allResults.concat(result.items);
-							hasMore = result.items.length === params.pageSize;
-							page++;
-						}
-
-						responseData = allResults;
+						responseData = await makePaginatedRequest.call(
+							this,
+							apiKey,
+							API_ENDPOINTS.SOCIAL_PUBLISHER_TASK,
+							{ workspaceId },
+						);
 					} else {
-						const result = await client.list({}, { page: 1, pageSize: params.pageSize });
+						const limit = this.getNodeParameter('limit', i, 50) as number;
+						const result: any = await makeApiRequest.call(this, apiKey, {
+							method: 'GET',
+							endpoint: API_ENDPOINTS.SOCIAL_PUBLISHER_TASK,
+							qs: { workspaceId, page: 1, pageSize: limit },
+						});
 						responseData = result.items;
 					}
 				} else if (operation === 'getDefaultSettings') {
-					responseData = await client.getDefaultSettings();
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'GET',
+						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_TASK}/default-settings`,
+					});
 				}
 
 				const executionData = this.helpers.constructExecutionMetaData(

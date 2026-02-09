@@ -4,7 +4,9 @@ import {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { HtmlHostingClient } from '@posty5/html-hosting';
+import { makeApiRequest, makePaginatedRequest, uploadFile } from '../../utils/api.helpers';
+import { API_ENDPOINTS } from '../../utils/constants';
+import type { IListParams } from '../../types/html-hosting.types';
 
 export class Posty5HtmlHosting implements INodeType {
 	description: INodeTypeDescription = {
@@ -291,11 +293,7 @@ export class Posty5HtmlHosting implements INodeType {
 		const operation = this.getNodeParameter('operation', 0) as string;
 
 		const credentials = await this.getCredentials('posty5Api');
-		const { HttpClient } = await import('@posty5/core');
-		const http = new HttpClient({
-			apiKey: credentials.apiKey as string,
-		});
-		const client = new HtmlHostingClient(http);
+		const apiKey = credentials.apiKey as string;
 
 		for (let i = 0; i < items.length; i++) {
 			try {
@@ -310,28 +308,40 @@ export class Posty5HtmlHosting implements INodeType {
 
 					const fileBuffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
 
-					// Convert buffer to Blob
-					const blob = new Blob([fileBuffer], { type: 'text/html' });
-					const file = new File([blob], fileName, { type: 'text/html' });
+					const body: any = { name, fileName };
+					if (customLandingId) body.customLandingId = customLandingId;
+					if (additionalFields.tag) body.tag = additionalFields.tag;
+					if (additionalFields.refId) body.refId = additionalFields.refId;
 
-					const params: any = { name };
-					if (customLandingId) params.customLandingId = customLandingId;
-					if (additionalFields.tag) params.tag = additionalFields.tag;
-					if (additionalFields.refId) params.refId = additionalFields.refId;
+					const createResponse = await makeApiRequest.call(this, apiKey, {
+						method: 'POST',
+						endpoint: API_ENDPOINTS.HTML_HOSTING,
+						body,
+					});
 
-					responseData = await client.createWithFile(params, file);
+					// Upload file to the pre-signed URL
+					await uploadFile.call(this, createResponse.uploadFileConfig.uploadUrl, fileBuffer);
+
+					responseData = createResponse.details;
 				} else if (operation === 'createFromGithub') {
 					const name = this.getNodeParameter('name', i) as string;
 					const githubFileUrl = this.getNodeParameter('githubFileUrl', i) as string;
 					const customLandingId = this.getNodeParameter('customLandingId', i, '') as string;
 					const additionalFields = this.getNodeParameter('additionalFields', i, {}) as any;
 
-					const params: any = { name, githubFileUrl };
-					if (customLandingId) params.customLandingId = customLandingId;
-					if (additionalFields.tag) params.tag = additionalFields.tag;
-					if (additionalFields.refId) params.refId = additionalFields.refId;
+					const body: any = {
+						name,
+						githubInfo: { fileURL: githubFileUrl },
+					};
+					if (customLandingId) body.customLandingId = customLandingId;
+					if (additionalFields.tag) body.tag = additionalFields.tag;
+					if (additionalFields.refId) body.refId = additionalFields.refId;
 
-					responseData = await client.createWithGithubFile(params);
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'POST',
+						endpoint: API_ENDPOINTS.HTML_HOSTING,
+						body,
+					});
 				} else if (operation === 'updateFromFile') {
 					const htmlHostingId = this.getNodeParameter('htmlHostingId', i) as string;
 					const name = this.getNodeParameter('name', i) as string;
@@ -341,15 +351,28 @@ export class Posty5HtmlHosting implements INodeType {
 					const additionalFields = this.getNodeParameter('additionalFields', i, {}) as any;
 
 					const fileBuffer = await this.helpers.getBinaryDataBuffer(i, binaryPropertyName);
-					const blob = new Blob([fileBuffer], { type: 'text/html' });
-					const file = new File([blob], fileName, { type: 'text/html' });
 
-					const params: any = { name };
-					if (customLandingId) params.customLandingId = customLandingId;
-					if (additionalFields.tag) params.tag = additionalFields.tag;
-					if (additionalFields.refId) params.refId = additionalFields.refId;
+					const body: any = { name, fileName };
+					if (customLandingId) body.customLandingId = customLandingId;
+					if (additionalFields.tag) body.tag = additionalFields.tag;
+					if (additionalFields.refId) body.refId = additionalFields.refId;
 
-					responseData = await client.updateWithNewFile(htmlHostingId, params, file);
+					const updateResponse = await makeApiRequest.call(this, apiKey, {
+						method: 'PUT',
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}`,
+						body,
+					});
+
+					// Upload file if new file URL is provided
+					if (updateResponse.uploadFileConfig) {
+						await uploadFile.call(
+							this,
+							updateResponse.uploadFileConfig.uploadUrl,
+							fileBuffer,
+						);
+					}
+
+					responseData = updateResponse.details;
 				} else if (operation === 'updateFromGithub') {
 					const htmlHostingId = this.getNodeParameter('htmlHostingId', i) as string;
 					const name = this.getNodeParameter('name', i) as string;
@@ -357,50 +380,74 @@ export class Posty5HtmlHosting implements INodeType {
 					const customLandingId = this.getNodeParameter('customLandingId', i, '') as string;
 					const additionalFields = this.getNodeParameter('additionalFields', i, {}) as any;
 
-					const params: any = { id: htmlHostingId, name, githubFileUrl };
-					if (customLandingId) params.customLandingId = customLandingId;
-					if (additionalFields.tag) params.tag = additionalFields.tag;
-					if (additionalFields.refId) params.refId = additionalFields.refId;
+					const body: any = {
+						name,
+						githubInfo: { fileURL: githubFileUrl },
+					};
+					if (customLandingId) body.customLandingId = customLandingId;
+					if (additionalFields.tag) body.tag = additionalFields.tag;
+					if (additionalFields.refId) body.refId = additionalFields.refId;
 
-					responseData = await client.updateWithGithubFile(htmlHostingId, params);
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'PUT',
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}`,
+						body,
+					});
 				} else if (operation === 'get') {
 					const htmlHostingId = this.getNodeParameter('htmlHostingId', i) as string;
-					responseData = await client.get(htmlHostingId);
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'GET',
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}`,
+					});
 				} else if (operation === 'delete') {
 					const htmlHostingId = this.getNodeParameter('htmlHostingId', i) as string;
-					responseData = await client.delete(htmlHostingId);
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'DELETE',
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}`,
+					});
 				} else if (operation === 'clearCache') {
 					const htmlHostingId = this.getNodeParameter('htmlHostingId', i) as string;
-					responseData = await client.cleanCache(htmlHostingId);
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'POST',
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}/clear-cache`,
+					});
+				} else if (operation === 'getFormIds') {
+					const htmlHostingId = this.getNodeParameter('htmlHostingId', i) as string;
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'GET',
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}/forms`,
+					});
 				} else if (operation === 'list') {
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
 					const filters = this.getNodeParameter('filters', i, {}) as any;
 
-					const params: any = {
-						page: 1,
-						pageSize: returnAll ? 100 : this.getNodeParameter('limit', i, 50),
-						...filters,
-					};
+					const qs: IListParams = {};
+					if (filters.tag) qs.tag = filters.tag;
+					if (filters.refId) qs.refId = filters.refId;
+					if (filters.search) {
+						qs.name = filters.search;
+						qs.htmlHostingId = filters.search;
+					}
 
 					if (returnAll) {
-						let allResults: any[] = [];
-						let page = 1;
-						let hasMore = true;
-
-						while (hasMore) {
-							const result = await client.list({ ...filters }, { page, pageSize: params.pageSize });
-							allResults = allResults.concat(result.items);
-							hasMore = result.items.length === params.pageSize;
-							page++;
-						}
-
-						responseData = allResults;
-					} else {
-						const result = await client.list(
-							{ ...filters },
-							{ page: 1, pageSize: params.pageSize },
+						responseData = await makePaginatedRequest.call(
+							this,
+							apiKey,
+							API_ENDPOINTS.HTML_HOSTING,
+							qs,
 						);
-						responseData = result.items;
+					} else {
+						const limit = this.getNodeParameter('limit', i, 50) as number;
+						const result = await makeApiRequest.call(this, apiKey, {
+							method: 'GET',
+							endpoint: API_ENDPOINTS.HTML_HOSTING,
+							qs: {
+								...qs,
+								page: 1,
+								pageSize: limit,
+							},
+						});
+						responseData = result.items || [];
 					}
 				}
 

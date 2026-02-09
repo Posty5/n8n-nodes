@@ -4,7 +4,9 @@ import {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { QRCodeClient } from '@posty5/qr-code';
+import { makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
+import { API_ENDPOINTS } from '../../utils/constants';
+import type { IListParams } from '../../types/qr-code.types';
 
 export class Posty5QrCode implements INodeType {
 	description: INodeTypeDescription = {
@@ -475,11 +477,7 @@ export class Posty5QrCode implements INodeType {
 		const operation = this.getNodeParameter('operation', 0) as string;
 
 		const credentials = await this.getCredentials('posty5Api');
-		const { HttpClient } = await import('@posty5/core');
-		const http = new HttpClient({
-			apiKey: credentials.apiKey as string,
-		});
-		const client = new QRCodeClient(http);
+		const apiKey = credentials.apiKey as string;
 
 		for (let i = 0; i < items.length; i++) {
 			try {
@@ -490,193 +488,184 @@ export class Posty5QrCode implements INodeType {
 					const name = this.getNodeParameter('name', i, '') as string;
 					const additionalFields = this.getNodeParameter('additionalFields', i, {}) as any;
 
-					const baseParams: any = {};
-					if (name) baseParams.name = name;
-					if (additionalFields.tag) baseParams.tag = additionalFields.tag;
-					if (additionalFields.refId) baseParams.refId = additionalFields.refId;
-					if (additionalFields.templateId) baseParams.templateId = additionalFields.templateId;
+					const body: any = {};
+					if (name) body.name = name;
+					if (additionalFields.tag) body.tag = additionalFields.tag;
+					if (additionalFields.refId) body.refId = additionalFields.refId;
+					if (additionalFields.templateId) body.templateId = additionalFields.templateId;
 					if (additionalFields.isEnableMonetization !== undefined) {
-						baseParams.isEnableMonetization = additionalFields.isEnableMonetization;
+						body.isEnableMonetization = additionalFields.isEnableMonetization;
 					}
 					if (additionalFields.pageTitle || additionalFields.pageDescription) {
-						baseParams.pageInfo = {
+						body.pageInfo = {
 							title: additionalFields.pageTitle || '',
 							description: additionalFields.pageDescription || '',
 						};
 					}
 
+					// Add type-specific fields
 					switch (qrType) {
 						case 'url': {
 							const url = this.getNodeParameter('url', i) as string;
-							responseData = await client.createURL({ ...baseParams, url });
+							body.url = { url };
 							break;
 						}
 						case 'freeText': {
 							const text = this.getNodeParameter('text', i) as string;
-							responseData = await client.createFreeText({ ...baseParams, text });
+							body.text = text;
 							break;
 						}
 						case 'email': {
 							const email = this.getNodeParameter('email', i) as string;
 							const subject = this.getNodeParameter('emailSubject', i, '') as string;
-							const body = this.getNodeParameter('emailBody', i, '') as string;
-							responseData = await client.createEmail({
-								...baseParams,
-								email: { email, subject, body },
-							});
+							const emailBody = this.getNodeParameter('emailBody', i, '') as string;
+							body.email = { email, subject, body: emailBody };
 							break;
 						}
 						case 'wifi': {
 							const wifiName = this.getNodeParameter('wifiName', i) as string;
 							const authenticationType = this.getNodeParameter('wifiAuthType', i) as string;
 							const password = this.getNodeParameter('wifiPassword', i, '') as string;
-							responseData = await client.createWifi({
-								...baseParams,
-								wifi: { name: wifiName, authenticationType, password },
-							});
+							body.wifi = { name: wifiName, authenticationType, password };
 							break;
 						}
 						case 'call': {
 							const phoneNumber = this.getNodeParameter('phoneNumber', i) as string;
-							responseData = await client.createCall({
-								...baseParams,
-								call: { phoneNumber },
-							});
+							body.call = { phoneNumber };
 							break;
 						}
 						case 'sms': {
 							const phoneNumber = this.getNodeParameter('smsPhoneNumber', i) as string;
 							const message = this.getNodeParameter('smsMessage', i, '') as string;
-							responseData = await client.createSMS({
-								...baseParams,
-								sms: { phoneNumber, message },
-							});
+							body.sms = { phoneNumber, message };
 							break;
 						}
 						case 'geolocation': {
 							const latitude = this.getNodeParameter('latitude', i) as number;
 							const longitude = this.getNodeParameter('longitude', i) as number;
-							responseData = await client.createGeolocation({
-								...baseParams,
-								geolocation: { latitude, longitude },
-							});
+							body.geolocation = { latitude, longitude };
 							break;
 						}
 					}
+
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'POST',
+						endpoint: API_ENDPOINTS.QR_CODE,
+						body,
+					});
 				} else if (operation === 'get') {
 					const qrCodeId = this.getNodeParameter('qrCodeId', i) as string;
-					responseData = await client.get(qrCodeId);
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'GET',
+						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`,
+					});
 				} else if (operation === 'update') {
 					const qrCodeId = this.getNodeParameter('qrCodeId', i) as string;
 					const qrType = this.getNodeParameter('qrType', i) as string;
 					const name = this.getNodeParameter('name', i, '') as string;
 					const additionalFields = this.getNodeParameter('additionalFields', i, {}) as any;
 
-					const baseParams: any = { id: qrCodeId };
-					if (name) baseParams.name = name;
-					if (additionalFields.tag) baseParams.tag = additionalFields.tag;
-					if (additionalFields.refId) baseParams.refId = additionalFields.refId;
-					if (additionalFields.templateId) baseParams.templateId = additionalFields.templateId;
+					const body: any = {};
+					if (name) body.name = name;
+					if (additionalFields.tag) body.tag = additionalFields.tag;
+					if (additionalFields.refId) body.refId = additionalFields.refId;
+					if (additionalFields.templateId) body.templateId = additionalFields.templateId;
 					if (additionalFields.isEnableMonetization !== undefined) {
-						baseParams.isEnableMonetization = additionalFields.isEnableMonetization;
+						body.isEnableMonetization = additionalFields.isEnableMonetization;
 					}
 					if (additionalFields.pageTitle || additionalFields.pageDescription) {
-						baseParams.pageInfo = {
+						body.pageInfo = {
 							title: additionalFields.pageTitle || '',
 							description: additionalFields.pageDescription || '',
 						};
 					}
 
+					// Add type-specific fields
 					switch (qrType) {
 						case 'url': {
 							const url = this.getNodeParameter('url', i) as string;
-							responseData = await client.updateURL(qrCodeId, { ...baseParams, url });
+							body.url = { url };
 							break;
 						}
 						case 'freeText': {
 							const text = this.getNodeParameter('text', i) as string;
-							responseData = await client.updateFreeText(qrCodeId, { ...baseParams, text });
+							body.qrCodeTarget = { text };
 							break;
 						}
 						case 'email': {
 							const email = this.getNodeParameter('email', i) as string;
 							const subject = this.getNodeParameter('emailSubject', i, '') as string;
-							const body = this.getNodeParameter('emailBody', i, '') as string;
-							responseData = await client.updateEmail(qrCodeId, {
-								...baseParams,
-								email: { email, subject, body },
-							});
+							const emailBody = this.getNodeParameter('emailBody', i, '') as string;
+							body.email = { email, subject, body: emailBody };
 							break;
 						}
 						case 'wifi': {
 							const wifiName = this.getNodeParameter('wifiName', i) as string;
 							const authenticationType = this.getNodeParameter('wifiAuthType', i) as string;
 							const password = this.getNodeParameter('wifiPassword', i, '') as string;
-							responseData = await client.updateWifi(qrCodeId, {
-								...baseParams,
-								wifi: { name: wifiName, authenticationType, password },
-							});
+							body.wifi = { name: wifiName, authenticationType, password };
 							break;
 						}
 						case 'call': {
 							const phoneNumber = this.getNodeParameter('phoneNumber', i) as string;
-							responseData = await client.updateCall(qrCodeId, {
-								...baseParams,
-								call: { phoneNumber },
-							});
+							body.call = { phoneNumber };
 							break;
 						}
 						case 'sms': {
 							const phoneNumber = this.getNodeParameter('smsPhoneNumber', i) as string;
 							const message = this.getNodeParameter('smsMessage', i, '') as string;
-							responseData = await client.updateSMS(qrCodeId, {
-								...baseParams,
-								sms: { phoneNumber, message },
-							});
+							body.sms = { phoneNumber, message };
 							break;
 						}
 						case 'geolocation': {
 							const latitude = this.getNodeParameter('latitude', i) as number;
 							const longitude = this.getNodeParameter('longitude', i) as number;
-							responseData = await client.updateGeolocation(qrCodeId, {
-								...baseParams,
-								geolocation: { latitude, longitude },
-							});
+							body.geolocation = { latitude, longitude };
 							break;
 						}
 					}
+
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'PUT',
+						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`,
+						body,
+					});
 				} else if (operation === 'delete') {
 					const qrCodeId = this.getNodeParameter('qrCodeId', i) as string;
-					responseData = await client.delete(qrCodeId);
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'DELETE',
+						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`,
+					});
 				} else if (operation === 'list') {
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
 					const filters = this.getNodeParameter('filters', i, {}) as any;
 
-					const params: any = {
-						page: 1,
-						pageSize: returnAll ? 100 : this.getNodeParameter('limit', i, 50),
-						...filters,
-					};
+					const qs: IListParams = {};
+					if (filters.tag) qs.tag = filters.tag;
+					if (filters.refId) qs.refId = filters.refId;
+					if (filters.search) {
+						qs.name = filters.search;
+					}
 
 					if (returnAll) {
-						let allResults: any[] = [];
-						let page = 1;
-						let hasMore = true;
-
-						while (hasMore) {
-							const result = await client.list({ ...filters }, { page, pageSize: params.pageSize });
-							allResults = allResults.concat(result.items);
-							hasMore = result.items.length === params.pageSize;
-							page++;
-						}
-
-						responseData = allResults;
-					} else {
-						const result = await client.list(
-							{ ...filters },
-							{ page: 1, pageSize: params.pageSize },
+						responseData = await makePaginatedRequest.call(
+							this,
+							apiKey,
+							API_ENDPOINTS.QR_CODE,
+							qs,
 						);
-						responseData = result.items;
+					} else {
+						const limit = this.getNodeParameter('limit', i, 50) as number;
+						const result = await makeApiRequest.call(this, apiKey, {
+							method: 'GET',
+							endpoint: API_ENDPOINTS.QR_CODE,
+							qs: {
+								...qs,
+								page: 1,
+								pageSize: limit,
+							},
+						});
+						responseData = result.items || [];
 					}
 				}
 

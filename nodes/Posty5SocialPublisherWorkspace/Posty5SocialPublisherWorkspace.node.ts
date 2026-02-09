@@ -4,7 +4,8 @@ import {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { SocialPublisherWorkspaceClient } from '@posty5/social-publisher-workspace';
+import { makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
+import { API_ENDPOINTS } from '../../utils/constants';
 
 export class Posty5SocialPublisherWorkspace implements INodeType {
 	description: INodeTypeDescription = {
@@ -109,11 +110,7 @@ export class Posty5SocialPublisherWorkspace implements INodeType {
 		const operation = this.getNodeParameter('operation', 0) as string;
 
 		const credentials = await this.getCredentials('posty5Api');
-		const { HttpClient } = await import('@posty5/core');
-		const http = new HttpClient({
-			apiKey: credentials.apiKey as string,
-		});
-		const client = new SocialPublisherWorkspaceClient(http);
+		const apiKey = credentials.apiKey as string;
 
 		for (let i = 0; i < items.length; i++) {
 			try {
@@ -121,34 +118,37 @@ export class Posty5SocialPublisherWorkspace implements INodeType {
 
 				if (operation === 'get') {
 					const workspaceId = this.getNodeParameter('workspaceId', i) as string;
-					responseData = await client.get(workspaceId);
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'GET',
+						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_WORKSPACE}/${workspaceId}`,
+					});
 				} else if (operation === 'getForNewTask') {
 					const workspaceId = this.getNodeParameter('workspaceId', i) as string;
-					responseData = await client.getForNewTask(workspaceId);
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'GET',
+						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_WORKSPACE}/${workspaceId}/for-new-task`,
+					});
 				} else if (operation === 'list') {
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
 
-					const params: any = {
-						page: 1,
-						pageSize: returnAll ? 100 : this.getNodeParameter('limit', i, 50),
-					};
-
 					if (returnAll) {
-						let allResults: any[] = [];
-						let page = 1;
-						let hasMore = true;
-
-						while (hasMore) {
-							const result = await client.list({}, { page, pageSize: params.pageSize });
-							allResults = allResults.concat(result.items);
-							hasMore = result.items.length === params.pageSize;
-							page++;
-						}
-
-						responseData = allResults;
+						responseData = await makePaginatedRequest.call(
+							this,
+							apiKey,
+							API_ENDPOINTS.SOCIAL_PUBLISHER_WORKSPACE,
+							{},
+						);
 					} else {
-						const result = await client.list({}, { page: 1, pageSize: params.pageSize });
-						responseData = result.items;
+						const limit = this.getNodeParameter('limit', i, 50) as number;
+						const result = await makeApiRequest.call(this, apiKey, {
+							method: 'GET',
+							endpoint: API_ENDPOINTS.SOCIAL_PUBLISHER_WORKSPACE,
+							qs: {
+								page: 1,
+								pageSize: limit,
+							},
+						});
+						responseData = result.items || [];
 					}
 				}
 

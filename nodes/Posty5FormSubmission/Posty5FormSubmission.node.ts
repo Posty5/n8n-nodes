@@ -4,10 +4,9 @@ import {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import {
-	HtmlHostingFormSubmissionClient,
-	IFormStatusType,
-} from '@posty5/html-hosting-form-submission';
+import { makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
+import { API_ENDPOINTS } from '../../utils/constants';
+import type { IFormStatusType, IListParams } from '../../types/form-submission.types';
 
 export class Posty5FormSubmission implements INodeType {
 	description: INodeTypeDescription = {
@@ -225,11 +224,7 @@ export class Posty5FormSubmission implements INodeType {
 		const operation = this.getNodeParameter('operation', 0) as string;
 
 		const credentials = await this.getCredentials('posty5Api');
-		const { HttpClient } = await import('@posty5/core');
-		const http = new HttpClient({
-			apiKey: credentials.apiKey as string,
-		});
-		const client = new HtmlHostingFormSubmissionClient(http);
+		const apiKey = credentials.apiKey as string;
 
 		for (let i = 0; i < items.length; i++) {
 			try {
@@ -237,50 +232,61 @@ export class Posty5FormSubmission implements INodeType {
 
 				if (operation === 'get') {
 					const submissionId = this.getNodeParameter('submissionId', i) as string;
-					responseData = await client.get(submissionId);
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'GET',
+						endpoint: `${API_ENDPOINTS.FORM_SUBMISSION}/${submissionId}`,
+					});
 				} else if (operation === 'getAdjacent') {
 					const submissionId = this.getNodeParameter('submissionId', i) as string;
-					responseData = await client.getNextPrevious(submissionId);
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'GET',
+						endpoint: `${API_ENDPOINTS.FORM_SUBMISSION}/${submissionId}/next-previous`,
+					});
 				} else if (operation === 'changeStatus') {
 					const submissionId = this.getNodeParameter('submissionId', i) as string;
 					const status = this.getNodeParameter('status', i) as IFormStatusType;
 					const rejectedReason = this.getNodeParameter('rejectedReason', i, '') as string;
 					const notes = this.getNodeParameter('notes', i, '') as string;
 
-					responseData = await client.changeStatus(submissionId, {
-						status,
-						rejectedReason: rejectedReason || undefined,
-						notes: notes || undefined,
+					const body: any = { status };
+					if (rejectedReason) body.rejectedReason = rejectedReason;
+					if (notes) body.notes = notes;
+
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'PUT',
+						endpoint: `${API_ENDPOINTS.FORM_SUBMISSION}/${submissionId}/change-status`,
+						body,
 					});
 				} else if (operation === 'list') {
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
 					const filters = this.getNodeParameter('filters', i, {}) as any;
 
-					const params: any = {
-						page: 1,
-						pageSize: returnAll ? 100 : this.getNodeParameter('limit', i, 50),
-						...filters,
+					const qs: IListParams = {
+						htmlHostingId: filters.htmlHostingId || '',
 					};
+					if (filters.formId) qs.formId = filters.formId;
+					if (filters.status) qs.status = filters.status;
+					if (filters.search) qs.numbering = filters.search;
 
 					if (returnAll) {
-						let allResults: any[] = [];
-						let page = 1;
-						let hasMore = true;
-
-						while (hasMore) {
-							const result = await client.list({ ...filters }, { page, pageSize: params.pageSize });
-							allResults = allResults.concat(result.items);
-							hasMore = result.items.length === params.pageSize;
-							page++;
-						}
-
-						responseData = allResults;
-					} else {
-						const result = await client.list(
-							{ ...filters },
-							{ page: 1, pageSize: params.pageSize },
+						responseData = await makePaginatedRequest.call(
+							this,
+							apiKey,
+							API_ENDPOINTS.FORM_SUBMISSION,
+							qs,
 						);
-						responseData = result.items;
+					} else {
+						const limit = this.getNodeParameter('limit', i, 50) as number;
+						const result = await makeApiRequest.call(this, apiKey, {
+							method: 'GET',
+							endpoint: API_ENDPOINTS.FORM_SUBMISSION,
+							qs: {
+								...qs,
+								page: 1,
+								pageSize: limit,
+							},
+						});
+						responseData = result.items || [];
 					}
 				}
 

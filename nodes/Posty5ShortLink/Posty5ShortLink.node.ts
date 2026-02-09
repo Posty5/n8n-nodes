@@ -4,7 +4,12 @@ import {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { ShortLinkClient } from '@posty5/short-link';
+import { makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
+import { API_ENDPOINTS } from '../../utils/constants';
+import type {
+	ICreateShortLinkRequest,
+	IListParams,
+} from '../../types/short-link.types';
 
 export class Posty5ShortLink implements INodeType {
 	description: INodeTypeDescription = {
@@ -251,11 +256,7 @@ export class Posty5ShortLink implements INodeType {
 		const operation = this.getNodeParameter('operation', 0) as string;
 
 		const credentials = await this.getCredentials('posty5Api');
-		const { HttpClient } = await import('@posty5/core');
-		const http = new HttpClient({
-			apiKey: credentials.apiKey as string,
-		});
-		const client = new ShortLinkClient(http);
+		const apiKey = credentials.apiKey as string;
 
 		for (let i = 0; i < items.length; i++) {
 			try {
@@ -267,81 +268,99 @@ export class Posty5ShortLink implements INodeType {
 					const customLandingId = this.getNodeParameter('customLandingId', i, '') as string;
 					const additionalFields = this.getNodeParameter('additionalFields', i, {}) as any;
 
-					const params: any = { url };
-					if (name) params.name = name;
-					if (customLandingId) params.customLandingId = customLandingId;
-					if (additionalFields.tag) params.tag = additionalFields.tag;
-					if (additionalFields.refId) params.refId = additionalFields.refId;
-					if (additionalFields.templateId) params.templateId = additionalFields.templateId;
+					const body: ICreateShortLinkRequest = {
+						baseUrl: url,
+					};
+					if (name) body.name = name;
+					if (customLandingId) body.customLandingId = customLandingId;
+					if (additionalFields.tag) body.tag = additionalFields.tag;
+					if (additionalFields.refId) body.refId = additionalFields.refId;
+					if (additionalFields.templateId) body.templateId = additionalFields.templateId;
 					if (additionalFields.isEnableMonetization !== undefined) {
-						params.isEnableMonetization = additionalFields.isEnableMonetization;
+						body.isEnableMonetization = additionalFields.isEnableMonetization;
 					}
 					if (additionalFields.pageTitle || additionalFields.pageDescription) {
-						params.pageInfo = {
+						body.pageInfo = {
 							title: additionalFields.pageTitle || '',
 							description: additionalFields.pageDescription || '',
 						};
 					}
 
-					responseData = await client.create(params);
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'POST',
+						endpoint: API_ENDPOINTS.SHORT_LINK,
+						body,
+					});
 				} else if (operation === 'get') {
 					const shortLinkId = this.getNodeParameter('shortLinkId', i) as string;
-					responseData = await client.get(shortLinkId);
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'GET',
+						endpoint: `${API_ENDPOINTS.SHORT_LINK}/${shortLinkId}`,
+					});
 				} else if (operation === 'update') {
 					const shortLinkId = this.getNodeParameter('shortLinkId', i) as string;
 					const name = this.getNodeParameter('name', i, '') as string;
 					const customLandingId = this.getNodeParameter('customLandingId', i, '') as string;
 					const additionalFields = this.getNodeParameter('additionalFields', i, {}) as any;
 
-					const params: any = { id: shortLinkId };
-					if (name) params.name = name;
-					if (customLandingId) params.customLandingId = customLandingId;
-					if (additionalFields.tag) params.tag = additionalFields.tag;
-					if (additionalFields.refId) params.refId = additionalFields.refId;
-					if (additionalFields.templateId) params.templateId = additionalFields.templateId;
+					const body: any = {};
+					if (name) body.name = name;
+					if (customLandingId) body.customLandingId = customLandingId;
+					if (additionalFields.tag) body.tag = additionalFields.tag;
+					if (additionalFields.refId) body.refId = additionalFields.refId;
+					if (additionalFields.templateId) body.templateId = additionalFields.templateId;
 					if (additionalFields.isEnableMonetization !== undefined) {
-						params.isEnableMonetization = additionalFields.isEnableMonetization;
+						body.isEnableMonetization = additionalFields.isEnableMonetization;
 					}
 					if (additionalFields.pageTitle || additionalFields.pageDescription) {
-						params.pageInfo = {
+						body.pageInfo = {
 							title: additionalFields.pageTitle || '',
 							description: additionalFields.pageDescription || '',
 						};
 					}
 
-					responseData = await client.update(shortLinkId, params);
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'PUT',
+						endpoint: `${API_ENDPOINTS.SHORT_LINK}/${shortLinkId}`,
+						body,
+					});
 				} else if (operation === 'delete') {
 					const shortLinkId = this.getNodeParameter('shortLinkId', i) as string;
-					responseData = await client.delete(shortLinkId);
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'DELETE',
+						endpoint: `${API_ENDPOINTS.SHORT_LINK}/${shortLinkId}`,
+					});
 				} else if (operation === 'list') {
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
 					const filters = this.getNodeParameter('filters', i, {}) as any;
 
-					const params: any = {
-						page: 1,
-						pageSize: returnAll ? 100 : this.getNodeParameter('limit', i, 50),
-						...filters,
-					};
+					const qs: IListParams = {};
+					if (filters.tag) qs.tag = filters.tag;
+					if (filters.refId) qs.refId = filters.refId;
+					if (filters.search) {
+						qs.name = filters.search;
+						qs.baseUrl = filters.search;
+					}
 
 					if (returnAll) {
-						let allResults: any[] = [];
-						let page = 1;
-						let hasMore = true;
-
-						while (hasMore) {
-							const result = await client.list(params, { page, pageSize: params.pageSize });
-							allResults = allResults.concat(result.items);
-							hasMore = result.items.length === params.pageSize;
-							page++;
-						}
-
-						responseData = allResults;
+						responseData = await makePaginatedRequest.call(
+							this,
+							apiKey,
+							API_ENDPOINTS.SHORT_LINK,
+							qs,
+						);
 					} else {
-						const result = await client.list(params, {
-							page: params.page,
-							pageSize: params.pageSize,
+						const limit = this.getNodeParameter('limit', i, 50) as number;
+						const result = await makeApiRequest.call(this, apiKey, {
+							method: 'GET',
+							endpoint: API_ENDPOINTS.SHORT_LINK,
+							qs: {
+								...qs,
+								page: 1,
+								pageSize: limit,
+							},
 						});
-						responseData = result.items;
+						responseData = result.items || [];
 					}
 				}
 

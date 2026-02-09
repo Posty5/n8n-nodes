@@ -1,6 +1,6 @@
 {
     "name": "@posty5/n8n-nodes-posty5",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "description": "N8N community nodes for Posty5 - URL shortening, QR codes, HTML hosting, and social media publishing",
     "keywords": [
         "n8n-community-node-package",
@@ -32,6 +32,9 @@
         "dev": "tsc --watch",
         "format": "prettier --write \"**/*.ts\"",
         "lint": "eslint . --ext .ts",
+        "test": "jest",
+        "test:watch": "jest --watch",
+        "test:coverage": "jest --coverage",
         "prepare": "npm run build"
     },
     "files": [
@@ -46,33 +49,26 @@
             "dist/nodes/Posty5ShortLink/Posty5ShortLink.node.js",
             "dist/nodes/Posty5QrCode/Posty5QrCode.node.js",
             "dist/nodes/Posty5HtmlHosting/Posty5HtmlHosting.node.js",
-            "dist/nodes/Posty5HtmlHostingVariables/Posty5HtmlHostingVariables.node.js",
             "dist/nodes/Posty5FormSubmission/Posty5FormSubmission.node.js",
             "dist/nodes/Posty5SocialPublisherWorkspace/Posty5SocialPublisherWorkspace.node.js",
             "dist/nodes/Posty5SocialPublisherTask/Posty5SocialPublisherTask.node.js"
         ]
     },
     "devDependencies": {
+        "@types/jest": "^29.5.11",
         "@types/node": "^20.11.0",
         "@typescript-eslint/eslint-plugin": "^6.19.0",
         "@typescript-eslint/parser": "^6.19.0",
         "eslint": "^8.56.0",
         "eslint-plugin-n8n-nodes-base": "^1.16.1",
+        "jest": "^29.7.0",
         "n8n-workflow": "^1.25.0",
         "prettier": "^3.2.4",
+        "ts-jest": "^29.1.1",
         "typescript": "^5.3.3"
     },
     "peerDependencies": {
         "n8n-workflow": ">=1.0.0"
     },
-    "dependencies": {
-        "@posty5/core": "^2.0.0",
-        "@posty5/html-hosting": "^2.0.0",
-        "@posty5/html-hosting-form-submission": "^2.0.0",
-        "@posty5/html-hosting-variables": "^2.0.0",
-        "@posty5/qr-code": "^2.0.0",
-        "@posty5/short-link": "^2.0.0",
-        "@posty5/social-publisher-task": "^2.0.0",
-        "@posty5/social-publisher-workspace": "^2.0.0"
-    }
+    "dependencies": {}
 }
