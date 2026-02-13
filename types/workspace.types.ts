@@ -29,8 +29,6 @@ export interface IWorkspaceAccount {
 	facebook?: IAccountSampleDetails | any;
 	instagram?: IAccountSampleDetails | any;
 	tiktok?: IAccountSampleDetails | any;
-	facebookPlatformPageId?: string;
-	instagramPlatformAccountId?: string;
 }
 
 /**
