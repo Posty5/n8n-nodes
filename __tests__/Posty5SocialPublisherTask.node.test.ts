@@ -33,6 +33,9 @@ describe('Posty5SocialPublisherTask', () => {
 			expect(operationValues).toContain('listTasks');
 			expect(operationValues).toContain('getDefaultSettings');
 			expect(operationValues).toHaveLength(4);
+
+			const publishOp = operations.find((op: any) => op.value === 'publishVideo');
+			expect(publishOp.name).toBe('Publish Video to Workspace');
 		});
 
 		it('should require posty5Api credentials', () => {

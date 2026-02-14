@@ -35,10 +35,16 @@ export class Posty5SocialPublisherTask implements INodeType {
 				noDataExpression: true,
 				options: [
 					{
-						name: 'Publish Video',
+						name: 'Publish Video to Workspace',
 						value: 'publishVideo',
-						description: 'Publish a video to social media platforms',
-						action: 'Publish a video',
+						description: 'Publish a video to social media platforms via workspace',
+						action: 'Publish a video to workspace',
+					},
+					{
+						name: 'Publish Video to Account',
+						value: 'publishVideoToAccount',
+						description: 'Publish a video to social media platforms via account',
+						action: 'Publish a video to account',
 					},
 					{
 						name: 'Get Task Status',
@@ -75,6 +81,19 @@ export class Posty5SocialPublisherTask implements INodeType {
 				},
 				default: '',
 				description: 'The workspace ID to publish under',
+			},
+			{
+				displayName: 'Account ID',
+				name: 'accountId',
+				type: 'string',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['publishVideoToAccount'],
+					},
+				},
+				default: '',
+				description: 'The account ID to publish under',
 			},
 			{
 				displayName: 'Video Source',
@@ -450,8 +469,9 @@ export class Posty5SocialPublisherTask implements INodeType {
 			try {
 				let responseData: any = {};
 
-				if (operation === 'publishVideo') {
-					const workspaceId = this.getNodeParameter('workspaceId', i) as string;
+				if (operation === 'publishVideo' || operation === 'publishVideoToAccount') {
+					const workspaceId = operation === 'publishVideo' ? this.getNodeParameter('workspaceId', i) as string : undefined;
+					const accountId = operation === 'publishVideoToAccount' ? this.getNodeParameter('accountId', i) as string : undefined;
 					const videoSource = this.getNodeParameter('videoSource', i) as string;
 					const platforms = this.getNodeParameter('platforms', i) as string[];
 					const thumbnailSource = this.getNodeParameter('thumbnailSource', i, 'none') as string;
@@ -525,6 +545,7 @@ export class Posty5SocialPublisherTask implements INodeType {
 					// Prepare task body
 					const taskBody: any = {
 						workspaceId,
+						accountId,
 						videoURL,
 						source,
 						platforms,
@@ -577,9 +598,18 @@ export class Posty5SocialPublisherTask implements INodeType {
 					}
 
 					// Create task
+					let endpoint = '';
+					const isFileUpload = source === 'video-upload';
+
+					if (operation === 'publishVideo') {
+						endpoint = `${API_ENDPOINTS.SOCIAL_PUBLISHER_TASK}${isFileUpload ? '/short-video/workspace/by-file' : '/short-video/workspace/by-url'}`;
+					} else {
+						endpoint = `${API_ENDPOINTS.SOCIAL_PUBLISHER_TASK}${isFileUpload ? '/short-video/account/by-file' : '/short-video/account/by-url'}`;
+					}
+
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'POST',
-						endpoint: API_ENDPOINTS.SOCIAL_PUBLISHER_TASK,
+						endpoint,
 						body: taskBody,
 					});
 				} else if (operation === 'getTaskStatus') {
