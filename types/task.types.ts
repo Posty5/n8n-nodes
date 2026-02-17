@@ -1,15 +1,15 @@
 /**
- * Social Publisher Task Types for Posty5 N8N Nodes
- * Type definitions for Social Publisher Task operations
+ * Social Publisher Post Types for Posty5 N8N Nodes
+ * Type definitions for Social Publisher Post operations
  */
 
 import { IPaginationResponse } from './common';
 import { SocialPublisherAccountStatusType } from './workspace.types';
 
 /**
- * Social publisher task status type
+ * Social publisher post status type
  */
-export type SocialPublisherTaskStatusType =
+export type SocialPublisherPostStatusType =
 	| 'pending'
 	| 'processing'
 	| 'processingInPlatform'
@@ -23,24 +23,24 @@ export type SocialPublisherTaskStatusType =
 	| 'retrying';
 
 /**
- * Social publisher task type
+ * Social publisher post type
  */
-export type SocialPublisherTaskType = 'shortVideo';
+export type SocialPublisherPostType = 'shortVideo';
 
 /**
- * Social publisher task account type
+ * Social publisher post account type
  */
-export type SocialPublisherTaskAccountType = 'youtube' | 'facebook' | 'instagram' | 'tiktok';
+export type SocialPublisherPostAccountType = 'youtube' | 'facebook' | 'instagram' | 'tiktok';
 
 /**
- * Social publisher task schedule type
+ * Social publisher post schedule type
  */
-export type SocialPublisherTaskScheduleType = 'now' | 'schedule';
+export type SocialPublisherPostScheduleType = 'now' | 'schedule';
 
 /**
- * Social publisher task source type
+ * Social publisher post source type
  */
-export type SocialPublisherTaskSourceType =
+export type SocialPublisherPostSourceType =
 	| 'video-file'
 	| 'video-url'
 	| 'facebook-video'
@@ -59,7 +59,7 @@ export interface IUploadConfig {
  * Generate upload URLs response
  */
 export interface IGenerateUploadUrlsResponse {
-	taskId: string;
+	postId: string;
 	thumb: {
 		fileURL: string | undefined;
 		uploadFileURL: string | undefined;
@@ -73,46 +73,46 @@ export interface IGenerateUploadUrlsResponse {
 }
 
 /**
- * Social publisher task status log
+ * Social publisher post status log
  */
-export interface ISocialPublisherTaskStatusLog {
-	status: SocialPublisherTaskStatusType;
+export interface ISocialPublisherPostStatusLog {
+	status: SocialPublisherPostStatusType;
 	error: string;
 	changedAt: Date;
 }
 
 /**
- * Social publisher task post info
+ * Social publisher post post info
  */
-export interface ISocialPublisherTaskPostInfo {
+export interface ISocialPublisherPostInfo {
 	platformAccountId: string;
 	currentError: string;
 	isAllow: boolean;
-	currentStatus: SocialPublisherTaskStatusType;
+	currentStatus: SocialPublisherPostStatusType;
 	currentStatusChangedAt: Date;
 	publishId: string;
 	videoId: string;
 	videoURL: string;
-	statusHistory: { status: SocialPublisherTaskStatusType; changedAt: Date }[];
+	statusHistory: { status: SocialPublisherPostStatusType; changedAt: Date }[];
 	socialPublisherAccountId: string | any;
 }
 
 /**
- * Social publisher task platform
+ * Social publisher post platform
  */
-export interface ISocialPublisherTaskPlatform {
-	postInfo: ISocialPublisherTaskPostInfo;
+export interface ISocialPublisherPostPlatform {
+	postInfo: ISocialPublisherPostInfo;
 }
 
 /**
- * Social publisher task response
+ * Social publisher post response
  */
-export interface ISocialPublisherTaskResponse {
+export interface ISocialPublisherPostResponse {
 	_id: string;
 	numbering: string;
 	caption: string;
 	createdAt: Date;
-	currentStatus: SocialPublisherTaskStatusType;
+	currentStatus: SocialPublisherPostStatusType;
 	isAllow: {
 		tiktok: boolean;
 		facebookPage: boolean;
@@ -149,26 +149,26 @@ export interface IBaseStatusHistoryGroupedItem<StatusType> {
 }
 
 /**
- * Social publisher task status response
+ * Social publisher post status response
  */
-export interface ISocialPublisherTaskStatusResponse {
+export interface ISocialPublisherPostStatusResponse {
 	_id: string;
 	numbering: string;
 	type: 'shortVideo';
-	source: SocialPublisherTaskSourceType;
+	source: SocialPublisherPostSourceType;
 	sourceURLs: {
 		thumbURL?: string | null;
 		videoURL?: string;
 		postURL?: string;
 	};
-	currentStatus: SocialPublisherTaskStatusType;
+	currentStatus: SocialPublisherPostStatusType;
 	currentError: string;
 	currentStatusChangedAt: string;
-	statusHistoryGrouped: IBaseStatusHistoryGroupedDay<SocialPublisherTaskStatusType>[];
-	tiktok?: ISocialPublisherTaskTikTokPostDetails;
-	facebook?: ISocialPublisherTaskFacebookPagePostDetails;
-	instagram?: ISocialPublisherTaskInstagramPostDetails;
-	youtube?: ISocialPublisherTaskYouTubePostDetails;
+	statusHistoryGrouped: IBaseStatusHistoryGroupedDay<SocialPublisherPostStatusType>[];
+	tiktok?: ISocialPublisherPostTikTokPostDetails;
+	facebook?: ISocialPublisherPostFacebookPagePostDetails;
+	instagram?: ISocialPublisherPostInstagramPostDetails;
+	youtube?: ISocialPublisherPostYouTubePostDetails;
 	workspace: ISocialPublisherWorkspace;
 	createdAt: Date;
 	startedAt: Date;
@@ -208,23 +208,23 @@ export interface ISocialPublisherAccount {
 }
 
 /**
- * Social publisher task account
+ * Social publisher post account
  */
-export interface ISocialPublisherTaskAccount {
+export interface ISocialPublisherPostAccount {
 	tags: string[];
 	postInfo: {
 		isAllow: boolean;
-		currentStatus: SocialPublisherTaskStatusType;
-		statusHistoryGrouped: IBaseStatusHistoryGroupedDay<SocialPublisherTaskStatusType>[];
+		currentStatus: SocialPublisherPostStatusType;
+		statusHistoryGrouped: IBaseStatusHistoryGroupedDay<SocialPublisherPostStatusType>[];
 		videoURL: string;
 		socialPublisherAccount: ISocialPublisherAccount;
 	};
 }
 
 /**
- * Social publisher task TikTok post details
+ * Social publisher post TikTok post details
  */
-export interface ISocialPublisherTaskTikTokPostDetails extends ISocialPublisherTaskAccount {
+export interface ISocialPublisherPostTikTokPostDetails extends ISocialPublisherPostAccount {
 	caption: string;
 	disable_duet: boolean;
 	disable_stitch: boolean;
@@ -233,26 +233,26 @@ export interface ISocialPublisherTaskTikTokPostDetails extends ISocialPublisherT
 }
 
 /**
- * Social publisher task Facebook page post details
+ * Social publisher post Facebook page post details
  */
-export interface ISocialPublisherTaskFacebookPagePostDetails extends ISocialPublisherTaskAccount {
+export interface ISocialPublisherPostFacebookPagePostDetails extends ISocialPublisherPostAccount {
 	description: string;
 	title: string;
 }
 
 /**
- * Social publisher task Instagram post details
+ * Social publisher post Instagram post details
  */
-export interface ISocialPublisherTaskInstagramPostDetails extends ISocialPublisherTaskAccount {
+export interface ISocialPublisherPostInstagramPostDetails extends ISocialPublisherPostAccount {
 	description: string;
 	share_to_feed: boolean;
 	is_published_to_both_feed_and_story: boolean;
 }
 
 /**
- * Social publisher task YouTube post details
+ * Social publisher post YouTube post details
  */
-export interface ISocialPublisherTaskYouTubePostDetails extends ISocialPublisherTaskAccount {
+export interface ISocialPublisherPostYouTubePostDetails extends ISocialPublisherPostAccount {
 	title: string;
 	description: string;
 	tags: string[];
@@ -265,9 +265,9 @@ export interface ISocialPublisherTaskYouTubePostDetails extends ISocialPublisher
 }
 
 /**
- * Social publisher task next/previous response
+ * Social publisher post next/previous response
  */
-export interface ISocialPublisherTaskNextPreviousResponse {
+export interface ISocialPublisherPostNextPreviousResponse {
 	nextId?: string;
 	previousId?: string;
 }
@@ -318,16 +318,16 @@ export interface IInstagramConfig {
  * Schedule configuration
  */
 export interface IScheduleConfig {
-	type: SocialPublisherTaskScheduleType;
+	type: SocialPublisherPostScheduleType;
 	scheduledAt?: Date;
 }
 
 /**
- * Create social publisher task request
+ * Create social publisher post request
  */
-export interface ICreateSocialPublisherTaskRequest {
+export interface ICreateSocialPublisherPostRequest {
 	workspaceId: string;
-	source: SocialPublisherTaskSourceType;
+	source: SocialPublisherPostSourceType;
 	isAllowYouTube: boolean;
 	isAllowTiktok: boolean;
 	isAllowFacebookPage: boolean;
@@ -353,7 +353,7 @@ export interface IGenerateUploadUrlsRequest {
 }
 
 /**
- * List parameters for filtering tasks
+ * List parameters for filtering posts
  */
 export interface IListParams {
 	caption?: string;
@@ -369,9 +369,9 @@ export interface IListParams {
 }
 
 // Response type aliases
-export type ISearchSocialPublisherTaskResponse = IPaginationResponse<ISocialPublisherTaskResponse>;
-export type IGetTaskResponse = ISocialPublisherTaskStatusResponse;
-export type IGetTaskStatusResponse = ISocialPublisherTaskStatusResponse;
-export interface IDeleteTaskResponse {
+export type ISearchSocialPublisherPostResponse = IPaginationResponse<ISocialPublisherPostResponse>;
+export type IGetPostResponse = ISocialPublisherPostStatusResponse;
+export type IGetPostStatusResponse = ISocialPublisherPostStatusResponse;
+export interface IDeletePostResponse {
 	message?: string;
 }

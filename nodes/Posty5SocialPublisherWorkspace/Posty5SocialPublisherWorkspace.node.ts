@@ -47,16 +47,16 @@ export class Posty5SocialPublisherWorkspace implements INodeType {
 						action: 'List workspaces',
 					},
 					{
-						name: 'Get For New Task',
-						value: 'getForNewTask',
-						description: 'Get workspace details for creating new task',
-						action: 'Get workspace for new task',
+						name: 'Get For New Post',
+						value: 'getForNewPost',
+						description: 'Get workspace details for creating new post',
+						action: 'Get workspace for new post',
 					},
 				],
 				default: 'list',
 			},
 
-			// Workspace ID for get/getForNewTask operations
+			// Workspace ID for get/getForNewPost operations
 			{
 				displayName: 'Workspace ID',
 				name: 'workspaceId',
@@ -64,7 +64,7 @@ export class Posty5SocialPublisherWorkspace implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['get', 'getForNewTask'],
+						operation: ['get', 'getForNewPost'],
 					},
 				},
 				default: '',
@@ -122,11 +122,11 @@ export class Posty5SocialPublisherWorkspace implements INodeType {
 						method: 'GET',
 						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_WORKSPACE}/${workspaceId}`,
 					});
-				} else if (operation === 'getForNewTask') {
+				} else if (operation === 'getForNewPost') {
 					const workspaceId = this.getNodeParameter('workspaceId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'GET',
-						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_WORKSPACE}/${workspaceId}/for-new-task`,
+						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_WORKSPACE}/${workspaceId}/for-new-post`,
 					});
 				} else if (operation === 'list') {
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;

@@ -51,7 +51,7 @@
             "dist/nodes/Posty5HtmlHosting/Posty5HtmlHosting.node.js",
             "dist/nodes/Posty5FormSubmission/Posty5FormSubmission.node.js",
             "dist/nodes/Posty5SocialPublisherWorkspace/Posty5SocialPublisherWorkspace.node.js",
-            "dist/nodes/Posty5SocialPublisherTask/Posty5SocialPublisherTask.node.js"
+            "dist/nodes/Posty5SocialPublisherPost/Posty5SocialPublisherPost.node.js"
         ]
     },
     "devDependencies": {

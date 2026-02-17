@@ -23,8 +23,8 @@ n8n-nodes-posty5/
 │   │   └── Posty5FormSubmission.node.ts # Form submissions (4 operations)
 │   ├── Posty5SocialPublisherWorkspace/
 │   │   └── Posty5SocialPublisherWorkspace.node.ts  # Workspaces (5 operations)
-│   └── Posty5SocialPublisherTask/
-│       └── Posty5SocialPublisherTask.node.ts  # Video publishing (4 operations)
+│   └── Posty5SocialPublisherPost/
+│       └── Posty5SocialPublisherPost.node.ts  # Video publishing (4 operations)
 ├── package.json                         # NPM package config
 ├── tsconfig.json                        # TypeScript config
 ├── .eslintrc.js                         # ESLint config
@@ -44,7 +44,7 @@ n8n-nodes-posty5/
 4. **Posty5 HTML Variables** - Manage dynamic variables
 5. **Posty5 Form Submission** - Collect form data
 6. **Posty5 Social Publisher Workspace** - Manage workspaces
-7. **Posty5 Social Publisher Task** - Multi-platform video publishing
+7. **Posty5 Social Publisher Post** - Multi-platform video publishing
 
 ### Key Capabilities
 
@@ -104,7 +104,7 @@ All required Posty5 SDK packages:
 - @posty5/html-hosting-variables ^1.0.0
 - @posty5/html-hosting-form-submission ^1.0.0
 - @posty5/social-publisher-workspace ^1.0.0
-- @posty5/social-publisher-task ^1.0.0
+- @posty5/social-publisher-post ^1.0.0
 
 ## 🔍 Testing Checklist
 

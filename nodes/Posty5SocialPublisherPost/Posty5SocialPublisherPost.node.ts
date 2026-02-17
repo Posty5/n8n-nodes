@@ -7,17 +7,17 @@ import {
 import { makeApiRequest, makePaginatedRequest, uploadFile } from '../../utils/api.helpers';
 import { API_ENDPOINTS } from '../../utils/constants';
 
-export class Posty5SocialPublisherTask implements INodeType {
+export class Posty5SocialPublisherPost implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'Posty5 Social Publisher Task',
-		name: 'posty5SocialPublisherTask',
+		displayName: 'Posty5 Social Publisher Post',
+		name: 'posty5SocialPublisherPost',
 		icon: 'file:posty5.svg',
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"]}}',
 		description: 'Publish videos to social media platforms',
 		defaults: {
-			name: 'Posty5 Social Publisher Task',
+			name: 'Posty5 Social Publisher Post',
 		},
 		inputs: ['main'],
 		outputs: ['main'],
@@ -47,16 +47,16 @@ export class Posty5SocialPublisherTask implements INodeType {
 						action: 'Publish a video to account',
 					},
 					{
-						name: 'Get Task Status',
-						value: 'getTaskStatus',
-						description: 'Get the status of a publishing task',
-						action: 'Get task status',
+						name: 'Get Post Status',
+						value: 'getPostStatus',
+						description: 'Get the status of a publishing post',
+						action: 'Get Post Status',
 					},
 					{
-						name: 'List Tasks',
-						value: 'listTasks',
-						description: 'List all publishing tasks',
-						action: 'List tasks',
+						name: 'List Posts',
+						value: 'listPosts',
+						description: 'List all publishing posts',
+						action: 'List Posts',
 					},
 					{
 						name: 'Get Default Settings',
@@ -396,22 +396,22 @@ export class Posty5SocialPublisherTask implements INodeType {
 				],
 			},
 
-			// Get Task Status fields
+			// Get post status fields
 			{
-				displayName: 'Task ID',
-				name: 'taskId',
+				displayName: 'Post ID',
+				name: 'postId',
 				type: 'string',
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['getTaskStatus'],
+						operation: ['getPostStatus'],
 					},
 				},
 				default: '',
-				description: 'The ID of the task',
+				description: 'The ID of the post',
 			},
 
-			// List Tasks fields
+			// List posts fields
 			{
 				displayName: 'Workspace ID',
 				name: 'listWorkspaceId',
@@ -419,11 +419,11 @@ export class Posty5SocialPublisherTask implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['listTasks'],
+						operation: ['listPosts'],
 					},
 				},
 				default: '',
-				description: 'Filter tasks by workspace ID',
+				description: 'Filter posts by workspace ID',
 			},
 			{
 				displayName: 'Return All',
@@ -431,7 +431,7 @@ export class Posty5SocialPublisherTask implements INodeType {
 				type: 'boolean',
 				displayOptions: {
 					show: {
-						operation: ['listTasks'],
+						operation: ['listPosts'],
 					},
 				},
 				default: false,
@@ -443,7 +443,7 @@ export class Posty5SocialPublisherTask implements INodeType {
 				type: 'number',
 				displayOptions: {
 					show: {
-						operation: ['listTasks'],
+						operation: ['listPosts'],
 						returnAll: [false],
 					},
 				},
@@ -470,8 +470,14 @@ export class Posty5SocialPublisherTask implements INodeType {
 				let responseData: any = {};
 
 				if (operation === 'publishVideo' || operation === 'publishVideoToAccount') {
-					const workspaceId = operation === 'publishVideo' ? this.getNodeParameter('workspaceId', i) as string : undefined;
-					const accountId = operation === 'publishVideoToAccount' ? this.getNodeParameter('accountId', i) as string : undefined;
+					const workspaceId =
+						operation === 'publishVideo'
+							? (this.getNodeParameter('workspaceId', i) as string)
+							: undefined;
+					const accountId =
+						operation === 'publishVideoToAccount'
+							? (this.getNodeParameter('accountId', i) as string)
+							: undefined;
 					const videoSource = this.getNodeParameter('videoSource', i) as string;
 					const platforms = this.getNodeParameter('platforms', i) as string[];
 					const thumbnailSource = this.getNodeParameter('thumbnailSource', i, 'none') as string;
@@ -489,7 +495,7 @@ export class Posty5SocialPublisherTask implements INodeType {
 						// Generate upload URLs
 						const uploadUrlsResponse: any = await makeApiRequest.call(this, apiKey, {
 							method: 'POST',
-							endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_TASK}/generate-upload-urls`,
+							endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/generate-upload-urls`,
 							body: {
 								videoFileType: 'mp4',
 								thumbFileType: 'jpg',
@@ -542,8 +548,8 @@ export class Posty5SocialPublisherTask implements INodeType {
 						}
 					}
 
-					// Prepare task body
-					const taskBody: any = {
+					// Prepare post body
+					const postBody: any = {
 						workspaceId,
 						accountId,
 						videoURL,
@@ -552,24 +558,24 @@ export class Posty5SocialPublisherTask implements INodeType {
 					};
 
 					if (thumbURL) {
-						taskBody.thumbURL = thumbURL;
+						postBody.thumbURL = thumbURL;
 					}
 
 					// Handle scheduling
 					if (scheduledPublishTime === 'later') {
 						const scheduleDate = this.getNodeParameter('scheduleDate', i) as string;
-						taskBody.scheduledPublishTime = new Date(scheduleDate).toISOString();
+						postBody.scheduledPublishTime = new Date(scheduleDate).toISOString();
 					} else {
-						taskBody.scheduledPublishTime = 'now';
+						postBody.scheduledPublishTime = 'now';
 					}
 
 					// Platform-specific settings
 					if (platforms.includes('youtube')) {
 						const youtubeSettings = this.getNodeParameter('youtubeSettings', i, {}) as any;
 						if (Object.keys(youtubeSettings).length > 0) {
-							taskBody.youtubeConfig = { ...youtubeSettings };
+							postBody.youtubeConfig = { ...youtubeSettings };
 							if (youtubeSettings.tags && typeof youtubeSettings.tags === 'string') {
-								taskBody.youtubeConfig.tags = youtubeSettings.tags
+								postBody.youtubeConfig.tags = youtubeSettings.tags
 									.split(',')
 									.map((t: string) => t.trim());
 							}
@@ -579,46 +585,46 @@ export class Posty5SocialPublisherTask implements INodeType {
 					if (platforms.includes('tiktok')) {
 						const tiktokSettings = this.getNodeParameter('tiktokSettings', i, {}) as any;
 						if (Object.keys(tiktokSettings).length > 0) {
-							taskBody.tiktokConfig = tiktokSettings;
+							postBody.tiktokConfig = tiktokSettings;
 						}
 					}
 
 					if (platforms.includes('facebook')) {
 						const facebookSettings = this.getNodeParameter('facebookSettings', i, {}) as any;
 						if (Object.keys(facebookSettings).length > 0) {
-							taskBody.facebookPageConfig = facebookSettings;
+							postBody.facebookPageConfig = facebookSettings;
 						}
 					}
 
 					if (platforms.includes('instagram')) {
 						const instagramSettings = this.getNodeParameter('instagramSettings', i, {}) as any;
 						if (Object.keys(instagramSettings).length > 0) {
-							taskBody.instagramConfig = instagramSettings;
+							postBody.instagramConfig = instagramSettings;
 						}
 					}
 
-					// Create task
+					// Create post
 					let endpoint = '';
 					const isFileUpload = source === 'video-upload';
 
 					if (operation === 'publishVideo') {
-						endpoint = `${API_ENDPOINTS.SOCIAL_PUBLISHER_TASK}${isFileUpload ? '/short-video/workspace/by-file' : '/short-video/workspace/by-url'}`;
+						endpoint = `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}${isFileUpload ? '/short-video/workspace/by-file' : '/short-video/workspace/by-url'}`;
 					} else {
-						endpoint = `${API_ENDPOINTS.SOCIAL_PUBLISHER_TASK}${isFileUpload ? '/short-video/account/by-file' : '/short-video/account/by-url'}`;
+						endpoint = `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}${isFileUpload ? '/short-video/account/by-file' : '/short-video/account/by-url'}`;
 					}
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'POST',
 						endpoint,
-						body: taskBody,
+						body: postBody,
 					});
-				} else if (operation === 'getTaskStatus') {
-					const taskId = this.getNodeParameter('taskId', i) as string;
+				} else if (operation === 'getPostStatus') {
+					const postId = this.getNodeParameter('postId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'GET',
-						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_TASK}/${taskId}/status`,
+						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${postId}/status`,
 					});
-				} else if (operation === 'listTasks') {
+				} else if (operation === 'listPosts') {
 					const workspaceId = this.getNodeParameter('listWorkspaceId', i) as string;
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
 
@@ -626,14 +632,14 @@ export class Posty5SocialPublisherTask implements INodeType {
 						responseData = await makePaginatedRequest.call(
 							this,
 							apiKey,
-							API_ENDPOINTS.SOCIAL_PUBLISHER_TASK,
+							API_ENDPOINTS.SOCIAL_PUBLISHER_POST,
 							{ workspaceId },
 						);
 					} else {
 						const limit = this.getNodeParameter('limit', i, 50) as number;
 						const result: any = await makeApiRequest.call(this, apiKey, {
 							method: 'GET',
-							endpoint: API_ENDPOINTS.SOCIAL_PUBLISHER_TASK,
+							endpoint: API_ENDPOINTS.SOCIAL_PUBLISHER_POST,
 							qs: { workspaceId, page: 1, pageSize: limit },
 						});
 						responseData = result.items;
@@ -641,7 +647,7 @@ export class Posty5SocialPublisherTask implements INodeType {
 				} else if (operation === 'getDefaultSettings') {
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'GET',
-						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_TASK}/default-settings`,
+						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/default-settings`,
 					});
 				}
 

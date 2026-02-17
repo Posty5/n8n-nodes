@@ -31,7 +31,7 @@ describe('Posty5SocialPublisherWorkspace', () => {
 
 			expect(operationValues).toContain('get');
 			expect(operationValues).toContain('list');
-			expect(operationValues).toContain('getForNewTask');
+			expect(operationValues).toContain('getForNewPost');
 			expect(operations).toHaveLength(3);
 		});
 
@@ -78,7 +78,7 @@ describe('Posty5SocialPublisherWorkspace', () => {
 	});
 
 	describe('GET FOR NEW TASK Operation', () => {
-		it('should get workspace details for creating new task by workspaceId', async () => {
+		it('should get workspace details for creating new post by workspaceId', async () => {
 			const mockResponse = {
 				id: 'ws123',
 				name: 'Test Workspace',
@@ -103,7 +103,7 @@ describe('Posty5SocialPublisherWorkspace', () => {
 
 			const mockExecuteFunctions = createMockExecuteFunctions(
 				{
-					operation: 'getForNewTask',
+					operation: 'getForNewPost',
 					workspaceId: 'ws123',
 				},
 				[{ json: {} }],
@@ -116,7 +116,7 @@ describe('Posty5SocialPublisherWorkspace', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'GET',
-					url: expect.stringMatching(/\/api\/social-publisher-workspace\/ws123\/for-new-task$/),
+					url: expect.stringMatching(/\/api\/social-publisher-workspace\/ws123\/for-new-post$/),
 				}),
 			);
 

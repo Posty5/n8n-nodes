@@ -10,7 +10,7 @@ export const createdResources = {
 	shortLinks: [] as string[],
 	htmlHosting: [] as string[],
 	formSubmissions: [] as string[],
-	tasks: [] as string[],
+	posts: [] as string[],
 };
 
 export function createMockExecuteFunctions(

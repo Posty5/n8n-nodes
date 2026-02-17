@@ -152,7 +152,7 @@ Manage social media workspaces/organizations.
 - Update - Modify workspace
 - Delete - Remove workspace
 
-### 7. Posty5 Social Publisher Task
+### 7. Posty5 Social Publisher Post
 
 Publish videos to multiple social media platforms.
 
@@ -166,8 +166,8 @@ Publish videos to multiple social media platforms.
 **Operations:**
 
 - Publish Video - Upload and schedule posts
-- Get Task Status - Check publishing progress
-- List Tasks - View all tasks
+- Get Post Status - Check publishing progress
+- List Posts - View all posts
 - Get Default Settings - Retrieve platform defaults
 
 **Video Sources:**
@@ -226,12 +226,12 @@ Trigger (Manual/Webhook)
   ↓
 Read Binary File (video.mp4)
   ↓
-Posty5 Social Publisher Task (Publish)
+Posty5 Social Publisher Post (Publish)
   - Platforms: YouTube, TikTok, Instagram
   - Video: Binary data
   - Scheduled: Now
   ↓
-Posty5 Social Publisher Task (Get Task Status)
+Posty5 Social Publisher Post (Get Post Status)
   ↓
 Send Notification
 ```
@@ -297,7 +297,7 @@ binaryPropertyName: 'data';
 
 ### Scheduling
 
-Social Publisher Task supports scheduling:
+Social Publisher Post supports scheduling:
 
 ```javascript
 scheduledPublishTime: 'now';
@@ -353,4 +353,4 @@ Powered by:
 - [@posty5/short-link](https://www.npmjs.com/package/@posty5/short-link)
 - [@posty5/html-hosting](https://www.npmjs.com/package/@posty5/html-hosting)
 - [@posty5/social-publisher-workspace](https://www.npmjs.com/package/@posty5/social-publisher-workspace)
-- [@posty5/social-publisher-task](https://www.npmjs.com/package/@posty5/social-publisher-task)
+- [@posty5/social-publisher-post](https://www.npmjs.com/package/@posty5/social-publisher-post)

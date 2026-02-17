@@ -1,11 +1,11 @@
-import { Posty5SocialPublisherTask } from '../nodes/Posty5SocialPublisherTask/Posty5SocialPublisherTask.node';
+import { Posty5SocialPublisherPost } from '../nodes/Posty5SocialPublisherPost/Posty5SocialPublisherPost.node';
 import { createMockExecuteFunctions, TEST_CONFIG } from './setup';
 
-describe('Posty5SocialPublisherTask - Account', () => {
-	let taskNode: Posty5SocialPublisherTask;
+describe('Posty5SocialPublisherPost - Account', () => {
+	let postNode: Posty5SocialPublisherPost;
 
 	beforeEach(() => {
-		taskNode = new Posty5SocialPublisherTask();
+		postNode = new Posty5SocialPublisherPost();
 		jest.clearAllMocks();
 	});
 
@@ -20,8 +20,8 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				},
 			};
 
-			const mockTaskResponse = {
-				id: 'task-acc-123',
+			const mockPostResponse = {
+				id: 'post-acc-123',
 				accountId: 'account123',
 				videoURL: 'https://storage.example.com/video-acc-123',
 				source: 'video-upload',
@@ -54,14 +54,14 @@ describe('Posty5SocialPublisherTask - Account', () => {
 			(mockExecuteFunctions.helpers.httpRequest as jest.Mock)
 				.mockResolvedValueOnce(mockUploadResponse)
 				.mockResolvedValueOnce({})
-				.mockResolvedValueOnce(mockTaskResponse);
+				.mockResolvedValueOnce(mockPostResponse);
 
-			const result = await taskNode.execute.call(mockExecuteFunctions);
+			const result = await postNode.execute.call(mockExecuteFunctions);
 
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringMatching(/\/api\/social-publisher-task\/generate-upload-urls$/),
+					url: expect.stringMatching(/\/api\/social-publisher-post\/generate-upload-urls$/),
 				}),
 			);
 
@@ -69,7 +69,7 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				expect.objectContaining({
 					method: 'POST',
 					url: expect.stringMatching(
-						/\/api\/social-publisher-task\/short-video\/account\/by-file$/,
+						/\/api\/social-publisher-post\/short-video\/account\/by-file$/,
 					),
 					body: expect.objectContaining({
 						accountId: 'account123',
@@ -85,12 +85,12 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				}),
 			);
 
-			expect(result[0][0].json).toEqual(mockTaskResponse);
+			expect(result[0][0].json).toEqual(mockPostResponse);
 		});
 
 		it('should publish video from URL to account', async () => {
-			const mockTaskResponse = {
-				id: 'task-acc-url-123',
+			const mockPostResponse = {
+				id: 'post-acc-url-123',
 				accountId: 'account123',
 				videoURL: 'https://example.com/video.mp4',
 				source: 'video-url',
@@ -114,15 +114,15 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				},
 				[{ json: {} }],
 				{ apiKey: TEST_CONFIG.apiKey },
-				mockTaskResponse,
+				mockPostResponse,
 			);
 
-			const result = await taskNode.execute.call(mockExecuteFunctions);
+			const result = await postNode.execute.call(mockExecuteFunctions);
 
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringMatching(/\/api\/social-publisher-task\/short-video\/account\/by-url$/),
+					url: expect.stringMatching(/\/api\/social-publisher-post\/short-video\/account\/by-url$/),
 					body: expect.objectContaining({
 						accountId: 'account123',
 						videoURL: 'https://example.com/video.mp4',
@@ -133,7 +133,7 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				}),
 			);
 
-			expect(result[0][0].json).toEqual(mockTaskResponse);
+			expect(result[0][0].json).toEqual(mockPostResponse);
 		});
 	});
 
@@ -148,8 +148,8 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				},
 			};
 
-			const mockTaskResponse = {
-				id: 'task-acc-thumb-456',
+			const mockPostResponse = {
+				id: 'post-acc-thumb-456',
 				accountId: 'account456',
 				videoURL: 'https://storage.example.com/video-acc-456',
 				thumbURL: 'https://storage.example.com/thumb-acc-456',
@@ -189,9 +189,9 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				.mockResolvedValueOnce(mockUploadResponse)
 				.mockResolvedValueOnce({})
 				.mockResolvedValueOnce({})
-				.mockResolvedValueOnce(mockTaskResponse);
+				.mockResolvedValueOnce(mockPostResponse);
 
-			const result = await taskNode.execute.call(mockExecuteFunctions);
+			const result = await postNode.execute.call(mockExecuteFunctions);
 
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
@@ -205,7 +205,7 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				expect.objectContaining({
 					method: 'POST',
 					url: expect.stringMatching(
-						/\/api\/social-publisher-task\/short-video\/account\/by-file$/,
+						/\/api\/social-publisher-post\/short-video\/account\/by-file$/,
 					),
 					body: expect.objectContaining({
 						accountId: 'account456',
@@ -215,7 +215,7 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				}),
 			);
 
-			expect(result[0][0].json).toEqual(mockTaskResponse);
+			expect(result[0][0].json).toEqual(mockPostResponse);
 		});
 
 		it('should publish video from binary to multiple platforms on account', async () => {
@@ -228,8 +228,8 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				},
 			};
 
-			const mockTaskResponse = {
-				id: 'task-acc-multi',
+			const mockPostResponse = {
+				id: 'post-acc-multi',
 				accountId: 'account789',
 				videoURL: 'https://storage.example.com/video-acc-multi',
 				source: 'video-upload',
@@ -258,15 +258,15 @@ describe('Posty5SocialPublisherTask - Account', () => {
 			(mockExecuteFunctions.helpers.httpRequest as jest.Mock)
 				.mockResolvedValueOnce(mockUploadResponse)
 				.mockResolvedValueOnce({})
-				.mockResolvedValueOnce(mockTaskResponse);
+				.mockResolvedValueOnce(mockPostResponse);
 
-			const result = await taskNode.execute.call(mockExecuteFunctions);
+			const result = await postNode.execute.call(mockExecuteFunctions);
 
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
 					url: expect.stringMatching(
-						/\/api\/social-publisher-task\/short-video\/account\/by-file$/,
+						/\/api\/social-publisher-post\/short-video\/account\/by-file$/,
 					),
 					body: expect.objectContaining({
 						accountId: 'account789',
@@ -276,7 +276,7 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				}),
 			);
 
-			expect(result[0][0].json).toEqual(mockTaskResponse);
+			expect(result[0][0].json).toEqual(mockPostResponse);
 		});
 
 		it('should publish video from binary with scheduled time to account', async () => {
@@ -289,8 +289,8 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				},
 			};
 
-			const mockTaskResponse = {
-				id: 'task-acc-sched',
+			const mockPostResponse = {
+				id: 'post-acc-sched',
 				accountId: 'account-sched',
 				videoURL: 'https://storage.example.com/video-acc-sched',
 				source: 'video-upload',
@@ -321,15 +321,15 @@ describe('Posty5SocialPublisherTask - Account', () => {
 			(mockExecuteFunctions.helpers.httpRequest as jest.Mock)
 				.mockResolvedValueOnce(mockUploadResponse)
 				.mockResolvedValueOnce({})
-				.mockResolvedValueOnce(mockTaskResponse);
+				.mockResolvedValueOnce(mockPostResponse);
 
-			const result = await taskNode.execute.call(mockExecuteFunctions);
+			const result = await postNode.execute.call(mockExecuteFunctions);
 
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
 					url: expect.stringMatching(
-						/\/api\/social-publisher-task\/short-video\/account\/by-file$/,
+						/\/api\/social-publisher-post\/short-video\/account\/by-file$/,
 					),
 					body: expect.objectContaining({
 						accountId: 'account-sched',
@@ -339,14 +339,14 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				}),
 			);
 
-			expect(result[0][0].json).toEqual(mockTaskResponse);
+			expect(result[0][0].json).toEqual(mockPostResponse);
 		});
 	});
 
 	describe('Publish Video to Account - URL Source Detection', () => {
 		it('should detect Facebook video source from URL', async () => {
-			const mockTaskResponse = {
-				id: 'task-acc-fb',
+			const mockPostResponse = {
+				id: 'post-acc-fb',
 				accountId: 'account-fb',
 				videoURL: 'https://www.facebook.com/watch?v=987654321',
 				source: 'facebook-video',
@@ -366,15 +366,15 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				},
 				[{ json: {} }],
 				{ apiKey: TEST_CONFIG.apiKey },
-				mockTaskResponse,
+				mockPostResponse,
 			);
 
-			const result = await taskNode.execute.call(mockExecuteFunctions);
+			const result = await postNode.execute.call(mockExecuteFunctions);
 
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringMatching(/\/api\/social-publisher-task\/short-video\/account\/by-url$/),
+					url: expect.stringMatching(/\/api\/social-publisher-post\/short-video\/account\/by-url$/),
 					body: expect.objectContaining({
 						accountId: 'account-fb',
 						videoURL: 'https://www.facebook.com/watch?v=987654321',
@@ -384,12 +384,12 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				}),
 			);
 
-			expect(result[0][0].json).toEqual(mockTaskResponse);
+			expect(result[0][0].json).toEqual(mockPostResponse);
 		});
 
 		it('should detect TikTok video source from URL', async () => {
-			const mockTaskResponse = {
-				id: 'task-acc-tt',
+			const mockPostResponse = {
+				id: 'post-acc-tt',
 				accountId: 'account-tt',
 				videoURL: 'https://www.tiktok.com/@creator/video/111222333',
 				source: 'tiktok-video',
@@ -409,15 +409,15 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				},
 				[{ json: {} }],
 				{ apiKey: TEST_CONFIG.apiKey },
-				mockTaskResponse,
+				mockPostResponse,
 			);
 
-			const result = await taskNode.execute.call(mockExecuteFunctions);
+			const result = await postNode.execute.call(mockExecuteFunctions);
 
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringMatching(/\/api\/social-publisher-task\/short-video\/account\/by-url$/),
+					url: expect.stringMatching(/\/api\/social-publisher-post\/short-video\/account\/by-url$/),
 					body: expect.objectContaining({
 						accountId: 'account-tt',
 						videoURL: 'https://www.tiktok.com/@creator/video/111222333',
@@ -427,12 +427,12 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				}),
 			);
 
-			expect(result[0][0].json).toEqual(mockTaskResponse);
+			expect(result[0][0].json).toEqual(mockPostResponse);
 		});
 
 		it('should detect YouTube video source from URL', async () => {
-			const mockTaskResponse = {
-				id: 'task-acc-yt',
+			const mockPostResponse = {
+				id: 'post-acc-yt',
 				accountId: 'account-yt',
 				videoURL: 'https://www.youtube.com/watch?v=abcdef12345',
 				source: 'youtube-video',
@@ -452,15 +452,15 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				},
 				[{ json: {} }],
 				{ apiKey: TEST_CONFIG.apiKey },
-				mockTaskResponse,
+				mockPostResponse,
 			);
 
-			const result = await taskNode.execute.call(mockExecuteFunctions);
+			const result = await postNode.execute.call(mockExecuteFunctions);
 
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringMatching(/\/api\/social-publisher-task\/short-video\/account\/by-url$/),
+					url: expect.stringMatching(/\/api\/social-publisher-post\/short-video\/account\/by-url$/),
 					body: expect.objectContaining({
 						accountId: 'account-yt',
 						videoURL: 'https://www.youtube.com/watch?v=abcdef12345',
@@ -470,12 +470,12 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				}),
 			);
 
-			expect(result[0][0].json).toEqual(mockTaskResponse);
+			expect(result[0][0].json).toEqual(mockPostResponse);
 		});
 
 		it('should use generic video-url source for non-social URLs', async () => {
-			const mockTaskResponse = {
-				id: 'task-acc-generic',
+			const mockPostResponse = {
+				id: 'post-acc-generic',
 				accountId: 'account-gen',
 				videoURL: 'https://cdn.example.com/my-video.mp4',
 				source: 'video-url',
@@ -495,15 +495,15 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				},
 				[{ json: {} }],
 				{ apiKey: TEST_CONFIG.apiKey },
-				mockTaskResponse,
+				mockPostResponse,
 			);
 
-			const result = await taskNode.execute.call(mockExecuteFunctions);
+			const result = await postNode.execute.call(mockExecuteFunctions);
 
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringMatching(/\/api\/social-publisher-task\/short-video\/account\/by-url$/),
+					url: expect.stringMatching(/\/api\/social-publisher-post\/short-video\/account\/by-url$/),
 					body: expect.objectContaining({
 						accountId: 'account-gen',
 						source: 'video-url',
@@ -512,14 +512,14 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				}),
 			);
 
-			expect(result[0][0].json).toEqual(mockTaskResponse);
+			expect(result[0][0].json).toEqual(mockPostResponse);
 		});
 	});
 
 	describe('Publish Video to Account - Platform Settings', () => {
 		it('should publish to account with YouTube settings', async () => {
-			const mockTaskResponse = {
-				id: 'task-acc-yt-cfg',
+			const mockPostResponse = {
+				id: 'post-acc-yt-cfg',
 				accountId: 'account-yt-cfg',
 				videoURL: 'https://example.com/video.mp4',
 				source: 'video-url',
@@ -551,15 +551,15 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				},
 				[{ json: {} }],
 				{ apiKey: TEST_CONFIG.apiKey },
-				mockTaskResponse,
+				mockPostResponse,
 			);
 
-			const result = await taskNode.execute.call(mockExecuteFunctions);
+			const result = await postNode.execute.call(mockExecuteFunctions);
 
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringMatching(/\/api\/social-publisher-task\/short-video\/account\/by-url$/),
+					url: expect.stringMatching(/\/api\/social-publisher-post\/short-video\/account\/by-url$/),
 					body: expect.objectContaining({
 						accountId: 'account-yt-cfg',
 						youtubeConfig: expect.objectContaining({
@@ -573,12 +573,12 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				}),
 			);
 
-			expect(result[0][0].json).toEqual(mockTaskResponse);
+			expect(result[0][0].json).toEqual(mockPostResponse);
 		});
 
 		it('should publish to account with TikTok settings', async () => {
-			const mockTaskResponse = {
-				id: 'task-acc-tt-cfg',
+			const mockPostResponse = {
+				id: 'post-acc-tt-cfg',
 				accountId: 'account-tt-cfg',
 				videoURL: 'https://example.com/video.mp4',
 				source: 'video-url',
@@ -612,15 +612,15 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				},
 				[{ json: {} }],
 				{ apiKey: TEST_CONFIG.apiKey },
-				mockTaskResponse,
+				mockPostResponse,
 			);
 
-			const result = await taskNode.execute.call(mockExecuteFunctions);
+			const result = await postNode.execute.call(mockExecuteFunctions);
 
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringMatching(/\/api\/social-publisher-task\/short-video\/account\/by-url$/),
+					url: expect.stringMatching(/\/api\/social-publisher-post\/short-video\/account\/by-url$/),
 					body: expect.objectContaining({
 						accountId: 'account-tt-cfg',
 						tiktokConfig: expect.objectContaining({
@@ -635,12 +635,12 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				}),
 			);
 
-			expect(result[0][0].json).toEqual(mockTaskResponse);
+			expect(result[0][0].json).toEqual(mockPostResponse);
 		});
 
 		it('should publish to account with Facebook settings', async () => {
-			const mockTaskResponse = {
-				id: 'task-acc-fb-cfg',
+			const mockPostResponse = {
+				id: 'post-acc-fb-cfg',
 				accountId: 'account-fb-cfg',
 				videoURL: 'https://example.com/video.mp4',
 				source: 'video-url',
@@ -668,15 +668,15 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				},
 				[{ json: {} }],
 				{ apiKey: TEST_CONFIG.apiKey },
-				mockTaskResponse,
+				mockPostResponse,
 			);
 
-			const result = await taskNode.execute.call(mockExecuteFunctions);
+			const result = await postNode.execute.call(mockExecuteFunctions);
 
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringMatching(/\/api\/social-publisher-task\/short-video\/account\/by-url$/),
+					url: expect.stringMatching(/\/api\/social-publisher-post\/short-video\/account\/by-url$/),
 					body: expect.objectContaining({
 						accountId: 'account-fb-cfg',
 						facebookPageConfig: expect.objectContaining({
@@ -688,12 +688,12 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				}),
 			);
 
-			expect(result[0][0].json).toEqual(mockTaskResponse);
+			expect(result[0][0].json).toEqual(mockPostResponse);
 		});
 
 		it('should publish to account with Instagram settings', async () => {
-			const mockTaskResponse = {
-				id: 'task-acc-ig-cfg',
+			const mockPostResponse = {
+				id: 'post-acc-ig-cfg',
 				accountId: 'account-ig-cfg',
 				videoURL: 'https://example.com/video.mp4',
 				source: 'video-url',
@@ -721,15 +721,15 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				},
 				[{ json: {} }],
 				{ apiKey: TEST_CONFIG.apiKey },
-				mockTaskResponse,
+				mockPostResponse,
 			);
 
-			const result = await taskNode.execute.call(mockExecuteFunctions);
+			const result = await postNode.execute.call(mockExecuteFunctions);
 
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringMatching(/\/api\/social-publisher-task\/short-video\/account\/by-url$/),
+					url: expect.stringMatching(/\/api\/social-publisher-post\/short-video\/account\/by-url$/),
 					body: expect.objectContaining({
 						accountId: 'account-ig-cfg',
 						instagramConfig: expect.objectContaining({
@@ -741,7 +741,7 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				}),
 			);
 
-			expect(result[0][0].json).toEqual(mockTaskResponse);
+			expect(result[0][0].json).toEqual(mockPostResponse);
 		});
 	});
 
@@ -765,7 +765,7 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				new Error('API Error: Account not found'),
 			);
 
-			await expect(taskNode.execute.call(mockExecuteFunctions)).rejects.toThrow(
+			await expect(postNode.execute.call(mockExecuteFunctions)).rejects.toThrow(
 				'API Error: Account not found',
 			);
 		});
@@ -790,7 +790,7 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				new Error('API Error: Invalid account permissions'),
 			);
 
-			const result = await taskNode.execute.call(mockExecuteFunctions);
+			const result = await postNode.execute.call(mockExecuteFunctions);
 
 			expect(result[0]).toHaveLength(1);
 			expect(result[0][0].json.error).toContain('API Error: Invalid account permissions');
@@ -799,8 +799,8 @@ describe('Posty5SocialPublisherTask - Account', () => {
 
 	describe('Publish Video to Account - Multiple Items', () => {
 		it('should process multiple account publish items in batch', async () => {
-			const mockTaskResponse1 = {
-				id: 'task-acc-batch-1',
+			const mockPostResponse1 = {
+				id: 'post-acc-batch-1',
 				accountId: 'account-batch',
 				videoURL: 'https://example.com/video1.mp4',
 				source: 'video-url',
@@ -808,8 +808,8 @@ describe('Posty5SocialPublisherTask - Account', () => {
 				status: 'pending',
 			};
 
-			const mockTaskResponse2 = {
-				id: 'task-acc-batch-2',
+			const mockPostResponse2 = {
+				id: 'post-acc-batch-2',
 				accountId: 'account-batch',
 				videoURL: 'https://example.com/video2.mp4',
 				source: 'video-url',
@@ -851,15 +851,15 @@ describe('Posty5SocialPublisherTask - Account', () => {
 			);
 
 			(mockExecuteFunctions.helpers.httpRequest as jest.Mock)
-				.mockResolvedValueOnce(mockTaskResponse1)
-				.mockResolvedValueOnce(mockTaskResponse2);
+				.mockResolvedValueOnce(mockPostResponse1)
+				.mockResolvedValueOnce(mockPostResponse2);
 
-			const result = await taskNode.execute.call(mockExecuteFunctions);
+			const result = await postNode.execute.call(mockExecuteFunctions);
 
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledTimes(2);
 			expect(result[0]).toHaveLength(2);
-			expect(result[0][0].json.id).toBe('task-acc-batch-1');
-			expect(result[0][1].json.id).toBe('task-acc-batch-2');
+			expect(result[0][0].json.id).toBe('post-acc-batch-1');
+			expect(result[0][1].json.id).toBe('post-acc-batch-2');
 		});
 	});
 });
