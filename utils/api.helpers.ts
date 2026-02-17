@@ -41,13 +41,18 @@ export async function makeApiRequest(
 		requestOptions.body = options.body;
 	}
 
+	// Add createdFrom to all POST request bodies
+	if (options.method === 'POST') {
+		requestOptions.body = { ...(requestOptions.body as Record<string, any>), createdFrom: 'n8n' };
+	}
+
 	if (options.qs) {
 		requestOptions.qs = options.qs;
 	}
 
 	try {
 		const response = await this.helpers.httpRequest(requestOptions);
-		
+
 		// Handle standard Posty5 API response format
 		if (response && typeof response === 'object') {
 			// API returns { success, result, message } format
@@ -56,7 +61,7 @@ export async function makeApiRequest(
 			}
 			return response;
 		}
-		
+
 		return response;
 	} catch (error: any) {
 		// Enhance error message with API details

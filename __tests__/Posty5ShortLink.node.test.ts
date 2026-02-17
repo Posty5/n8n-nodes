@@ -73,6 +73,7 @@ describe('Posty5ShortLink', () => {
 					url: expect.stringMatching(/\/api\/short-link$/),
 					body: expect.objectContaining({
 						baseUrl: 'https://example.com',
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -112,6 +113,7 @@ describe('Posty5ShortLink', () => {
 						baseUrl: 'https://example.com/promo',
 						name: 'My Campaign',
 						customLandingId: 'my-link',
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -161,6 +163,7 @@ describe('Posty5ShortLink', () => {
 						refId: 'ref-001',
 						templateId: 'tpl-123',
 						isEnableMonetization: true,
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -208,6 +211,7 @@ describe('Posty5ShortLink', () => {
 							title: 'Landing Page Title',
 							description: 'Landing Page Description',
 						},
+						createdFrom: 'n8n',
 					}),
 				}),
 			);

@@ -80,6 +80,7 @@ describe('Posty5SocialPublisherTask - Account', () => {
 							caption: 'Account Video',
 							privacy_level: 'SELF_ONLY',
 						}),
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -127,6 +128,7 @@ describe('Posty5SocialPublisherTask - Account', () => {
 						videoURL: 'https://example.com/video.mp4',
 						source: 'video-url',
 						platforms: ['youtube'],
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -208,6 +210,7 @@ describe('Posty5SocialPublisherTask - Account', () => {
 					body: expect.objectContaining({
 						accountId: 'account456',
 						thumbURL: 'https://storage.example.com/thumb-acc-456',
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -268,6 +271,7 @@ describe('Posty5SocialPublisherTask - Account', () => {
 					body: expect.objectContaining({
 						accountId: 'account789',
 						platforms: ['youtube', 'tiktok', 'facebook'],
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -330,6 +334,7 @@ describe('Posty5SocialPublisherTask - Account', () => {
 					body: expect.objectContaining({
 						accountId: 'account-sched',
 						scheduledPublishTime: expect.stringMatching(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/),
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -369,13 +374,12 @@ describe('Posty5SocialPublisherTask - Account', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringMatching(
-						/\/api\/social-publisher-task\/short-video\/account\/by-url$/,
-					),
+					url: expect.stringMatching(/\/api\/social-publisher-task\/short-video\/account\/by-url$/),
 					body: expect.objectContaining({
 						accountId: 'account-fb',
 						videoURL: 'https://www.facebook.com/watch?v=987654321',
 						source: 'facebook-video',
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -413,13 +417,12 @@ describe('Posty5SocialPublisherTask - Account', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringMatching(
-						/\/api\/social-publisher-task\/short-video\/account\/by-url$/,
-					),
+					url: expect.stringMatching(/\/api\/social-publisher-task\/short-video\/account\/by-url$/),
 					body: expect.objectContaining({
 						accountId: 'account-tt',
 						videoURL: 'https://www.tiktok.com/@creator/video/111222333',
 						source: 'tiktok-video',
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -457,13 +460,12 @@ describe('Posty5SocialPublisherTask - Account', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringMatching(
-						/\/api\/social-publisher-task\/short-video\/account\/by-url$/,
-					),
+					url: expect.stringMatching(/\/api\/social-publisher-task\/short-video\/account\/by-url$/),
 					body: expect.objectContaining({
 						accountId: 'account-yt',
 						videoURL: 'https://www.youtube.com/watch?v=abcdef12345',
 						source: 'youtube-video',
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -501,12 +503,11 @@ describe('Posty5SocialPublisherTask - Account', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringMatching(
-						/\/api\/social-publisher-task\/short-video\/account\/by-url$/,
-					),
+					url: expect.stringMatching(/\/api\/social-publisher-task\/short-video\/account\/by-url$/),
 					body: expect.objectContaining({
 						accountId: 'account-gen',
 						source: 'video-url',
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -558,9 +559,7 @@ describe('Posty5SocialPublisherTask - Account', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringMatching(
-						/\/api\/social-publisher-task\/short-video\/account\/by-url$/,
-					),
+					url: expect.stringMatching(/\/api\/social-publisher-task\/short-video\/account\/by-url$/),
 					body: expect.objectContaining({
 						accountId: 'account-yt-cfg',
 						youtubeConfig: expect.objectContaining({
@@ -569,6 +568,7 @@ describe('Posty5SocialPublisherTask - Account', () => {
 							tags: ['acc-tag1', 'acc-tag2'],
 							madeForKids: false,
 						}),
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -620,9 +620,7 @@ describe('Posty5SocialPublisherTask - Account', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringMatching(
-						/\/api\/social-publisher-task\/short-video\/account\/by-url$/,
-					),
+					url: expect.stringMatching(/\/api\/social-publisher-task\/short-video\/account\/by-url$/),
 					body: expect.objectContaining({
 						accountId: 'account-tt-cfg',
 						tiktokConfig: expect.objectContaining({
@@ -632,6 +630,7 @@ describe('Posty5SocialPublisherTask - Account', () => {
 							disable_stitch: false,
 							disable_comment: true,
 						}),
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -677,15 +676,14 @@ describe('Posty5SocialPublisherTask - Account', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringMatching(
-						/\/api\/social-publisher-task\/short-video\/account\/by-url$/,
-					),
+					url: expect.stringMatching(/\/api\/social-publisher-task\/short-video\/account\/by-url$/),
 					body: expect.objectContaining({
 						accountId: 'account-fb-cfg',
 						facebookPageConfig: expect.objectContaining({
 							title: 'Account FB Title',
 							description: 'Account FB Description',
 						}),
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -731,15 +729,14 @@ describe('Posty5SocialPublisherTask - Account', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringMatching(
-						/\/api\/social-publisher-task\/short-video\/account\/by-url$/,
-					),
+					url: expect.stringMatching(/\/api\/social-publisher-task\/short-video\/account\/by-url$/),
 					body: expect.objectContaining({
 						accountId: 'account-ig-cfg',
 						instagramConfig: expect.objectContaining({
 							description: 'Account IG caption #reels',
 							share_to_feed: false,
 						}),
+						createdFrom: 'n8n',
 					}),
 				}),
 			);

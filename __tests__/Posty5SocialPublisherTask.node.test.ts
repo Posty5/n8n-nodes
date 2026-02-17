@@ -100,6 +100,7 @@ describe('Posty5SocialPublisherTask', () => {
 					body: expect.objectContaining({
 						videoFileType: 'mp4',
 						thumbFileType: 'jpg',
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -124,6 +125,7 @@ describe('Posty5SocialPublisherTask', () => {
 						source: 'video-upload',
 						platforms: ['youtube'],
 						scheduledPublishTime: 'now',
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -203,6 +205,7 @@ describe('Posty5SocialPublisherTask', () => {
 					),
 					body: expect.objectContaining({
 						thumbURL: 'https://storage.example.com/thumb-456',
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -262,6 +265,7 @@ describe('Posty5SocialPublisherTask', () => {
 					),
 					body: expect.objectContaining({
 						platforms: ['youtube', 'tiktok'],
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -323,6 +327,7 @@ describe('Posty5SocialPublisherTask', () => {
 					),
 					body: expect.objectContaining({
 						scheduledPublishTime: expect.stringMatching(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/),
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -368,6 +373,7 @@ describe('Posty5SocialPublisherTask', () => {
 					body: expect.objectContaining({
 						videoURL: 'https://example.com/video.mp4',
 						source: 'video-url',
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -411,6 +417,7 @@ describe('Posty5SocialPublisherTask', () => {
 					body: expect.objectContaining({
 						videoURL: 'https://www.facebook.com/watch?v=123456789',
 						source: 'facebook-video',
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -454,6 +461,7 @@ describe('Posty5SocialPublisherTask', () => {
 					body: expect.objectContaining({
 						videoURL: 'https://www.tiktok.com/@user/video/123456789',
 						source: 'tiktok-video',
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -497,6 +505,7 @@ describe('Posty5SocialPublisherTask', () => {
 					body: expect.objectContaining({
 						videoURL: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
 						source: 'youtube-video',
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -558,6 +567,7 @@ describe('Posty5SocialPublisherTask', () => {
 							tags: ['tag1', 'tag2', 'tag3'],
 							madeForKids: true,
 						}),
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -620,6 +630,7 @@ describe('Posty5SocialPublisherTask', () => {
 							disable_stitch: true,
 							disable_comment: false,
 						}),
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -673,6 +684,7 @@ describe('Posty5SocialPublisherTask', () => {
 							title: 'Facebook Video Title',
 							description: 'Facebook video description',
 						}),
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -726,6 +738,7 @@ describe('Posty5SocialPublisherTask', () => {
 							description: 'Instagram caption with #hashtags',
 							share_to_feed: true,
 						}),
+						createdFrom: 'n8n',
 					}),
 				}),
 			);

@@ -87,6 +87,7 @@ describe('Posty5QrCode', () => {
 						url: expect.stringMatching(/\/api\/qr-code\/url$/),
 						body: expect.objectContaining({
 							url: { url: 'https://example.com' },
+							createdFrom: 'n8n',
 						}),
 					}),
 				);
@@ -131,6 +132,7 @@ describe('Posty5QrCode', () => {
 						body: expect.objectContaining({
 							tag: 'campaign-2024',
 							refId: 'ref-001',
+							createdFrom: 'n8n',
 						}),
 					}),
 				);
@@ -170,6 +172,7 @@ describe('Posty5QrCode', () => {
 						url: expect.stringMatching(/\/api\/qr-code\/freeText$/),
 						body: expect.objectContaining({
 							text: 'Hello World!',
+							createdFrom: 'n8n',
 						}),
 					}),
 				);
@@ -219,6 +222,7 @@ describe('Posty5QrCode', () => {
 								subject: 'Test Subject',
 								body: 'Test Body',
 							},
+							createdFrom: 'n8n',
 						}),
 					}),
 				);
@@ -301,6 +305,7 @@ describe('Posty5QrCode', () => {
 								authenticationType: 'WPA',
 								password: 'secret123',
 							},
+							createdFrom: 'n8n',
 						}),
 					}),
 				);
@@ -373,6 +378,7 @@ describe('Posty5QrCode', () => {
 						url: expect.stringMatching(/\/api\/qr-code\/call$/),
 						body: expect.objectContaining({
 							call: { phoneNumber: '+1234567890' },
+							createdFrom: 'n8n',
 						}),
 					}),
 				);
@@ -419,6 +425,7 @@ describe('Posty5QrCode', () => {
 								phoneNumber: '+1234567890',
 								message: 'Hello from QR!',
 							},
+							createdFrom: 'n8n',
 						}),
 					}),
 				);
@@ -496,6 +503,7 @@ describe('Posty5QrCode', () => {
 								latitude: 37.7749,
 								longitude: -122.4194,
 							},
+							createdFrom: 'n8n',
 						}),
 					}),
 				);

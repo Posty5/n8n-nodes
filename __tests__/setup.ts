@@ -1,8 +1,8 @@
 import type { IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
 
 export const TEST_CONFIG = {
-	apiKey: 'test-api-key-123',
-	baseUrl: 'https://api.posty5.com',
+	apiKey: process.env.POSTY5_API_KEY || '',
+	baseUrl: process.env.POSTY5_BASE_URL || 'https://api.posty5.com',
 };
 
 export const createdResources = {

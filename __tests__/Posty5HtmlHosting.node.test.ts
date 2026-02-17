@@ -93,6 +93,7 @@ describe('Posty5HtmlHosting', () => {
 					body: expect.objectContaining({
 						name: 'Test Page',
 						fileName: 'index.html',
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -153,6 +154,7 @@ describe('Posty5HtmlHosting', () => {
 						name: 'Custom Page',
 						fileName: 'index.html',
 						customLandingId: 'my-page',
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -209,6 +211,7 @@ describe('Posty5HtmlHosting', () => {
 						fileName: 'index.html',
 						tag: 'marketing',
 						refId: 'campaign-001',
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -252,6 +255,7 @@ describe('Posty5HtmlHosting', () => {
 						githubInfo: {
 							fileURL: 'https://raw.githubusercontent.com/user/repo/main/index.html',
 						},
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
@@ -302,6 +306,7 @@ describe('Posty5HtmlHosting', () => {
 						githubInfo: {
 							fileURL: 'https://raw.githubusercontent.com/user/repo/main/page.html',
 						},
+						createdFrom: 'n8n',
 					}),
 				}),
 			);
