@@ -254,7 +254,7 @@ export class Posty5FormSubmission implements INodeType {
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'PUT',
-						endpoint: `${API_ENDPOINTS.FORM_SUBMISSION}/${submissionId}/change-status`,
+						endpoint: `${API_ENDPOINTS.FORM_SUBMISSION}/${submissionId}/status`,
 						body,
 					});
 				} else if (operation === 'list') {

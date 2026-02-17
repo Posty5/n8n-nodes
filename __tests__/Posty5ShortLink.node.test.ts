@@ -70,7 +70,7 @@ describe('Posty5ShortLink', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringContaining('/api/short-link'),
+					url: expect.stringMatching(/\/api\/short-link$/),
 					body: expect.objectContaining({
 						baseUrl: 'https://example.com',
 					}),
@@ -451,7 +451,7 @@ describe('Posty5ShortLink', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'GET',
-					url: expect.stringContaining('/api/short-link'),
+					url: expect.stringMatching(/\/api\/short-link$/),
 					qs: expect.objectContaining({
 						page: 1,
 						pageSize: 2,

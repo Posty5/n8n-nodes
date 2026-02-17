@@ -164,7 +164,7 @@ describe('Posty5SocialPublisherWorkspace', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'GET',
-					url: expect.stringContaining('/api/social-publisher-workspace'),
+					url: expect.stringMatching(/\/api\/social-publisher-workspace$/),
 					qs: expect.objectContaining({
 						page: 1,
 						pageSize: 10,

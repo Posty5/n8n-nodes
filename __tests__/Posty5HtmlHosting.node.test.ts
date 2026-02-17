@@ -89,7 +89,7 @@ describe('Posty5HtmlHosting', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringContaining('/api/html-hosting'),
+					url: expect.stringMatching(/\/api\/html-hosting\/file$/),
 					body: expect.objectContaining({
 						name: 'Test Page',
 						fileName: 'index.html',
@@ -246,7 +246,7 @@ describe('Posty5HtmlHosting', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringContaining('/api/html-hosting'),
+					url: expect.stringMatching(/\/api\/html-hosting\/github$/),
 					body: expect.objectContaining({
 						name: 'GitHub Page',
 						githubInfo: {
@@ -351,7 +351,7 @@ describe('Posty5HtmlHosting', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'PUT',
-					url: expect.stringMatching(/\/api\/html-hosting\/hh123$/),
+					url: expect.stringMatching(/\/api\/html-hosting\/hh123\/file$/),
 					body: expect.objectContaining({
 						name: 'Updated Page',
 						fileName: 'index.html',
@@ -417,7 +417,7 @@ describe('Posty5HtmlHosting', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'PUT',
-					url: expect.stringMatching(/\/api\/html-hosting\/hh123$/),
+					url: expect.stringMatching(/\/api\/html-hosting\/hh123\/file$/),
 					body: expect.objectContaining({
 						name: 'Updated Custom Page',
 						fileName: 'index.html',
@@ -462,7 +462,7 @@ describe('Posty5HtmlHosting', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'PUT',
-					url: expect.stringMatching(/\/api\/html-hosting\/hh128$/),
+					url: expect.stringMatching(/\/api\/html-hosting\/hh128\/github$/),
 					body: expect.objectContaining({
 						name: 'Updated GitHub Page',
 						githubInfo: {
@@ -511,7 +511,7 @@ describe('Posty5HtmlHosting', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'PUT',
-					url: expect.stringMatching(/\/api\/html-hosting\/hh129$/),
+					url: expect.stringMatching(/\/api\/html-hosting\/hh129\/github$/),
 					body: expect.objectContaining({
 						name: 'Updated GitHub Custom',
 						customLandingId: 'github-updated',
@@ -613,8 +613,8 @@ describe('Posty5HtmlHosting', () => {
 
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
-					method: 'POST',
-					url: expect.stringMatching(/\/api\/html-hosting\/hh123\/clear-cache$/),
+					method: 'PUT',
+					url: expect.stringMatching(/\/api\/html-hosting\/hh123\/clean-cache$/),
 				}),
 			);
 
@@ -644,7 +644,7 @@ describe('Posty5HtmlHosting', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'GET',
-					url: expect.stringMatching(/\/api\/html-hosting\/hh123\/forms$/),
+					url: expect.stringMatching(/\/api\/html-hosting\/lookup-froms\/hh123$/),
 				}),
 			);
 
@@ -681,7 +681,7 @@ describe('Posty5HtmlHosting', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'GET',
-					url: expect.stringContaining('/api/html-hosting'),
+					url: expect.stringMatching(/\/api\/html-hosting$/),
 					qs: expect.objectContaining({
 						page: 1,
 						pageSize: 3,
@@ -713,9 +713,7 @@ describe('Posty5HtmlHosting', () => {
 			);
 
 			// Mock makePaginatedRequest by intercepting httpRequest
-			(mockExecuteFunctions.helpers.httpRequest as jest.Mock).mockResolvedValueOnce(
-				mockResponse,
-			);
+			(mockExecuteFunctions.helpers.httpRequest as jest.Mock).mockResolvedValueOnce(mockResponse);
 
 			const result = await htmlHostingNode.execute.call(mockExecuteFunctions);
 

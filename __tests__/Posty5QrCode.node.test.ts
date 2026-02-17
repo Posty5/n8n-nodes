@@ -84,7 +84,7 @@ describe('Posty5QrCode', () => {
 				expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 					expect.objectContaining({
 						method: 'POST',
-						url: expect.stringContaining('/api/qr-code'),
+						url: expect.stringMatching(/\/api\/qr-code\/url$/),
 						body: expect.objectContaining({
 							url: { url: 'https://example.com' },
 						}),
@@ -127,6 +127,7 @@ describe('Posty5QrCode', () => {
 				expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 					expect.objectContaining({
 						method: 'POST',
+						url: expect.stringMatching(/\/api\/qr-code\/url$/),
 						body: expect.objectContaining({
 							tag: 'campaign-2024',
 							refId: 'ref-001',
@@ -166,6 +167,7 @@ describe('Posty5QrCode', () => {
 				expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 					expect.objectContaining({
 						method: 'POST',
+						url: expect.stringMatching(/\/api\/qr-code\/freeText$/),
 						body: expect.objectContaining({
 							text: 'Hello World!',
 						}),
@@ -210,6 +212,7 @@ describe('Posty5QrCode', () => {
 				expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 					expect.objectContaining({
 						method: 'POST',
+						url: expect.stringMatching(/\/api\/qr-code\/email$/),
 						body: expect.objectContaining({
 							email: {
 								email: 'test@example.com',
@@ -291,6 +294,7 @@ describe('Posty5QrCode', () => {
 				expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 					expect.objectContaining({
 						method: 'POST',
+						url: expect.stringMatching(/\/api\/qr-code\/wifi$/),
 						body: expect.objectContaining({
 							wifi: {
 								name: 'MyNetwork',
@@ -366,6 +370,7 @@ describe('Posty5QrCode', () => {
 				expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 					expect.objectContaining({
 						method: 'POST',
+						url: expect.stringMatching(/\/api\/qr-code\/call$/),
 						body: expect.objectContaining({
 							call: { phoneNumber: '+1234567890' },
 						}),
@@ -408,6 +413,7 @@ describe('Posty5QrCode', () => {
 				expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 					expect.objectContaining({
 						method: 'POST',
+						url: expect.stringMatching(/\/api\/qr-code\/sms$/),
 						body: expect.objectContaining({
 							sms: {
 								phoneNumber: '+1234567890',
@@ -484,6 +490,7 @@ describe('Posty5QrCode', () => {
 				expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 					expect.objectContaining({
 						method: 'POST',
+						url: expect.stringMatching(/\/api\/qr-code\/geolocation$/),
 						body: expect.objectContaining({
 							geolocation: {
 								latitude: 37.7749,
@@ -620,7 +627,7 @@ describe('Posty5QrCode', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'PUT',
-					url: expect.stringMatching(/\/api\/qr-code\/qr123$/),
+					url: expect.stringMatching(/\/api\/qr-code\/url\/qr123$/),
 					body: expect.objectContaining({
 						name: 'Updated QR',
 						url: { url: 'https://updated.com' },
@@ -665,6 +672,7 @@ describe('Posty5QrCode', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'PUT',
+					url: expect.stringMatching(/\/api\/qr-code\/email\/qr456$/),
 					body: expect.objectContaining({
 						email: {
 							email: 'newemail@example.com',
@@ -709,6 +717,13 @@ describe('Posty5QrCode', () => {
 
 			const result = await qrCodeNode.execute.call(mockExecuteFunctions);
 
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
+				expect.objectContaining({
+					method: 'PUT',
+					url: expect.stringMatching(/\/api\/qr-code\/wifi\/qr789$/),
+				}),
+			);
+
 			expect(result[0][0].json).toEqual(mockResponse);
 		});
 
@@ -744,6 +759,8 @@ describe('Posty5QrCode', () => {
 
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
+					method: 'PUT',
+					url: expect.stringMatching(/\/api\/qr-code\/url\/qr999$/),
 					body: expect.objectContaining({
 						tag: 'new-tag',
 						refId: 'new-ref',
@@ -863,7 +880,7 @@ describe('Posty5QrCode', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'GET',
-					url: expect.stringContaining('/api/qr-code'),
+					url: expect.stringMatching(/\/api\/qr-code$/),
 					qs: expect.objectContaining({
 						page: 1,
 						pageSize: 2,
@@ -925,6 +942,7 @@ describe('Posty5QrCode', () => {
 
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
+					url: expect.stringMatching(/\/api\/qr-code$/),
 					qs: expect.objectContaining({
 						tag: 'campaign',
 					}),
@@ -962,6 +980,7 @@ describe('Posty5QrCode', () => {
 
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
+					url: expect.stringMatching(/\/api\/qr-code$/),
 					qs: expect.objectContaining({
 						refId: 'ref-123',
 					}),
@@ -998,6 +1017,7 @@ describe('Posty5QrCode', () => {
 
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
+					url: expect.stringMatching(/\/api\/qr-code$/),
 					qs: expect.objectContaining({
 						name: 'Search Result',
 					}),
@@ -1040,6 +1060,7 @@ describe('Posty5QrCode', () => {
 
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
+					url: expect.stringMatching(/\/api\/qr-code$/),
 					qs: expect.objectContaining({
 						tag: 'test',
 						refId: 'ref-001',
@@ -1278,18 +1299,41 @@ describe('Posty5QrCode', () => {
 
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
-					url: expect.stringContaining('/api/qr-code'),
+					url: expect.stringMatching(/\/api\/qr-code\/qr123$/),
 				}),
 			);
 		});
 
 		it('should use correct HTTP method for each operation', async () => {
 			const operations = [
-				{ operation: 'create', method: 'POST', additionalParams: { qrType: 'url', url: 'https://example.com', name: '', additionalFields: {} } },
+				{
+					operation: 'create',
+					method: 'POST',
+					additionalParams: {
+						qrType: 'url',
+						url: 'https://example.com',
+						name: '',
+						additionalFields: {},
+					},
+				},
 				{ operation: 'get', method: 'GET', additionalParams: { qrCodeId: 'qr123' } },
-				{ operation: 'update', method: 'PUT', additionalParams: { qrCodeId: 'qr123', qrType: 'url', url: 'https://example.com', name: '', additionalFields: {} } },
+				{
+					operation: 'update',
+					method: 'PUT',
+					additionalParams: {
+						qrCodeId: 'qr123',
+						qrType: 'url',
+						url: 'https://example.com',
+						name: '',
+						additionalFields: {},
+					},
+				},
 				{ operation: 'delete', method: 'DELETE', additionalParams: { qrCodeId: 'qr123' } },
-				{ operation: 'list', method: 'GET', additionalParams: { returnAll: false, limit: 50, filters: {} } },
+				{
+					operation: 'list',
+					method: 'GET',
+					additionalParams: { returnAll: false, limit: 50, filters: {} },
+				},
 			];
 
 			for (const { operation, method, additionalParams } of operations) {

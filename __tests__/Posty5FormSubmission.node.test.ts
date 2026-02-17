@@ -148,7 +148,7 @@ describe('Posty5FormSubmission', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'PUT',
-					url: expect.stringMatching(/\/api\/html-hosting-form-submission\/fs123\/change-status$/),
+					url: expect.stringMatching(/\/api\/html-hosting-form-submission\/fs123\/status$/),
 					body: {
 						status: 'new',
 					},
@@ -186,7 +186,7 @@ describe('Posty5FormSubmission', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'PUT',
-					url: expect.stringMatching(/\/api\/html-hosting-form-submission\/fs123\/change-status$/),
+					url: expect.stringMatching(/\/api\/html-hosting-form-submission\/fs123\/status$/),
 					body: {
 						status: 'approved',
 						notes: 'Application approved by manager',
@@ -225,7 +225,7 @@ describe('Posty5FormSubmission', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'PUT',
-					url: expect.stringMatching(/\/api\/html-hosting-form-submission\/fs123\/change-status$/),
+					url: expect.stringMatching(/\/api\/html-hosting-form-submission\/fs123\/status$/),
 					body: {
 						status: 'rejected',
 						rejectedReason: 'Missing required documents',
@@ -265,7 +265,7 @@ describe('Posty5FormSubmission', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'PUT',
-					url: expect.stringMatching(/\/api\/html-hosting-form-submission\/fs123\/change-status$/),
+					url: expect.stringMatching(/\/api\/html-hosting-form-submission\/fs123\/status$/),
 					body: {
 						status: 'completed',
 						rejectedReason: 'Partially processed',
@@ -315,7 +315,7 @@ describe('Posty5FormSubmission', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'GET',
-					url: expect.stringContaining('/api/html-hosting-form-submission'),
+					url: expect.stringMatching(/\/api\/html-hosting-form-submission$/),
 					qs: expect.objectContaining({
 						page: 1,
 						pageSize: 10,

@@ -332,7 +332,7 @@ export interface ICreateSocialPublisherTaskRequest {
 	isAllowTiktok: boolean;
 	isAllowFacebookPage: boolean;
 	isAllowInstagram: boolean;
-	youTube?: IYouTubeConfig;
+	youtube?: IYouTubeConfig;
 	tiktok?: ITikTokConfig;
 	facebook?: IFacebookPageConfig;
 	instagram?: IInstagramConfig;

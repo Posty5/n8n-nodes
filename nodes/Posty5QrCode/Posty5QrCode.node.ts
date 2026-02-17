@@ -550,7 +550,7 @@ export class Posty5QrCode implements INodeType {
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'POST',
-						endpoint: API_ENDPOINTS.QR_CODE,
+						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrType}`,
 						body,
 					});
 				} else if (operation === 'get') {
@@ -627,7 +627,7 @@ export class Posty5QrCode implements INodeType {
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'PUT',
-						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`,
+						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrType}/${qrCodeId}`,
 						body,
 					});
 				} else if (operation === 'delete') {
@@ -648,12 +648,7 @@ export class Posty5QrCode implements INodeType {
 					}
 
 					if (returnAll) {
-						responseData = await makePaginatedRequest.call(
-							this,
-							apiKey,
-							API_ENDPOINTS.QR_CODE,
-							qs,
-						);
+						responseData = await makePaginatedRequest.call(this, apiKey, API_ENDPOINTS.QR_CODE, qs);
 					} else {
 						const limit = this.getNodeParameter('limit', i, 50) as number;
 						const result = await makeApiRequest.call(this, apiKey, {

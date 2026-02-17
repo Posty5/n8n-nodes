@@ -29,10 +29,11 @@ describe('Posty5SocialPublisherTask', () => {
 			const operationValues = operations.map((op: any) => op.value);
 
 			expect(operationValues).toContain('publishVideo');
+			expect(operationValues).toContain('publishVideoToAccount');
 			expect(operationValues).toContain('getTaskStatus');
 			expect(operationValues).toContain('listTasks');
 			expect(operationValues).toContain('getDefaultSettings');
-			expect(operationValues).toHaveLength(4);
+			expect(operationValues).toHaveLength(5);
 
 			const publishOp = operations.find((op: any) => op.value === 'publishVideo');
 			expect(publishOp.name).toBe('Publish Video to Workspace');
@@ -95,7 +96,7 @@ describe('Posty5SocialPublisherTask', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringContaining('/api/social-publisher-task/generate-upload-urls'),
+					url: expect.stringMatching(/\/api\/social-publisher-task\/generate-upload-urls$/),
 					body: expect.objectContaining({
 						videoFileType: 'mp4',
 						thumbFileType: 'jpg',
@@ -114,7 +115,9 @@ describe('Posty5SocialPublisherTask', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringContaining('/api/social-publisher-task'),
+					url: expect.stringMatching(
+						/\/api\/social-publisher-task\/short-video\/workspace\/by-file$/,
+					),
 					body: expect.objectContaining({
 						workspaceId: 'workspace123',
 						videoURL: 'https://storage.example.com/video-123',
@@ -195,7 +198,9 @@ describe('Posty5SocialPublisherTask', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringContaining('/api/social-publisher-task'),
+					url: expect.stringMatching(
+						/\/api\/social-publisher-task\/short-video\/workspace\/by-file$/,
+					),
 					body: expect.objectContaining({
 						thumbURL: 'https://storage.example.com/thumb-456',
 					}),
@@ -252,7 +257,9 @@ describe('Posty5SocialPublisherTask', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringContaining('/api/social-publisher-task'),
+					url: expect.stringMatching(
+						/\/api\/social-publisher-task\/short-video\/workspace\/by-file$/,
+					),
 					body: expect.objectContaining({
 						platforms: ['youtube', 'tiktok'],
 					}),
@@ -311,7 +318,9 @@ describe('Posty5SocialPublisherTask', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringContaining('/api/social-publisher-task'),
+					url: expect.stringMatching(
+						/\/api\/social-publisher-task\/short-video\/workspace\/by-file$/,
+					),
 					body: expect.objectContaining({
 						scheduledPublishTime: expect.stringMatching(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/),
 					}),
@@ -353,7 +362,9 @@ describe('Posty5SocialPublisherTask', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringContaining('/api/social-publisher-task'),
+					url: expect.stringMatching(
+						/\/api\/social-publisher-task\/short-video\/workspace\/by-url$/,
+					),
 					body: expect.objectContaining({
 						videoURL: 'https://example.com/video.mp4',
 						source: 'video-url',
@@ -394,7 +405,9 @@ describe('Posty5SocialPublisherTask', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringContaining('/api/social-publisher-task'),
+					url: expect.stringMatching(
+						/\/api\/social-publisher-task\/short-video\/workspace\/by-url$/,
+					),
 					body: expect.objectContaining({
 						videoURL: 'https://www.facebook.com/watch?v=123456789',
 						source: 'facebook-video',
@@ -435,7 +448,9 @@ describe('Posty5SocialPublisherTask', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringContaining('/api/social-publisher-task'),
+					url: expect.stringMatching(
+						/\/api\/social-publisher-task\/short-video\/workspace\/by-url$/,
+					),
 					body: expect.objectContaining({
 						videoURL: 'https://www.tiktok.com/@user/video/123456789',
 						source: 'tiktok-video',
@@ -476,7 +491,9 @@ describe('Posty5SocialPublisherTask', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringContaining('/api/social-publisher-task'),
+					url: expect.stringMatching(
+						/\/api\/social-publisher-task\/short-video\/workspace\/by-url$/,
+					),
 					body: expect.objectContaining({
 						videoURL: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
 						source: 'youtube-video',
@@ -531,7 +548,9 @@ describe('Posty5SocialPublisherTask', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringContaining('/api/social-publisher-task'),
+					url: expect.stringMatching(
+						/\/api\/social-publisher-task\/short-video\/workspace\/by-url$/,
+					),
 					body: expect.objectContaining({
 						youtubeConfig: expect.objectContaining({
 							title: 'My Video Title',
@@ -590,7 +609,9 @@ describe('Posty5SocialPublisherTask', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringContaining('/api/social-publisher-task'),
+					url: expect.stringMatching(
+						/\/api\/social-publisher-task\/short-video\/workspace\/by-url$/,
+					),
 					body: expect.objectContaining({
 						tiktokConfig: expect.objectContaining({
 							caption: 'Check this out! #viral',
@@ -644,7 +665,9 @@ describe('Posty5SocialPublisherTask', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringContaining('/api/social-publisher-task'),
+					url: expect.stringMatching(
+						/\/api\/social-publisher-task\/short-video\/workspace\/by-url$/,
+					),
 					body: expect.objectContaining({
 						facebookPageConfig: expect.objectContaining({
 							title: 'Facebook Video Title',
@@ -695,7 +718,9 @@ describe('Posty5SocialPublisherTask', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'POST',
-					url: expect.stringContaining('/api/social-publisher-task'),
+					url: expect.stringMatching(
+						/\/api\/social-publisher-task\/short-video\/workspace\/by-url$/,
+					),
 					body: expect.objectContaining({
 						instagramConfig: expect.objectContaining({
 							description: 'Instagram caption with #hashtags',
@@ -736,7 +761,7 @@ describe('Posty5SocialPublisherTask', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'GET',
-					url: expect.stringContaining('/api/social-publisher-task/task123/status'),
+					url: expect.stringMatching(/\/api\/social-publisher-task\/task123\/status$/),
 				}),
 			);
 
@@ -774,7 +799,7 @@ describe('Posty5SocialPublisherTask', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'GET',
-					url: expect.stringContaining('/api/social-publisher-task'),
+					url: expect.stringMatching(/\/api\/social-publisher-task$/),
 					qs: expect.objectContaining({
 						workspaceId: 'workspace123',
 						page: 1,
@@ -847,7 +872,7 @@ describe('Posty5SocialPublisherTask', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 				expect.objectContaining({
 					method: 'GET',
-					url: expect.stringContaining('/api/social-publisher-task/default-settings'),
+					url: expect.stringMatching(/\/api\/social-publisher-task\/default-settings$/),
 				}),
 			);
 

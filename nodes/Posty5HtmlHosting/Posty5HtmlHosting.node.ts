@@ -315,7 +315,7 @@ export class Posty5HtmlHosting implements INodeType {
 
 					const createResponse = await makeApiRequest.call(this, apiKey, {
 						method: 'POST',
-						endpoint: API_ENDPOINTS.HTML_HOSTING,
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/file`,
 						body,
 					});
 
@@ -339,7 +339,7 @@ export class Posty5HtmlHosting implements INodeType {
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'POST',
-						endpoint: API_ENDPOINTS.HTML_HOSTING,
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/github`,
 						body,
 					});
 				} else if (operation === 'updateFromFile') {
@@ -359,17 +359,13 @@ export class Posty5HtmlHosting implements INodeType {
 
 					const updateResponse = await makeApiRequest.call(this, apiKey, {
 						method: 'PUT',
-						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}`,
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}/file`,
 						body,
 					});
 
 					// Upload file if new file URL is provided
 					if (updateResponse.uploadFileConfig) {
-						await uploadFile.call(
-							this,
-							updateResponse.uploadFileConfig.uploadUrl,
-							fileBuffer,
-						);
+						await uploadFile.call(this, updateResponse.uploadFileConfig.uploadUrl, fileBuffer);
 					}
 
 					responseData = updateResponse.details;
@@ -390,7 +386,7 @@ export class Posty5HtmlHosting implements INodeType {
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'PUT',
-						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}`,
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}/github`,
 						body,
 					});
 				} else if (operation === 'get') {
@@ -408,14 +404,14 @@ export class Posty5HtmlHosting implements INodeType {
 				} else if (operation === 'clearCache') {
 					const htmlHostingId = this.getNodeParameter('htmlHostingId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
-						method: 'POST',
-						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}/clear-cache`,
+						method: 'PUT',
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}/clean-cache`,
 					});
 				} else if (operation === 'getFormIds') {
 					const htmlHostingId = this.getNodeParameter('htmlHostingId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'GET',
-						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}/forms`,
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/lookup-froms/${htmlHostingId}`,
 					});
 				} else if (operation === 'list') {
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
