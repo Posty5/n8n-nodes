@@ -1,6 +1,6 @@
 {
     "name": "@posty5/n8n-nodes-posty5",
-    "version": "2.1.0",
+    "version": "3.0.0",
     "description": "N8N community nodes for Posty5 - URL shortening, QR codes, HTML hosting, and social media publishing",
     "keywords": [
         "n8n-community-node-package",
