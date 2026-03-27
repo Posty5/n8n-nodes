@@ -1,6 +1,6 @@
 {
     "name": "@posty5/n8n-nodes-posty5",
-    "version": "3.0.0",
+    "version": "3.0.1",
     "description": "N8N community nodes for Posty5 - URL shortening, QR codes, HTML hosting, and social media publishing",
     "keywords": [
         "n8n-community-node-package",
@@ -28,6 +28,7 @@
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
+        "prebuild": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
         "build": "tsc",
         "dev": "tsc --watch",
         "format": "prettier --write \"**/*.ts\"",

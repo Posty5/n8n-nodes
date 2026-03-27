@@ -25,7 +25,7 @@ export async function makeApiRequest(
 	apiKey: string,
 	options: IApiRequestOptions,
 ): Promise<any> {
-	const baseUrl = process.env.POSTY5_BASE_URL || POSTY5_API_BASE_URL;
+	const baseUrl = POSTY5_API_BASE_URL;
 
 	const requestOptions: IHttpRequestOptions = {
 		method: options.method,
