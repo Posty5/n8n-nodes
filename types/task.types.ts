@@ -30,7 +30,7 @@ export type SocialPublisherPostType = 'shortVideo';
 /**
  * Social publisher post account type
  */
-export type SocialPublisherPostAccountType = 'youtube' | 'facebook' | 'instagram' | 'tiktok';
+export type SocialPublisherPostAccountType = 'youtube' | 'facebook' | 'instagram' | 'tiktok' | 'x' | 'linkedin';
 
 /**
  * Social publisher post schedule type
@@ -45,7 +45,9 @@ export type SocialPublisherPostSourceType =
 	| 'video-url'
 	| 'facebook-video'
 	| 'youtube-video'
-	| 'tiktok-video';
+	| 'tiktok-video'
+	| 'x-video'
+	| 'linkedin-video';
 
 /**
  * Upload config for video and thumbnail
@@ -169,6 +171,8 @@ export interface ISocialPublisherPostStatusResponse {
 	facebook?: ISocialPublisherPostFacebookPagePostDetails;
 	instagram?: ISocialPublisherPostInstagramPostDetails;
 	youtube?: ISocialPublisherPostYouTubePostDetails;
+	x?: ISocialPublisherPostXPostDetails;
+	linkedin?: ISocialPublisherPostLinkedInPostDetails;
 	workspace: ISocialPublisherWorkspace;
 	createdAt: Date;
 	startedAt: Date;
@@ -192,6 +196,8 @@ export interface ISocialPublisherWorkspace {
 		tiktok?: ISocialPublisherAccount;
 		facebook?: ISocialPublisherAccount;
 		instagram?: ISocialPublisherAccount;
+		x?: ISocialPublisherAccount;
+		linkedin?: ISocialPublisherAccount;
 	};
 }
 
@@ -265,6 +271,22 @@ export interface ISocialPublisherPostYouTubePostDetails extends ISocialPublisher
 }
 
 /**
+ * Social publisher post X post details
+ */
+export interface ISocialPublisherPostXPostDetails extends ISocialPublisherPostAccount {
+	caption: string;
+	reply_settings?: string;
+}
+
+/**
+ * Social publisher post LinkedIn post details
+ */
+export interface ISocialPublisherPostLinkedInPostDetails extends ISocialPublisherPostAccount {
+	text?: string;
+	visibility?: string;
+}
+
+/**
  * Social publisher post next/previous response
  */
 export interface ISocialPublisherPostNextPreviousResponse {
@@ -312,6 +334,22 @@ export interface IInstagramConfig {
 	description: string;
 	share_to_feed?: boolean;
 	is_published_to_both_feed_and_story?: boolean;
+}
+
+/**
+ * X (Twitter) configuration
+ */
+export interface IXConfig {
+	caption: string;
+	reply_settings?: 'everyone' | 'mentionedUsers' | 'following';
+}
+
+/**
+ * LinkedIn configuration
+ */
+export interface ILinkedInConfig {
+	text?: string;
+	visibility?: 'PUBLIC' | 'CONNECTIONS' | 'LOGGED_IN';
 }
 
 /**

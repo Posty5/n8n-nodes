@@ -156,6 +156,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 					{ name: 'Facebook', value: 'facebook' },
 					{ name: 'Instagram', value: 'instagram' },
 					{ name: 'X', value: 'x' },
+					{ name: 'LinkedIn', value: 'linkedin' },
 				],
 				default: ['youtube'],
 				description: 'Platforms to publish to',
@@ -434,6 +435,42 @@ export class Posty5SocialPublisherPost implements INodeType {
 				],
 			},
 
+			// LinkedIn Settings
+			{
+				displayName: 'LinkedIn Settings',
+				name: 'linkedinSettings',
+				type: 'collection',
+				placeholder: 'Add Setting',
+				default: {},
+				displayOptions: {
+					show: {
+						operation: ['publishVideo'],
+						platforms: ['linkedin'],
+					},
+				},
+				options: [
+					{
+						displayName: 'Text',
+						name: 'text',
+						type: 'string',
+						default: '',
+						description: 'Post text (max 3000 characters)',
+					},
+					{
+						displayName: 'Visibility',
+						name: 'visibility',
+						type: 'options',
+						options: [
+							{ name: 'Public', value: 'PUBLIC' },
+							{ name: 'Connections', value: 'CONNECTIONS' },
+							{ name: 'Logged In', value: 'LOGGED_IN' },
+						],
+						default: 'PUBLIC',
+						description: 'Who can see the post',
+					},
+				],
+			},
+
 			// Get post status fields
 			{
 				displayName: 'Post ID',
@@ -578,8 +615,8 @@ export class Posty5SocialPublisherPost implements INodeType {
 						} else if (videoURL.includes('youtube.com') || videoURL.includes('youtu.be')) {
 							source = 'youtube-video';
 						} else if (videoURL.includes('x.com') || videoURL.includes('twitter.com')) {
-							source = 'x-video';
-						} else {
+							source = 'x-video';					} else if (videoURL.includes('linkedin.com')) {
+						source = 'linkedin-video';						} else {
 							source = 'video-url';
 						}
 
@@ -647,6 +684,13 @@ export class Posty5SocialPublisherPost implements INodeType {
 						const xSettings = this.getNodeParameter('xSettings', i, {}) as any;
 						if (Object.keys(xSettings).length > 0) {
 							postBody.xConfig = xSettings;
+						}
+					}
+
+					if (platforms.includes('linkedin')) {
+						const linkedinSettings = this.getNodeParameter('linkedinSettings', i, {}) as any;
+						if (Object.keys(linkedinSettings).length > 0) {
+							postBody.linkedinConfig = linkedinSettings;
 						}
 					}
 
