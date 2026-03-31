@@ -155,6 +155,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 					{ name: 'TikTok', value: 'tiktok' },
 					{ name: 'Facebook', value: 'facebook' },
 					{ name: 'Instagram', value: 'instagram' },
+					{ name: 'X', value: 'x' },
 				],
 				default: ['youtube'],
 				description: 'Platforms to publish to',
@@ -396,6 +397,43 @@ export class Posty5SocialPublisherPost implements INodeType {
 				],
 			},
 
+			// X Settings
+			{
+				displayName: 'X Settings',
+				name: 'xSettings',
+				type: 'collection',
+				placeholder: 'Add Setting',
+				default: {},
+				displayOptions: {
+					show: {
+						operation: ['publishVideo'],
+						platforms: ['x'],
+					},
+				},
+				options: [
+					{
+						displayName: 'Caption',
+						name: 'caption',
+						type: 'string',
+						required: true,
+						default: '',
+						description: 'Tweet text (max 280 characters)',
+					},
+					{
+						displayName: 'Reply Settings',
+						name: 'reply_settings',
+						type: 'options',
+						options: [
+							{ name: 'Everyone', value: 'everyone' },
+							{ name: 'Mentioned Users', value: 'mentionedUsers' },
+							{ name: 'Following', value: 'following' },
+						],
+						default: 'everyone',
+						description: 'Who can reply to the tweet',
+					},
+				],
+			},
+
 			// Get post status fields
 			{
 				displayName: 'Post ID',
@@ -539,6 +577,8 @@ export class Posty5SocialPublisherPost implements INodeType {
 							source = 'tiktok-video';
 						} else if (videoURL.includes('youtube.com') || videoURL.includes('youtu.be')) {
 							source = 'youtube-video';
+						} else if (videoURL.includes('x.com') || videoURL.includes('twitter.com')) {
+							source = 'x-video';
 						} else {
 							source = 'video-url';
 						}
@@ -600,6 +640,13 @@ export class Posty5SocialPublisherPost implements INodeType {
 						const instagramSettings = this.getNodeParameter('instagramSettings', i, {}) as any;
 						if (Object.keys(instagramSettings).length > 0) {
 							postBody.instagramConfig = instagramSettings;
+						}
+					}
+
+					if (platforms.includes('x')) {
+						const xSettings = this.getNodeParameter('xSettings', i, {}) as any;
+						if (Object.keys(xSettings).length > 0) {
+							postBody.xConfig = xSettings;
 						}
 					}
 

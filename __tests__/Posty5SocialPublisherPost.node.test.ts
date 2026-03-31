@@ -747,6 +747,106 @@ describe('Posty5SocialPublisherPost', () => {
 		});
 	});
 
+	describe('Publish Video with X Platform', () => {
+		it('should publish with X settings', async () => {
+			const mockPostResponse = {
+				id: 'post135',
+				workspaceId: 'workspace123',
+				videoURL: 'https://example.com/video.mp4',
+				source: 'video-url',
+				platforms: ['x'],
+				xConfig: {
+					caption: 'Check out this video! #shorts',
+					reply_settings: 'everyone',
+				},
+				status: 'pending',
+			};
+
+			const mockExecuteFunctions = createMockExecuteFunctions(
+				{
+					operation: 'publishVideo',
+					workspaceId: 'workspace123',
+					videoSource: 'url',
+					videoUrl: 'https://example.com/video.mp4',
+					platforms: ['x'],
+					xSettings: {
+						caption: 'Check out this video! #shorts',
+						reply_settings: 'everyone',
+					},
+					thumbnailSource: 'none',
+					scheduledPublishTime: 'now',
+				},
+				[{ json: {} }],
+				{ apiKey: TEST_CONFIG.apiKey },
+				mockPostResponse,
+			);
+
+			const result = await postNode.execute.call(mockExecuteFunctions);
+
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
+				expect.objectContaining({
+					method: 'POST',
+					url: expect.stringMatching(
+						/\/api\/social-publisher-post\/short-video\/workspace\/by-url$/,
+					),
+					body: expect.objectContaining({
+						xConfig: expect.objectContaining({
+							caption: 'Check out this video! #shorts',
+							reply_settings: 'everyone',
+						}),
+						createdFrom: 'n8n',
+					}),
+				}),
+			);
+
+			expect(result[0][0].json).toEqual(mockPostResponse);
+		});
+
+		it('should publish from X (Twitter) URL (x-video source)', async () => {
+			const mockPostResponse = {
+				id: 'post136',
+				workspaceId: 'workspace123',
+				videoURL: 'https://x.com/user/status/1234567890',
+				source: 'x-video',
+				platforms: ['x'],
+				status: 'pending',
+			};
+
+			const mockExecuteFunctions = createMockExecuteFunctions(
+				{
+					operation: 'publishVideo',
+					workspaceId: 'workspace123',
+					videoSource: 'url',
+					videoUrl: 'https://x.com/user/status/1234567890',
+					platforms: ['x'],
+					thumbnailSource: 'none',
+					scheduledPublishTime: 'now',
+				},
+				[{ json: {} }],
+				{ apiKey: TEST_CONFIG.apiKey },
+				mockPostResponse,
+			);
+
+			const result = await postNode.execute.call(mockExecuteFunctions);
+
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
+				expect.objectContaining({
+					method: 'POST',
+					url: expect.stringMatching(
+						/\/api\/social-publisher-post\/short-video\/workspace\/by-url$/,
+					),
+					body: expect.objectContaining({
+						videoURL: 'https://x.com/user/status/1234567890',
+						source: 'x-video',
+						createdFrom: 'n8n',
+					}),
+				}),
+			);
+
+			expect(result[0][0].json).toEqual(mockPostResponse);
+		});
+	});
+
 	describe('Get Post Status', () => {
 		it('should Get post status by postId', async () => {
 			const mockResponse = {
