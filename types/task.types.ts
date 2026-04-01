@@ -30,7 +30,13 @@ export type SocialPublisherPostType = 'shortVideo';
 /**
  * Social publisher post account type
  */
-export type SocialPublisherPostAccountType = 'youtube' | 'facebook' | 'instagram' | 'tiktok' | 'x' | 'linkedin';
+export type SocialPublisherPostAccountType =
+	| 'youtube'
+	| 'facebook'
+	| 'instagram'
+	| 'tiktok'
+	| 'x'
+	| 'linkedin';
 
 /**
  * Social publisher post schedule type

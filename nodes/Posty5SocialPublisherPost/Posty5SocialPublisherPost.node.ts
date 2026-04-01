@@ -615,8 +615,10 @@ export class Posty5SocialPublisherPost implements INodeType {
 						} else if (videoURL.includes('youtube.com') || videoURL.includes('youtu.be')) {
 							source = 'youtube-video';
 						} else if (videoURL.includes('x.com') || videoURL.includes('twitter.com')) {
-							source = 'x-video';					} else if (videoURL.includes('linkedin.com')) {
-						source = 'linkedin-video';						} else {
+							source = 'x-video';
+						} else if (videoURL.includes('linkedin.com')) {
+							source = 'linkedin-video';
+						} else {
 							source = 'video-url';
 						}
 
