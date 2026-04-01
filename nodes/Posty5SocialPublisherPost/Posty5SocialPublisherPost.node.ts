@@ -690,6 +690,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 					}
 
 					if (platforms.includes('linkedin')) {
+						postBody.isAllowLinkedIn = true;
 						const linkedinSettings = this.getNodeParameter('linkedinSettings', i, {}) as any;
 						if (Object.keys(linkedinSettings).length > 0) {
 							postBody.linkedinConfig = linkedinSettings;

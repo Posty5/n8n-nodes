@@ -1046,6 +1046,147 @@ describe('Posty5SocialPublisherPost', () => {
 		});
 	});
 
+	describe('LinkedIn Platform', () => {
+		it('should have LinkedIn platform option with correct name and value', () => {
+			const platformsProperty = postNode.description.properties.find(
+				(prop) => prop.name === 'platforms',
+			);
+			expect(platformsProperty).toBeDefined();
+			const options = (platformsProperty as any)?.options || [];
+			const linkedInOption = options.find((opt: any) => opt.value === 'linkedin');
+			expect(linkedInOption).toBeDefined();
+			expect(linkedInOption.name).toBe('LinkedIn');
+			expect(linkedInOption.value).toBe('linkedin');
+		});
+
+		it('should detect linkedin.com URL as linkedin-video source', async () => {
+			const mockPostResponse = {
+				id: 'post-li-1',
+				workspaceId: 'workspace123',
+				videoURL: 'https://www.linkedin.com/posts/user-activity-123456789',
+				source: 'linkedin-video',
+				platforms: ['youtube'],
+				status: 'pending',
+			};
+
+			const mockExecuteFunctions = createMockExecuteFunctions(
+				{
+					operation: 'publishVideo',
+					workspaceId: 'workspace123',
+					videoSource: 'url',
+					videoUrl: 'https://www.linkedin.com/posts/user-activity-123456789',
+					platforms: ['youtube'],
+					thumbnailSource: 'none',
+					scheduledPublishTime: 'now',
+				},
+				[{ json: {} }],
+				{ apiKey: TEST_CONFIG.apiKey },
+				mockPostResponse,
+			);
+
+			const result = await postNode.execute.call(mockExecuteFunctions);
+
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
+				expect.objectContaining({
+					method: 'POST',
+					body: expect.objectContaining({
+						videoURL: 'https://www.linkedin.com/posts/user-activity-123456789',
+						source: 'linkedin-video',
+					}),
+				}),
+			);
+
+			expect(result[0][0].json).toEqual(mockPostResponse);
+		});
+
+		it('should map LinkedIn settings to linkedinConfig in API payload', async () => {
+			const mockPostResponse = {
+				id: 'post-li-2',
+				workspaceId: 'workspace123',
+				videoURL: 'https://example.com/video.mp4',
+				source: 'video-url',
+				platforms: ['linkedin'],
+				linkedinConfig: {
+					text: 'Professional content for LinkedIn',
+					visibility: 'PUBLIC',
+				},
+				status: 'pending',
+			};
+
+			const mockExecuteFunctions = createMockExecuteFunctions(
+				{
+					operation: 'publishVideo',
+					workspaceId: 'workspace123',
+					videoSource: 'url',
+					videoUrl: 'https://example.com/video.mp4',
+					platforms: ['linkedin'],
+					linkedinSettings: {
+						text: 'Professional content for LinkedIn',
+						visibility: 'PUBLIC',
+					},
+					thumbnailSource: 'none',
+					scheduledPublishTime: 'now',
+				},
+				[{ json: {} }],
+				{ apiKey: TEST_CONFIG.apiKey },
+				mockPostResponse,
+			);
+
+			const result = await postNode.execute.call(mockExecuteFunctions);
+
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
+				expect.objectContaining({
+					method: 'POST',
+					body: expect.objectContaining({
+						linkedinConfig: expect.objectContaining({
+							text: 'Professional content for LinkedIn',
+							visibility: 'PUBLIC',
+						}),
+					}),
+				}),
+			);
+
+			expect(result[0][0].json).toEqual(mockPostResponse);
+		});
+
+		it('should set isAllowLinkedIn flag in payload when LinkedIn is selected', async () => {
+			const mockPostResponse = {
+				id: 'post-li-3',
+				workspaceId: 'workspace123',
+				videoURL: 'https://example.com/video.mp4',
+				source: 'video-url',
+				platforms: ['linkedin'],
+				status: 'pending',
+			};
+
+			const mockExecuteFunctions = createMockExecuteFunctions(
+				{
+					operation: 'publishVideo',
+					workspaceId: 'workspace123',
+					videoSource: 'url',
+					videoUrl: 'https://example.com/video.mp4',
+					platforms: ['linkedin'],
+					thumbnailSource: 'none',
+					scheduledPublishTime: 'now',
+				},
+				[{ json: {} }],
+				{ apiKey: TEST_CONFIG.apiKey },
+				mockPostResponse,
+			);
+
+			await postNode.execute.call(mockExecuteFunctions);
+
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
+				expect.objectContaining({
+					body: expect.objectContaining({
+						isAllowLinkedIn: true,
+						platforms: ['linkedin'],
+					}),
+				}),
+			);
+		});
+	});
+
 	describe('Multiple Items', () => {
 		it('should process 2 items in batch', async () => {
 			const mockPostResponse1 = {
