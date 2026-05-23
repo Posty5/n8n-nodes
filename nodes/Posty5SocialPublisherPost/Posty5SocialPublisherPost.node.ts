@@ -48,6 +48,18 @@ export class Posty5SocialPublisherPost implements INodeType {
 						action: 'Publish a video to account',
 					},
 					{
+						name: 'Publish Image to Workspace',
+						value: 'publishImage',
+						description: 'Publish an image to social media platforms via workspace (5 credits, +1 if comment is set)',
+						action: 'Publish an image to workspace',
+					},
+					{
+						name: 'Publish Image to Account',
+						value: 'publishImageToAccount',
+						description: 'Publish an image to a single connected account (5 credits, +1 if comment is set)',
+						action: 'Publish an image to account',
+					},
+					{
 						name: 'Get Post Status',
 						value: 'getPostStatus',
 						description: 'Get the status of a publishing post',
@@ -431,11 +443,11 @@ export class Posty5SocialPublisherPost implements INodeType {
 				default: {},
 				displayOptions: {
 					show: {
-						operation: ['publishVideo', 'publishVideoToAccount'],
+						operation: ['publishVideo', 'publishVideoToAccount', 'publishImage', 'publishImageToAccount'],
 					},
 				},
 				description:
-					'Optional post-publish comment (Pro plan, +1 credit). When Text is set, a comment is added under each enabled platform once the video is published.',
+					'Optional post-publish comment (Pro plan, +1 credit). When Text is set, a comment is added under each enabled platform once the video/image is published.',
 				options: [
 					{
 						displayName: 'Text',
@@ -476,6 +488,107 @@ export class Posty5SocialPublisherPost implements INodeType {
 							'TikTok comments are not supported by the platform. TikTok will always report "notSupported" on the comment status response.',
 					},
 				],
+			},
+
+			// ─── Image post fields (task 6) ───────────────────────────────────
+			// Image post shares the per-platform settings collections + the
+			// Comment block above with the video flow. The only new inputs are
+			// the image source + URL + shared caption + AI-enhance flag, plus
+			// the Workspace ID / Account ID and (for account-target) the
+			// platform selector.
+			{
+				displayName: 'Workspace ID',
+				name: 'imageWorkspaceId',
+				type: 'string',
+				required: true,
+				displayOptions: { show: { operation: ['publishImage'] } },
+				default: '',
+				description: 'The workspace ID to publish under',
+			},
+			{
+				displayName: 'Account ID',
+				name: 'imageAccountId',
+				type: 'string',
+				required: true,
+				displayOptions: { show: { operation: ['publishImageToAccount'] } },
+				default: '',
+				description: 'The account ID to publish under',
+			},
+			{
+				displayName: 'Image Source',
+				name: 'imageSource',
+				type: 'options',
+				displayOptions: {
+					show: { operation: ['publishImage', 'publishImageToAccount'] },
+				},
+				options: [
+					{ name: 'External URL', value: 'image-url' },
+					{ name: 'Uploaded Bucket File', value: 'image-file' },
+				],
+				default: 'image-url',
+				description:
+					'Where the image lives. "External URL" sends the URL directly; "Uploaded Bucket File" requires uploading via /generate-upload-urls first.',
+			},
+			{
+				displayName: 'Image URL',
+				name: 'imageExternalUrl',
+				type: 'string',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['publishImage', 'publishImageToAccount'],
+						imageSource: ['image-url'],
+					},
+				},
+				default: '',
+				description: 'Public URL of the image to publish',
+			},
+			{
+				displayName: 'Bucket File URL',
+				name: 'imageBucketKey',
+				type: 'string',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['publishImage', 'publishImageToAccount'],
+						imageSource: ['image-file'],
+					},
+				},
+				default: '',
+				description: 'fileURL returned by /generate-upload-urls after you uploaded the image',
+			},
+			{
+				displayName: 'Caption',
+				name: 'imageCaption',
+				type: 'string',
+				typeOptions: { rows: 3 },
+				required: true,
+				displayOptions: {
+					show: { operation: ['publishImage', 'publishImageToAccount'] },
+				},
+				default: '',
+				description:
+					'Shared caption used as the default per-platform description (1-8000 characters). Per-platform overrides still apply.',
+			},
+			{
+				displayName: 'AI-Enhanced',
+				name: 'imageAiEnhanced',
+				type: 'boolean',
+				default: false,
+				displayOptions: {
+					show: { operation: ['publishImage', 'publishImageToAccount'] },
+				},
+				description: 'Marks the caption as AI-enhanced; surfaces on the status page only',
+			},
+			{
+				displayName:
+					'YouTube community image posts are not supported by the YouTube Data API and will be reported as "notSupported" on the status response.',
+				name: 'imageYoutubeNotice',
+				type: 'notice',
+				default: '',
+				displayOptions: {
+					show: { operation: ['publishImage', 'publishImageToAccount'] },
+				},
 			},
 
 			// Get post status fields
@@ -708,6 +821,59 @@ export class Posty5SocialPublisherPost implements INodeType {
 						method: 'POST',
 						endpoint,
 						body: postBody,
+					});
+				} else if (operation === 'publishImage' || operation === 'publishImageToAccount') {
+					// ─── Image post (task 6) ─────────────────────────────────
+					// Image posts share most plumbing with video posts. The
+					// API auto-synthesizes per-platform description blocks
+					// from `caption` if not provided, so the n8n form only
+					// needs source + URL/bucketKey + caption + optional comment.
+					const isWorkspace = operation === 'publishImage';
+					const workspaceId = isWorkspace
+						? (this.getNodeParameter('imageWorkspaceId', i) as string)
+						: undefined;
+					const accountId = !isWorkspace
+						? (this.getNodeParameter('imageAccountId', i) as string)
+						: undefined;
+					const imageSource = this.getNodeParameter('imageSource', i) as string;
+					const caption = this.getNodeParameter('imageCaption', i) as string;
+					const aiEnhanced = this.getNodeParameter('imageAiEnhanced', i, false) as boolean;
+
+					const image: any = { source: imageSource };
+					if (imageSource === 'image-url') {
+						image.externalUrl = this.getNodeParameter('imageExternalUrl', i) as string;
+					} else {
+						image.bucketKey = this.getNodeParameter('imageBucketKey', i) as string;
+					}
+
+					const imagePostBody: any = {
+						workspaceId,
+						accountId,
+						image,
+						caption,
+						aiEnhanced,
+					};
+
+					// Optional auto-comment — reuse the existing Comment collection.
+					const commentSettings = this.getNodeParameter('comment', i, {}) as any;
+					if (commentSettings && typeof commentSettings.text === 'string' && commentSettings.text.trim().length > 0) {
+						imagePostBody.comment = {
+							text: commentSettings.text,
+							postToFacebook: commentSettings.postToFacebook ?? true,
+							postToInstagram: commentSettings.postToInstagram ?? true,
+							postToYoutube: commentSettings.postToYoutube ?? true,
+							postToTiktok: false,
+						};
+					}
+
+					const endpoint = isWorkspace
+						? `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/image/workspace`
+						: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/image/account`;
+
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'POST',
+						endpoint,
+						body: imagePostBody,
 					});
 				} else if (operation === 'getPostStatus') {
 					const postId = this.getNodeParameter('postId', i) as string;
