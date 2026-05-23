@@ -142,25 +142,6 @@ export class Posty5SocialPublisherPost implements INodeType {
 					'URL of the video to publish (can be direct URL, Facebook, TikTok, or YouTube Shorts)',
 			},
 			{
-				displayName: 'Platforms',
-				name: 'platforms',
-				type: 'multiOptions',
-				required: true,
-				displayOptions: {
-					show: {
-						operation: ['publishVideo'],
-					},
-				},
-				options: [
-					{ name: 'YouTube', value: 'youtube' },
-					{ name: 'TikTok', value: 'tiktok' },
-					{ name: 'Facebook', value: 'facebook' },
-					{ name: 'Instagram', value: 'instagram' },
-				],
-				default: ['youtube'],
-				description: 'Platforms to publish to',
-			},
-			{
 				displayName: 'Thumbnail Source',
 				name: 'thumbnailSource',
 				type: 'options',
@@ -235,6 +216,18 @@ export class Posty5SocialPublisherPost implements INodeType {
 
 			// YouTube Settings
 			{
+				displayName:
+					'Only used if your workspace has a YouTube account connected — otherwise ignored.',
+				name: 'youtubeSettingsNotice',
+				type: 'notice',
+				default: '',
+				displayOptions: {
+					show: {
+						operation: ['publishVideo'],
+					},
+				},
+			},
+			{
 				displayName: 'YouTube Settings',
 				name: 'youtubeSettings',
 				type: 'collection',
@@ -243,7 +236,6 @@ export class Posty5SocialPublisherPost implements INodeType {
 				displayOptions: {
 					show: {
 						operation: ['publishVideo'],
-						platforms: ['youtube'],
 					},
 				},
 				options: [
@@ -280,6 +272,18 @@ export class Posty5SocialPublisherPost implements INodeType {
 
 			// TikTok Settings
 			{
+				displayName:
+					'Only used if your workspace has a TikTok account connected — otherwise ignored.',
+				name: 'tiktokSettingsNotice',
+				type: 'notice',
+				default: '',
+				displayOptions: {
+					show: {
+						operation: ['publishVideo'],
+					},
+				},
+			},
+			{
 				displayName: 'TikTok Settings',
 				name: 'tiktokSettings',
 				type: 'collection',
@@ -288,7 +292,6 @@ export class Posty5SocialPublisherPost implements INodeType {
 				displayOptions: {
 					show: {
 						operation: ['publishVideo'],
-						platforms: ['tiktok'],
 					},
 				},
 				options: [
@@ -337,6 +340,18 @@ export class Posty5SocialPublisherPost implements INodeType {
 
 			// Facebook Settings
 			{
+				displayName:
+					'Only used if your workspace has a Facebook Page connected — otherwise ignored.',
+				name: 'facebookSettingsNotice',
+				type: 'notice',
+				default: '',
+				displayOptions: {
+					show: {
+						operation: ['publishVideo'],
+					},
+				},
+			},
+			{
 				displayName: 'Facebook Settings',
 				name: 'facebookSettings',
 				type: 'collection',
@@ -345,7 +360,6 @@ export class Posty5SocialPublisherPost implements INodeType {
 				displayOptions: {
 					show: {
 						operation: ['publishVideo'],
-						platforms: ['facebook'],
 					},
 				},
 				options: [
@@ -368,6 +382,18 @@ export class Posty5SocialPublisherPost implements INodeType {
 
 			// Instagram Settings
 			{
+				displayName:
+					'Only used if your workspace has an Instagram account connected — otherwise ignored.',
+				name: 'instagramSettingsNotice',
+				type: 'notice',
+				default: '',
+				displayOptions: {
+					show: {
+						operation: ['publishVideo'],
+					},
+				},
+			},
+			{
 				displayName: 'Instagram Settings',
 				name: 'instagramSettings',
 				type: 'collection',
@@ -376,7 +402,6 @@ export class Posty5SocialPublisherPost implements INodeType {
 				displayOptions: {
 					show: {
 						operation: ['publishVideo'],
-						platforms: ['instagram'],
 					},
 				},
 				options: [
@@ -536,7 +561,6 @@ export class Posty5SocialPublisherPost implements INodeType {
 							? (this.getNodeParameter('accountId', i) as string)
 							: undefined;
 					const videoSource = this.getNodeParameter('videoSource', i) as string;
-					const platforms = this.getNodeParameter('platforms', i) as string[];
 					const thumbnailSource = this.getNodeParameter('thumbnailSource', i, 'none') as string;
 					const scheduledPublishTime = this.getNodeParameter('scheduledPublishTime', i) as string;
 
@@ -605,13 +629,16 @@ export class Posty5SocialPublisherPost implements INodeType {
 						}
 					}
 
-					// Prepare post body
+					// Prepare post body.
+					// The server derives which platforms a post lands on from the
+					// workspace's connected accounts (or the account's platform).
+					// We forward every settings collection the user filled in —
+					// the API ignores any block whose platform isn't connected.
 					const postBody: any = {
 						workspaceId,
 						accountId,
 						videoURL,
 						source,
-						platforms,
 					};
 
 					if (thumbURL) {
@@ -626,38 +653,32 @@ export class Posty5SocialPublisherPost implements INodeType {
 						postBody.scheduledPublishTime = 'now';
 					}
 
-					// Platform-specific settings
-					if (platforms.includes('youtube')) {
-						const youtubeSettings = this.getNodeParameter('youtubeSettings', i, {}) as any;
-						if (Object.keys(youtubeSettings).length > 0) {
-							postBody.youtubeConfig = { ...youtubeSettings };
-							if (youtubeSettings.tags && typeof youtubeSettings.tags === 'string') {
-								postBody.youtubeConfig.tags = youtubeSettings.tags
-									.split(',')
-									.map((t: string) => t.trim());
-							}
+					// Platform-specific settings — forward every non-empty block.
+					// The user only fills the platforms relevant to their workspace;
+					// the API ignores configs for unconnected platforms.
+					const youtubeSettings = this.getNodeParameter('youtubeSettings', i, {}) as any;
+					if (Object.keys(youtubeSettings).length > 0) {
+						postBody.youtubeConfig = { ...youtubeSettings };
+						if (youtubeSettings.tags && typeof youtubeSettings.tags === 'string') {
+							postBody.youtubeConfig.tags = youtubeSettings.tags
+								.split(',')
+								.map((t: string) => t.trim());
 						}
 					}
 
-					if (platforms.includes('tiktok')) {
-						const tiktokSettings = this.getNodeParameter('tiktokSettings', i, {}) as any;
-						if (Object.keys(tiktokSettings).length > 0) {
-							postBody.tiktokConfig = tiktokSettings;
-						}
+					const tiktokSettings = this.getNodeParameter('tiktokSettings', i, {}) as any;
+					if (Object.keys(tiktokSettings).length > 0) {
+						postBody.tiktokConfig = tiktokSettings;
 					}
 
-					if (platforms.includes('facebook')) {
-						const facebookSettings = this.getNodeParameter('facebookSettings', i, {}) as any;
-						if (Object.keys(facebookSettings).length > 0) {
-							postBody.facebookPageConfig = facebookSettings;
-						}
+					const facebookSettings = this.getNodeParameter('facebookSettings', i, {}) as any;
+					if (Object.keys(facebookSettings).length > 0) {
+						postBody.facebookPageConfig = facebookSettings;
 					}
 
-					if (platforms.includes('instagram')) {
-						const instagramSettings = this.getNodeParameter('instagramSettings', i, {}) as any;
-						if (Object.keys(instagramSettings).length > 0) {
-							postBody.instagramConfig = instagramSettings;
-						}
+					const instagramSettings = this.getNodeParameter('instagramSettings', i, {}) as any;
+					if (Object.keys(instagramSettings).length > 0) {
+						postBody.instagramConfig = instagramSettings;
 					}
 
 					// Optional post-publish auto-comment (Pro plan, +1 credit).

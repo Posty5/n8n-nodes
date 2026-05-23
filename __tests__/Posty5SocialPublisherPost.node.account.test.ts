@@ -25,7 +25,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 				accountId: 'account123',
 				videoURL: 'https://storage.example.com/video-acc-123',
 				source: 'video-upload',
-				platforms: ['tiktok'],
 				status: 'pending',
 			};
 
@@ -35,7 +34,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 					accountId: 'account123',
 					videoSource: 'binary',
 					videoBinaryProperty: 'data',
-					platforms: ['tiktok'],
 					thumbnailSource: 'none',
 					scheduledPublishTime: 'now',
 					tiktokSettings: {
@@ -75,7 +73,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 						accountId: 'account123',
 						videoURL: 'https://storage.example.com/video-acc-123',
 						source: 'video-upload',
-						platforms: ['tiktok'],
 						tiktokConfig: expect.objectContaining({
 							caption: 'Account Video',
 							privacy_level: 'SELF_ONLY',
@@ -94,7 +91,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 				accountId: 'account123',
 				videoURL: 'https://example.com/video.mp4',
 				source: 'video-url',
-				platforms: ['youtube'],
 				status: 'pending',
 			};
 
@@ -104,7 +100,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 					accountId: 'account123',
 					videoSource: 'url',
 					videoUrl: 'https://example.com/video.mp4',
-					platforms: ['youtube'],
 					thumbnailSource: 'none',
 					scheduledPublishTime: 'now',
 					youtubeSettings: {
@@ -127,7 +122,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 						accountId: 'account123',
 						videoURL: 'https://example.com/video.mp4',
 						source: 'video-url',
-						platforms: ['youtube'],
 						createdFrom: 'n8n',
 					}),
 				}),
@@ -154,7 +148,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 				videoURL: 'https://storage.example.com/video-acc-456',
 				thumbURL: 'https://storage.example.com/thumb-acc-456',
 				source: 'video-upload',
-				platforms: ['youtube'],
 				status: 'pending',
 			};
 
@@ -164,7 +157,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 					accountId: 'account456',
 					videoSource: 'binary',
 					videoBinaryProperty: 'data',
-					platforms: ['youtube'],
 					thumbnailSource: 'binary',
 					thumbnailBinaryProperty: 'thumbnail',
 					scheduledPublishTime: 'now',
@@ -233,7 +225,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 				accountId: 'account789',
 				videoURL: 'https://storage.example.com/video-acc-multi',
 				source: 'video-upload',
-				platforms: ['youtube', 'tiktok', 'facebook'],
 				status: 'pending',
 			};
 
@@ -243,7 +234,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 					accountId: 'account789',
 					videoSource: 'binary',
 					videoBinaryProperty: 'data',
-					platforms: ['youtube', 'tiktok', 'facebook'],
 					thumbnailSource: 'none',
 					scheduledPublishTime: 'now',
 				},
@@ -270,7 +260,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 					),
 					body: expect.objectContaining({
 						accountId: 'account789',
-						platforms: ['youtube', 'tiktok', 'facebook'],
 						createdFrom: 'n8n',
 					}),
 				}),
@@ -294,7 +283,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 				accountId: 'account-sched',
 				videoURL: 'https://storage.example.com/video-acc-sched',
 				source: 'video-upload',
-				platforms: ['tiktok'],
 				scheduledPublishTime: '2026-06-01T14:00:00.000Z',
 				status: 'scheduled',
 			};
@@ -305,7 +293,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 					accountId: 'account-sched',
 					videoSource: 'binary',
 					videoBinaryProperty: 'data',
-					platforms: ['tiktok'],
 					thumbnailSource: 'none',
 					scheduledPublishTime: 'later',
 					scheduleDate: '2026-06-01T14:00:00.000Z',
@@ -350,7 +337,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 				accountId: 'account-fb',
 				videoURL: 'https://www.facebook.com/watch?v=987654321',
 				source: 'facebook-video',
-				platforms: ['facebook'],
 				status: 'pending',
 			};
 
@@ -360,7 +346,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 					accountId: 'account-fb',
 					videoSource: 'url',
 					videoUrl: 'https://www.facebook.com/watch?v=987654321',
-					platforms: ['facebook'],
 					thumbnailSource: 'none',
 					scheduledPublishTime: 'now',
 				},
@@ -393,7 +378,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 				accountId: 'account-tt',
 				videoURL: 'https://www.tiktok.com/@creator/video/111222333',
 				source: 'tiktok-video',
-				platforms: ['tiktok'],
 				status: 'pending',
 			};
 
@@ -403,7 +387,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 					accountId: 'account-tt',
 					videoSource: 'url',
 					videoUrl: 'https://www.tiktok.com/@creator/video/111222333',
-					platforms: ['tiktok'],
 					thumbnailSource: 'none',
 					scheduledPublishTime: 'now',
 				},
@@ -436,7 +419,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 				accountId: 'account-yt',
 				videoURL: 'https://www.youtube.com/watch?v=abcdef12345',
 				source: 'youtube-video',
-				platforms: ['youtube'],
 				status: 'pending',
 			};
 
@@ -446,7 +428,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 					accountId: 'account-yt',
 					videoSource: 'url',
 					videoUrl: 'https://www.youtube.com/watch?v=abcdef12345',
-					platforms: ['youtube'],
 					thumbnailSource: 'none',
 					scheduledPublishTime: 'now',
 				},
@@ -479,7 +460,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 				accountId: 'account-gen',
 				videoURL: 'https://cdn.example.com/my-video.mp4',
 				source: 'video-url',
-				platforms: ['youtube'],
 				status: 'pending',
 			};
 
@@ -489,7 +469,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 					accountId: 'account-gen',
 					videoSource: 'url',
 					videoUrl: 'https://cdn.example.com/my-video.mp4',
-					platforms: ['youtube'],
 					thumbnailSource: 'none',
 					scheduledPublishTime: 'now',
 				},
@@ -523,7 +502,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 				accountId: 'account-yt-cfg',
 				videoURL: 'https://example.com/video.mp4',
 				source: 'video-url',
-				platforms: ['youtube'],
 				youtubeConfig: {
 					title: 'Account YT Title',
 					description: 'Account YT Description',
@@ -539,7 +517,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 					accountId: 'account-yt-cfg',
 					videoSource: 'url',
 					videoUrl: 'https://example.com/video.mp4',
-					platforms: ['youtube'],
 					youtubeSettings: {
 						title: 'Account YT Title',
 						description: 'Account YT Description',
@@ -582,7 +559,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 				accountId: 'account-tt-cfg',
 				videoURL: 'https://example.com/video.mp4',
 				source: 'video-url',
-				platforms: ['tiktok'],
 				tiktokConfig: {
 					caption: 'Account TikTok video #account',
 					privacy_level: 'MUTUAL_FOLLOW_FRIENDS',
@@ -599,7 +575,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 					accountId: 'account-tt-cfg',
 					videoSource: 'url',
 					videoUrl: 'https://example.com/video.mp4',
-					platforms: ['tiktok'],
 					tiktokSettings: {
 						caption: 'Account TikTok video #account',
 						privacy_level: 'MUTUAL_FOLLOW_FRIENDS',
@@ -644,7 +619,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 				accountId: 'account-fb-cfg',
 				videoURL: 'https://example.com/video.mp4',
 				source: 'video-url',
-				platforms: ['facebook'],
 				facebookPageConfig: {
 					title: 'Account FB Title',
 					description: 'Account FB Description',
@@ -658,7 +632,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 					accountId: 'account-fb-cfg',
 					videoSource: 'url',
 					videoUrl: 'https://example.com/video.mp4',
-					platforms: ['facebook'],
 					facebookSettings: {
 						title: 'Account FB Title',
 						description: 'Account FB Description',
@@ -697,7 +670,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 				accountId: 'account-ig-cfg',
 				videoURL: 'https://example.com/video.mp4',
 				source: 'video-url',
-				platforms: ['instagram'],
 				instagramConfig: {
 					description: 'Account IG caption #reels',
 					share_to_feed: false,
@@ -711,7 +683,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 					accountId: 'account-ig-cfg',
 					videoSource: 'url',
 					videoUrl: 'https://example.com/video.mp4',
-					platforms: ['instagram'],
 					instagramSettings: {
 						description: 'Account IG caption #reels',
 						share_to_feed: false,
@@ -753,7 +724,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 					accountId: 'account-err',
 					videoSource: 'url',
 					videoUrl: 'https://example.com/video.mp4',
-					platforms: ['youtube'],
 					thumbnailSource: 'none',
 					scheduledPublishTime: 'now',
 				},
@@ -777,7 +747,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 					accountId: 'account-err',
 					videoSource: 'url',
 					videoUrl: 'https://example.com/video.mp4',
-					platforms: ['youtube'],
 					thumbnailSource: 'none',
 					scheduledPublishTime: 'now',
 				},
@@ -804,7 +773,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 				accountId: 'account-batch',
 				videoURL: 'https://example.com/video1.mp4',
 				source: 'video-url',
-				platforms: ['youtube'],
 				status: 'pending',
 			};
 
@@ -813,7 +781,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 				accountId: 'account-batch',
 				videoURL: 'https://example.com/video2.mp4',
 				source: 'video-url',
-				platforms: ['tiktok'],
 				status: 'pending',
 			};
 
@@ -823,7 +790,6 @@ describe('Posty5SocialPublisherPost - Account', () => {
 					accountId: 'account-batch',
 					videoSource: 'url',
 					videoUrl: 'https://example.com/video1.mp4',
-					platforms: ['youtube'],
 					thumbnailSource: 'none',
 					scheduledPublishTime: 'now',
 				},

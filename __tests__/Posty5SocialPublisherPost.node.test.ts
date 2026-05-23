@@ -64,7 +64,6 @@ describe('Posty5SocialPublisherPost', () => {
 				workspaceId: 'workspace123',
 				videoURL: 'https://storage.example.com/video-123',
 				source: 'video-upload',
-				platforms: ['youtube'],
 				status: 'pending',
 			};
 
@@ -74,7 +73,6 @@ describe('Posty5SocialPublisherPost', () => {
 					workspaceId: 'workspace123',
 					videoSource: 'binary',
 					videoBinaryProperty: 'data',
-					platforms: ['youtube'],
 					thumbnailSource: 'none',
 					scheduledPublishTime: 'now',
 				},
@@ -123,7 +121,6 @@ describe('Posty5SocialPublisherPost', () => {
 						workspaceId: 'workspace123',
 						videoURL: 'https://storage.example.com/video-123',
 						source: 'video-upload',
-						platforms: ['youtube'],
 						scheduledPublishTime: 'now',
 						createdFrom: 'n8n',
 					}),
@@ -150,7 +147,6 @@ describe('Posty5SocialPublisherPost', () => {
 				videoURL: 'https://storage.example.com/video-456',
 				thumbURL: 'https://storage.example.com/thumb-456',
 				source: 'video-upload',
-				platforms: ['youtube'],
 				status: 'pending',
 			};
 
@@ -160,7 +156,6 @@ describe('Posty5SocialPublisherPost', () => {
 					workspaceId: 'workspace123',
 					videoSource: 'binary',
 					videoBinaryProperty: 'data',
-					platforms: ['youtube'],
 					thumbnailSource: 'binary',
 					thumbnailBinaryProperty: 'thumbnail',
 					scheduledPublishTime: 'now',
@@ -228,7 +223,6 @@ describe('Posty5SocialPublisherPost', () => {
 				workspaceId: 'workspace123',
 				videoURL: 'https://storage.example.com/video-789',
 				source: 'video-upload',
-				platforms: ['youtube', 'tiktok'],
 				status: 'pending',
 			};
 
@@ -238,7 +232,6 @@ describe('Posty5SocialPublisherPost', () => {
 					workspaceId: 'workspace123',
 					videoSource: 'binary',
 					videoBinaryProperty: 'data',
-					platforms: ['youtube', 'tiktok'],
 					thumbnailSource: 'none',
 					scheduledPublishTime: 'now',
 				},
@@ -264,7 +257,6 @@ describe('Posty5SocialPublisherPost', () => {
 						/\/api\/social-publisher-post\/short-video\/workspace\/by-file$/,
 					),
 					body: expect.objectContaining({
-						platforms: ['youtube', 'tiktok'],
 						createdFrom: 'n8n',
 					}),
 				}),
@@ -288,7 +280,6 @@ describe('Posty5SocialPublisherPost', () => {
 				workspaceId: 'workspace123',
 				videoURL: 'https://storage.example.com/video-scheduled',
 				source: 'video-upload',
-				platforms: ['youtube'],
 				scheduledPublishTime: '2026-03-15T10:00:00.000Z',
 				status: 'scheduled',
 			};
@@ -299,7 +290,6 @@ describe('Posty5SocialPublisherPost', () => {
 					workspaceId: 'workspace123',
 					videoSource: 'binary',
 					videoBinaryProperty: 'data',
-					platforms: ['youtube'],
 					thumbnailSource: 'none',
 					scheduledPublishTime: 'later',
 					scheduleDate: '2026-03-15T10:00:00.000Z',
@@ -343,7 +333,6 @@ describe('Posty5SocialPublisherPost', () => {
 				workspaceId: 'workspace123',
 				videoURL: 'https://example.com/video.mp4',
 				source: 'video-url',
-				platforms: ['youtube'],
 				status: 'pending',
 			};
 
@@ -353,7 +342,6 @@ describe('Posty5SocialPublisherPost', () => {
 					workspaceId: 'workspace123',
 					videoSource: 'url',
 					videoUrl: 'https://example.com/video.mp4',
-					platforms: ['youtube'],
 					thumbnailSource: 'none',
 					scheduledPublishTime: 'now',
 				},
@@ -387,7 +375,6 @@ describe('Posty5SocialPublisherPost', () => {
 				workspaceId: 'workspace123',
 				videoURL: 'https://www.facebook.com/watch?v=123456789',
 				source: 'facebook-video',
-				platforms: ['youtube'],
 				status: 'pending',
 			};
 
@@ -397,7 +384,6 @@ describe('Posty5SocialPublisherPost', () => {
 					workspaceId: 'workspace123',
 					videoSource: 'url',
 					videoUrl: 'https://www.facebook.com/watch?v=123456789',
-					platforms: ['youtube'],
 					thumbnailSource: 'none',
 					scheduledPublishTime: 'now',
 				},
@@ -431,7 +417,6 @@ describe('Posty5SocialPublisherPost', () => {
 				workspaceId: 'workspace123',
 				videoURL: 'https://www.tiktok.com/@user/video/123456789',
 				source: 'tiktok-video',
-				platforms: ['youtube'],
 				status: 'pending',
 			};
 
@@ -441,7 +426,6 @@ describe('Posty5SocialPublisherPost', () => {
 					workspaceId: 'workspace123',
 					videoSource: 'url',
 					videoUrl: 'https://www.tiktok.com/@user/video/123456789',
-					platforms: ['youtube'],
 					thumbnailSource: 'none',
 					scheduledPublishTime: 'now',
 				},
@@ -475,7 +459,6 @@ describe('Posty5SocialPublisherPost', () => {
 				workspaceId: 'workspace123',
 				videoURL: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
 				source: 'youtube-video',
-				platforms: ['tiktok'],
 				status: 'pending',
 			};
 
@@ -485,7 +468,6 @@ describe('Posty5SocialPublisherPost', () => {
 					workspaceId: 'workspace123',
 					videoSource: 'url',
 					videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-					platforms: ['tiktok'],
 					thumbnailSource: 'none',
 					scheduledPublishTime: 'now',
 				},
@@ -521,7 +503,6 @@ describe('Posty5SocialPublisherPost', () => {
 				workspaceId: 'workspace123',
 				videoURL: 'https://example.com/video.mp4',
 				source: 'video-url',
-				platforms: ['youtube'],
 				youtubeConfig: {
 					title: 'My Video Title',
 					description: 'My video description',
@@ -537,7 +518,6 @@ describe('Posty5SocialPublisherPost', () => {
 					workspaceId: 'workspace123',
 					videoSource: 'url',
 					videoUrl: 'https://example.com/video.mp4',
-					platforms: ['youtube'],
 					youtubeSettings: {
 						title: 'My Video Title',
 						description: 'My video description',
@@ -581,7 +561,6 @@ describe('Posty5SocialPublisherPost', () => {
 				workspaceId: 'workspace123',
 				videoURL: 'https://example.com/video.mp4',
 				source: 'video-url',
-				platforms: ['tiktok'],
 				tiktokConfig: {
 					caption: 'Check this out! #viral',
 					privacy_level: 'PUBLIC_TO_EVERYONE',
@@ -598,7 +577,6 @@ describe('Posty5SocialPublisherPost', () => {
 					workspaceId: 'workspace123',
 					videoSource: 'url',
 					videoUrl: 'https://example.com/video.mp4',
-					platforms: ['tiktok'],
 					tiktokSettings: {
 						caption: 'Check this out! #viral',
 						privacy_level: 'PUBLIC_TO_EVERYONE',
@@ -644,7 +622,6 @@ describe('Posty5SocialPublisherPost', () => {
 				workspaceId: 'workspace123',
 				videoURL: 'https://example.com/video.mp4',
 				source: 'video-url',
-				platforms: ['facebook'],
 				facebookPageConfig: {
 					title: 'Facebook Video Title',
 					description: 'Facebook video description',
@@ -658,7 +635,6 @@ describe('Posty5SocialPublisherPost', () => {
 					workspaceId: 'workspace123',
 					videoSource: 'url',
 					videoUrl: 'https://example.com/video.mp4',
-					platforms: ['facebook'],
 					facebookSettings: {
 						title: 'Facebook Video Title',
 						description: 'Facebook video description',
@@ -698,7 +674,6 @@ describe('Posty5SocialPublisherPost', () => {
 				workspaceId: 'workspace123',
 				videoURL: 'https://example.com/video.mp4',
 				source: 'video-url',
-				platforms: ['instagram'],
 				instagramConfig: {
 					description: 'Instagram caption with #hashtags',
 					share_to_feed: true,
@@ -712,7 +687,6 @@ describe('Posty5SocialPublisherPost', () => {
 					workspaceId: 'workspace123',
 					videoSource: 'url',
 					videoUrl: 'https://example.com/video.mp4',
-					platforms: ['instagram'],
 					instagramSettings: {
 						description: 'Instagram caption with #hashtags',
 						share_to_feed: true,
@@ -752,7 +726,6 @@ describe('Posty5SocialPublisherPost', () => {
 			const mockResponse = {
 				id: 'post123',
 				status: 'completed',
-				platforms: ['youtube', 'tiktok'],
 				results: {
 					youtube: { status: 'published', videoId: 'yt123' },
 					tiktok: { status: 'published', videoId: 'tk456' },
@@ -902,7 +875,6 @@ describe('Posty5SocialPublisherPost', () => {
 					workspaceId: 'workspace123',
 					videoSource: 'url',
 					videoUrl: 'https://example.com/video.mp4',
-					platforms: ['youtube'],
 					thumbnailSource: 'none',
 					scheduledPublishTime: 'now',
 				},
@@ -926,7 +898,6 @@ describe('Posty5SocialPublisherPost', () => {
 					workspaceId: 'workspace123',
 					videoSource: 'url',
 					videoUrl: 'https://example.com/video.mp4',
-					platforms: ['youtube'],
 					thumbnailSource: 'none',
 					scheduledPublishTime: 'now',
 				},
@@ -953,7 +924,6 @@ describe('Posty5SocialPublisherPost', () => {
 				workspaceId: 'workspace123',
 				videoURL: 'https://example.com/video1.mp4',
 				source: 'video-url',
-				platforms: ['youtube'],
 				status: 'pending',
 			};
 
@@ -962,7 +932,6 @@ describe('Posty5SocialPublisherPost', () => {
 				workspaceId: 'workspace123',
 				videoURL: 'https://example.com/video2.mp4',
 				source: 'video-url',
-				platforms: ['tiktok'],
 				status: 'pending',
 			};
 
@@ -972,7 +941,6 @@ describe('Posty5SocialPublisherPost', () => {
 					workspaceId: 'workspace123',
 					videoSource: 'url',
 					videoUrl: 'https://example.com/video1.mp4',
-					platforms: ['youtube'],
 					thumbnailSource: 'none',
 					scheduledPublishTime: 'now',
 				},
