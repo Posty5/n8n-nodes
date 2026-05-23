@@ -15,7 +15,8 @@ export class Posty5SocialPublisherPost implements INodeType {
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"]}}',
-		description: 'Publish videos to social media platforms',
+		description:
+			'Publish videos to social media platforms. Supports an optional post-publish auto-comment (Pro plan, +1 credit) for YouTube, Facebook and Instagram — TikTok is not supported.',
 		defaults: {
 			name: 'Posty5 Social Publisher Post',
 		},
@@ -396,6 +397,62 @@ export class Posty5SocialPublisherPost implements INodeType {
 				],
 			},
 
+			// Auto-Comment (post-publish comment, Pro plan, +1 credit)
+			{
+				displayName: 'Comment',
+				name: 'comment',
+				type: 'collection',
+				placeholder: 'Add Comment',
+				default: {},
+				displayOptions: {
+					show: {
+						operation: ['publishVideo', 'publishVideoToAccount'],
+					},
+				},
+				description:
+					'Optional post-publish comment (Pro plan, +1 credit). When Text is set, a comment is added under each enabled platform once the video is published.',
+				options: [
+					{
+						displayName: 'Text',
+						name: 'text',
+						type: 'string',
+						typeOptions: { rows: 3 },
+						default: '',
+						description:
+							'Comment text (1-2200 characters). Leave empty to skip auto-commenting.',
+					},
+					{
+						displayName: 'Post to Facebook',
+						name: 'postToFacebook',
+						type: 'boolean',
+						default: true,
+						description: 'Whether to add the comment under the Facebook post',
+					},
+					{
+						displayName: 'Post to Instagram',
+						name: 'postToInstagram',
+						type: 'boolean',
+						default: true,
+						description: 'Whether to add the comment under the Instagram post',
+					},
+					{
+						displayName: 'Post to YouTube',
+						name: 'postToYoutube',
+						type: 'boolean',
+						default: true,
+						description: 'Whether to add the comment under the YouTube post',
+					},
+					{
+						displayName: 'TikTok',
+						name: 'tiktokNotice',
+						type: 'notice',
+						default: '',
+						description:
+							'TikTok comments are not supported by the platform. TikTok will always report "notSupported" on the comment status response.',
+					},
+				],
+			},
+
 			// Get post status fields
 			{
 				displayName: 'Post ID',
@@ -601,6 +658,19 @@ export class Posty5SocialPublisherPost implements INodeType {
 						if (Object.keys(instagramSettings).length > 0) {
 							postBody.instagramConfig = instagramSettings;
 						}
+					}
+
+					// Optional post-publish auto-comment (Pro plan, +1 credit).
+					// TikTok comments are not supported and will report `notSupported` in the status response.
+					const commentSettings = this.getNodeParameter('comment', i, {}) as any;
+					if (commentSettings && typeof commentSettings.text === 'string' && commentSettings.text.trim().length > 0) {
+						postBody.comment = {
+							text: commentSettings.text,
+							postToFacebook: commentSettings.postToFacebook ?? true,
+							postToInstagram: commentSettings.postToInstagram ?? true,
+							postToYoutube: commentSettings.postToYoutube ?? true,
+							postToTiktok: false,
+						};
 					}
 
 					// Create post
