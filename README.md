@@ -154,7 +154,7 @@ Manage social media workspaces/organizations.
 
 ### 7. Posty5 Social Publisher Post
 
-Publish videos to multiple social media platforms.
+Publish creator-owned videos to connected social media platforms. TikTok publishing requires the Posty5 creator-controlled review and confirmation flow.
 
 **Supported Platforms:**
 
@@ -174,9 +174,9 @@ Publish videos to multiple social media platforms.
 
 - Binary data (file upload)
 - Direct video URL
-- Facebook video URL (repost)
-- TikTok video URL (repost)
-- YouTube Shorts URL (repost)
+- Direct video file URL for content you created or have rights to publish
+
+TikTok Direct Post is not exposed as a public repost workflow in these n8n nodes. Do not use TikTok publishing to copy arbitrary third-party videos from TikTok, YouTube, Facebook, Instagram, or any other platform.
 
 **Platform-Specific Settings:**
 

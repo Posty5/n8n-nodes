@@ -40,12 +40,7 @@ export type SocialPublisherPostScheduleType = 'now' | 'schedule';
 /**
  * Social publisher post source type
  */
-export type SocialPublisherPostSourceType =
-	| 'video-file'
-	| 'video-url'
-	| 'facebook-video'
-	| 'youtube-video'
-	| 'tiktok-video';
+export type SocialPublisherPostSourceType = 'video-file' | 'video-url';
 
 /**
  * Upload config for video and thumbnail
@@ -159,7 +154,6 @@ export interface ISocialPublisherPostStatusResponse {
 	sourceURLs: {
 		thumbURL?: string | null;
 		videoURL?: string;
-		postURL?: string;
 	};
 	currentStatus: SocialPublisherPostStatusType;
 	currentError: string;
@@ -338,7 +332,6 @@ export interface ICreateSocialPublisherPostRequest {
 	instagram?: IInstagramConfig;
 	videoURL?: string;
 	thumbURL?: string;
-	postURL?: string;
 	schedule?: IScheduleConfig;
 	tag?: string;
 	refId?: string;

@@ -726,16 +726,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 						// URL-based video
 						videoURL = this.getNodeParameter('videoUrl', i) as string;
 
-						// Detect source type from URL pattern
-						if (videoURL.includes('facebook.com') || videoURL.includes('fb.watch')) {
-							source = 'facebook-video';
-						} else if (videoURL.includes('tiktok.com')) {
-							source = 'tiktok-video';
-						} else if (videoURL.includes('youtube.com') || videoURL.includes('youtu.be')) {
-							source = 'youtube-video';
-						} else {
-							source = 'video-url';
-						}
+						source = 'video-url';
 
 						if (thumbnailSource === 'url') {
 							thumbURL = this.getNodeParameter('thumbnailUrl', i) as string;
