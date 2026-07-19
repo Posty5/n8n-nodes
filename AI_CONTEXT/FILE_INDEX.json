@@ -1,0 +1,67 @@
+{
+  "generated_at": "2026-07-19",
+  "project": "n8n-nodes",
+  "excluded_generated_or_local": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "bin",
+    "obj",
+    ".angular",
+    ".astro",
+    ".vs",
+    ".git",
+    "archives",
+    "logs"
+  ],
+  "entries": [
+    {
+      "path": "package.json",
+      "role": "Package registry"
+    },
+    {
+      "path": "credentials/Posty5Api.credentials.ts",
+      "role": "Credential type"
+    },
+    {
+      "path": "utils/api.helpers.ts",
+      "role": "API helper"
+    },
+    {
+      "path": "utils/constants.ts",
+      "role": "Constants"
+    },
+    {
+      "path": "nodes",
+      "role": "Nodes"
+    },
+    {
+      "path": "__tests__",
+      "role": "Tests"
+    },
+    {
+      "path": "credentials",
+      "role": "n8n credential declarations."
+    },
+    {
+      "path": "nodes",
+      "role": "Six node implementations."
+    },
+    {
+      "path": "utils",
+      "role": "Posty5 HTTP and upload helpers/constants."
+    },
+    {
+      "path": "types",
+      "role": "Shared request/response/task types."
+    },
+    {
+      "path": "__tests__",
+      "role": "Jest node tests."
+    },
+    {
+      "path": "__mocks__",
+      "role": "n8n-workflow test mock."
+    }
+  ]
+}

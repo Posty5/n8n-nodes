@@ -1,0 +1,26 @@
+{
+  "generated_at": "2026-07-19",
+  "project": "n8n-nodes",
+  "patterns": [
+    {
+      "name": "Declarative node description",
+      "rule": "description.properties defines operations and conditional fields.",
+      "example": "nodes/Posty5ShortLink/Posty5ShortLink.node.ts"
+    },
+    {
+      "name": "Shared credential",
+      "rule": "All nodes request posty5Api.",
+      "example": "credentials/Posty5Api.credentials.ts"
+    },
+    {
+      "name": "Shared HTTP wrapper",
+      "rule": "Use n8n httpRequest, unwrap result, and enhance errors.",
+      "example": "utils/api.helpers.ts"
+    },
+    {
+      "name": "Colocated node test",
+      "rule": "Each registered node has a Jest test.",
+      "example": "__tests__/Posty5ShortLink.node.test.ts"
+    }
+  ]
+}

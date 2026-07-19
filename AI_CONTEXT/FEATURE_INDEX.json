@@ -1,0 +1,36 @@
+{
+  "generated_at": "2026-07-19",
+  "project": "n8n-nodes",
+  "features": [
+    {
+      "name": "Posty5 API credential",
+      "owner": "credential",
+      "source": "credentials/Posty5Api.credentials.ts"
+    },
+    {
+      "name": "Short-link automation",
+      "owner": "short-link",
+      "source": "nodes/Posty5ShortLink/Posty5ShortLink.node.ts"
+    },
+    {
+      "name": "QR automation",
+      "owner": "qr-code",
+      "source": "nodes/Posty5QrCode/Posty5QrCode.node.ts"
+    },
+    {
+      "name": "HTML hosting automation",
+      "owner": "html-hosting",
+      "source": "nodes/Posty5HtmlHosting/Posty5HtmlHosting.node.ts"
+    },
+    {
+      "name": "Form-submission workflow",
+      "owner": "form-submission",
+      "source": "nodes/Posty5FormSubmission/Posty5FormSubmission.node.ts"
+    },
+    {
+      "name": "Social publishing",
+      "owner": "social-post",
+      "source": "nodes/Posty5SocialPublisherPost/Posty5SocialPublisherPost.node.ts"
+    }
+  ]
+}

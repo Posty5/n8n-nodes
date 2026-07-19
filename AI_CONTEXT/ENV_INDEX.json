@@ -1,0 +1,28 @@
+{
+  "generated_at": "2026-07-19",
+  "project": "n8n-nodes",
+  "note": "Names and purposes only; never values.",
+  "config": [
+    {
+      "name": "posty5Api.apiKey",
+      "purpose": "Secret n8n credential injected as X-API-Key.",
+      "source": "credentials/Posty5Api.credentials.ts",
+      "category": "credential",
+      "sensitive": true
+    },
+    {
+      "name": "POSTY5_API_BASE_URL",
+      "purpose": "Compile-time constant Posty5 API origin.",
+      "source": "utils/constants.ts",
+      "category": "api",
+      "sensitive": false
+    },
+    {
+      "name": "createdFrom",
+      "purpose": "POST requests are tagged as n8n by the shared helper.",
+      "source": "utils/api.helpers.ts",
+      "category": "request",
+      "sensitive": false
+    }
+  ]
+}

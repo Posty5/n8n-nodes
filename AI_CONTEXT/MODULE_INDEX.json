@@ -1,0 +1,46 @@
+{
+  "generated_at": "2026-07-19",
+  "project": "n8n-nodes",
+  "modules": [
+    {
+      "name": "credential",
+      "purpose": "posty5Api credential injects X-API-Key and tests connectivity.",
+      "primary_path": "credentials/Posty5Api.credentials.ts"
+    },
+    {
+      "name": "short-link",
+      "purpose": "Create, get, list, update, and delete short links.",
+      "primary_path": "nodes/Posty5ShortLink/Posty5ShortLink.node.ts"
+    },
+    {
+      "name": "qr-code",
+      "purpose": "CRUD for URL, text, email, WiFi, call, SMS, and geolocation QR codes.",
+      "primary_path": "nodes/Posty5QrCode/Posty5QrCode.node.ts"
+    },
+    {
+      "name": "html-hosting",
+      "purpose": "Create/update from file or GitHub, list/get/delete, cache/forms operations.",
+      "primary_path": "nodes/Posty5HtmlHosting/Posty5HtmlHosting.node.ts"
+    },
+    {
+      "name": "form-submission",
+      "purpose": "Get, adjacent, list, and status-changing operations.",
+      "primary_path": "nodes/Posty5FormSubmission/Posty5FormSubmission.node.ts"
+    },
+    {
+      "name": "social-workspace",
+      "purpose": "Get/list/get-for-new-post workspace operations.",
+      "primary_path": "nodes/Posty5SocialPublisherWorkspace/Posty5SocialPublisherWorkspace.node.ts"
+    },
+    {
+      "name": "social-post",
+      "purpose": "Publish video/image, inspect status/list/default settings.",
+      "primary_path": "nodes/Posty5SocialPublisherPost/Posty5SocialPublisherPost.node.ts"
+    },
+    {
+      "name": "api-utils",
+      "purpose": "HTTP envelope handling, pagination, createdFrom tagging, and signed uploads.",
+      "primary_path": "utils/api.helpers.ts"
+    }
+  ]
+}

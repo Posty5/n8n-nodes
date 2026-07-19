@@ -1,0 +1,6 @@
+{
+  "generated_at": "2026-07-19",
+  "project": "n8n-nodes",
+  "routes": [],
+  "not_applicable": "This project does not host application routes. Public exports/operations are documented in 05_API_SURFACE.md and FEATURE_INDEX.json."
+}

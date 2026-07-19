@@ -1,0 +1,24 @@
+{
+  "generated_at": "2026-07-19",
+  "project_name": "Posty5 n8n Nodes",
+  "scope": "n8n-nodes/ only",
+  "primary_entrypoint": "AI.md",
+  "agent_entrypoints": {
+    "openai_codex": "AGENTS.md",
+    "claude_code": "CLAUDE.md",
+    "generic_ai": "AI.md"
+  },
+  "recommended_reading_order": [
+    "AI.md",
+    "AI_CONTEXT/00_START_HERE.md",
+    "AI_CONTEXT/14_AI_TASK_ROUTING.md",
+    "AI_CONTEXT/13_CHANGE_PLAYBOOK.md",
+    "AI_CONTEXT/FILE_INDEX.json",
+    "AI_CONTEXT/MODULE_INDEX.json",
+    "AI_CONTEXT/ROUTE_INDEX.json"
+  ],
+  "documentation_policy": {
+    "update_with_code_changes": true,
+    "maintenance_guide": "AI_CONTEXT/16_DOCUMENTATION_MAINTENANCE.md"
+  }
+}

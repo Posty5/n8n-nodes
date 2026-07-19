@@ -1,0 +1,21 @@
+{
+  "generated_at": "2026-07-19",
+  "project": "n8n-nodes",
+  "integrations": [
+    {
+      "name": "n8n-workflow",
+      "purpose": "Node/credential interfaces and HTTP helpers",
+      "source": "package.json"
+    },
+    {
+      "name": "Posty5 API",
+      "purpose": "All business operations",
+      "source": "utils/api.helpers.ts"
+    },
+    {
+      "name": "Signed object-storage URLs",
+      "purpose": "Direct binary upload for hosting/social operations",
+      "source": "utils/api.helpers.ts"
+    }
+  ]
+}
