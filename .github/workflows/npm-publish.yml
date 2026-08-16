@@ -33,3 +33,23 @@ jobs:
         run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: 📧 Send publish email notification
+        if: always() # if the publish succeeds or fails
+        uses: dawidd6/action-send-mail@v18
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USER }}
+          password: ${{ secrets.SMTP_PASS }}
+          from: "Posty5 Deploy Bot <${{ secrets.SMTP_USER }}>"
+          to: ${{ secrets.NOTIFY_EMAIL }}
+          subject: |
+            [${{ github.repository }}] 📦 Publish ${{ job.status }} — ${{ github.ref_name }}
+          body: |
+            Repository: ${{ github.repository }}
+            Ref: ${{ github.ref_name }}
+            Status: ${{ job.status }}
+            Commit: ${{ github.sha }}
+            Author: ${{ github.actor }}
+            Run URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
