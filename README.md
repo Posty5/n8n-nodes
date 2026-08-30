@@ -166,9 +166,51 @@ Publish creator-owned videos to connected social media platforms. TikTok publish
 **Operations:**
 
 - Publish Video - Upload and schedule posts
+- Publish Long Video - Videos up to 60 minutes, charged by duration
+- Quote Long Video - Price a video before publishing it
+- Reschedule Post - Move a not-yet-published post, or send it now (free)
 - Get Post Status - Check publishing progress
 - List Posts - View all posts
 - Get Default Settings - Retrieve platform defaults
+
+**Long video (up to 60 minutes):**
+
+Long video is charged by **duration** — 50 credits for every started 5 minutes,
+so a 12-minute video costs 150. The duration is measured server-side from the
+file; there is no duration field to send.
+
+Use **Quote Long Video** first to branch a workflow on cost before committing:
+
+```
+HTTP Request (fetch video) -> Quote Long Video -> IF credits < 500 -> Publish Long Video -> Get Post Status
+```
+
+Platform limits differ, and are checked when the post is created rather than
+mid-upload:
+
+| Platform | Longest accepted video |
+| --- | --- |
+| YouTube | 12 hours |
+| Facebook | 4 hours |
+| Instagram | 15 minutes (Reels) |
+| TikTok | Per-creator, read from the connected account |
+
+A workspace publish goes out to the targets that accept the video and reports
+the rest in `refusedTargets` on the item, so a later node can branch on a
+partial publish. An account publish is refused outright instead, and nothing is
+charged.
+
+Requires the `socialMediaPublisher.longVideoPost` plan feature.
+
+**Uploads resume.** Binary video is sent to the API's resumable endpoint in
+8MiB chunks, so a dropped connection costs one chunk rather than the whole
+transfer. The node falls back to a single signed PUT when the server does not
+offer the resumable service.
+
+> **Note on memory.** n8n's binary helper hands a node the whole file as a
+> Buffer, so a 60-minute video is in memory before the upload starts. Chunking
+> bounds what a dropped connection costs, not what the workflow allocates —
+> prefer the URL source for very large videos.
 
 **Video Sources:**
 

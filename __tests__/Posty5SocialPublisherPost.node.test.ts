@@ -35,7 +35,12 @@ describe('Posty5SocialPublisherPost', () => {
 			expect(operationValues).toContain('getPostStatus');
 			expect(operationValues).toContain('listPosts');
 			expect(operationValues).toContain('getDefaultSettings');
-			expect(operationValues).toHaveLength(7);
+			// Long video added four: two publishes, a quote and a reschedule.
+			expect(operationValues).toContain('publishLongVideo');
+			expect(operationValues).toContain('publishLongVideoToAccount');
+			expect(operationValues).toContain('getLongVideoQuote');
+			expect(operationValues).toContain('reschedulePost');
+			expect(operationValues).toHaveLength(11);
 
 			const publishOp = operations.find((op: any) => op.value === 'publishVideo');
 			expect(publishOp.name).toBe('Publish Video to Workspace');

@@ -6,6 +6,7 @@ import {
 } from 'n8n-workflow';
 import { makeApiRequest, makePaginatedRequest, uploadFile } from '../../utils/api.helpers';
 import { API_ENDPOINTS } from '../../utils/constants';
+import { supportsResumableUpload, uploadResumable } from '../../utils/resumable-upload';
 
 export class Posty5SocialPublisherPost implements INodeType {
 	description: INodeTypeDescription = {
@@ -60,6 +61,34 @@ export class Posty5SocialPublisherPost implements INodeType {
 						action: 'Publish an image to account',
 					},
 					{
+						name: 'Publish Long Video to Workspace',
+						value: 'publishLongVideo',
+						description:
+							'Publish a video of up to 60 minutes via workspace. Charged by duration: 50 credits per started 5 minutes.',
+						action: 'Publish a long video to workspace',
+					},
+					{
+						name: 'Publish Long Video to Account',
+						value: 'publishLongVideoToAccount',
+						description:
+							'Publish a video of up to 60 minutes to a single connected account. Charged by duration: 50 credits per started 5 minutes.',
+						action: 'Publish a long video to account',
+					},
+					{
+						name: 'Quote Long Video',
+						value: 'getLongVideoQuote',
+						description:
+							'Measure a video and return its exact credit cost plus which platforms accept it. Creates nothing and charges nothing.',
+						action: 'Quote a long video',
+					},
+					{
+						name: 'Reschedule Post',
+						value: 'reschedulePost',
+						description:
+							'Move a not-yet-published post to another time, or publish it now. Costs no credits.',
+						action: 'Reschedule a post',
+					},
+					{
 						name: 'Get Post Status',
 						value: 'getPostStatus',
 						description: 'Get the status of a publishing post',
@@ -89,7 +118,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['publishVideo'],
+						operation: ['publishVideo', 'publishLongVideo', 'publishLongVideoToAccount'],
 					},
 				},
 				default: '',
@@ -102,7 +131,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['publishVideoToAccount'],
+						operation: ['publishVideoToAccount', 'publishLongVideoToAccount'],
 					},
 				},
 				default: '',
@@ -114,7 +143,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				type: 'options',
 				displayOptions: {
 					show: {
-						operation: ['publishVideo'],
+						operation: ['publishVideo', 'publishLongVideo', 'publishLongVideoToAccount'],
 					},
 				},
 				options: [
@@ -131,7 +160,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['publishVideo'],
+						operation: ['publishVideo', 'publishLongVideo', 'publishLongVideoToAccount'],
 						videoSource: ['binary'],
 					},
 				},
@@ -145,7 +174,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['publishVideo'],
+						operation: ['publishVideo', 'publishLongVideo', 'publishLongVideoToAccount'],
 						videoSource: ['url'],
 					},
 				},
@@ -159,7 +188,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				type: 'options',
 				displayOptions: {
 					show: {
-						operation: ['publishVideo'],
+						operation: ['publishVideo', 'publishLongVideo', 'publishLongVideoToAccount'],
 					},
 				},
 				options: [
@@ -176,7 +205,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				type: 'string',
 				displayOptions: {
 					show: {
-						operation: ['publishVideo'],
+						operation: ['publishVideo', 'publishLongVideo', 'publishLongVideoToAccount'],
 						thumbnailSource: ['binary'],
 					},
 				},
@@ -189,7 +218,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				type: 'string',
 				displayOptions: {
 					show: {
-						operation: ['publishVideo'],
+						operation: ['publishVideo', 'publishLongVideo', 'publishLongVideoToAccount'],
 						thumbnailSource: ['url'],
 					},
 				},
@@ -202,7 +231,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				type: 'options',
 				displayOptions: {
 					show: {
-						operation: ['publishVideo'],
+						operation: ['publishVideo', 'publishLongVideo', 'publishLongVideoToAccount'],
 					},
 				},
 				options: [
@@ -218,7 +247,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				type: 'dateTime',
 				displayOptions: {
 					show: {
-						operation: ['publishVideo'],
+						operation: ['publishVideo', 'publishLongVideo', 'publishLongVideoToAccount'],
 						scheduledPublishTime: ['later'],
 					},
 				},
@@ -235,7 +264,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				default: '',
 				displayOptions: {
 					show: {
-						operation: ['publishVideo'],
+						operation: ['publishVideo', 'publishLongVideo', 'publishLongVideoToAccount'],
 					},
 				},
 			},
@@ -247,7 +276,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				default: {},
 				displayOptions: {
 					show: {
-						operation: ['publishVideo'],
+						operation: ['publishVideo', 'publishLongVideo', 'publishLongVideoToAccount'],
 					},
 				},
 				options: [
@@ -291,7 +320,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				default: '',
 				displayOptions: {
 					show: {
-						operation: ['publishVideo'],
+						operation: ['publishVideo', 'publishLongVideo', 'publishLongVideoToAccount'],
 					},
 				},
 			},
@@ -303,7 +332,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				default: {},
 				displayOptions: {
 					show: {
-						operation: ['publishVideo'],
+						operation: ['publishVideo', 'publishLongVideo', 'publishLongVideoToAccount'],
 					},
 				},
 				options: [
@@ -359,7 +388,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				default: '',
 				displayOptions: {
 					show: {
-						operation: ['publishVideo'],
+						operation: ['publishVideo', 'publishLongVideo', 'publishLongVideoToAccount'],
 					},
 				},
 			},
@@ -371,7 +400,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				default: {},
 				displayOptions: {
 					show: {
-						operation: ['publishVideo'],
+						operation: ['publishVideo', 'publishLongVideo', 'publishLongVideoToAccount'],
 					},
 				},
 				options: [
@@ -401,7 +430,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				default: '',
 				displayOptions: {
 					show: {
-						operation: ['publishVideo'],
+						operation: ['publishVideo', 'publishLongVideo', 'publishLongVideoToAccount'],
 					},
 				},
 			},
@@ -413,7 +442,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				default: {},
 				displayOptions: {
 					show: {
-						operation: ['publishVideo'],
+						operation: ['publishVideo', 'publishLongVideo', 'publishLongVideoToAccount'],
 					},
 				},
 				options: [
@@ -649,6 +678,89 @@ export class Posty5SocialPublisherPost implements INodeType {
 				default: 50,
 				description: 'Max number of results to return',
 			},
+			// ─── Long video: quote + reschedule ──────────────────────────────
+			{
+				displayName: 'Video URL',
+				name: 'quoteVideoUrl',
+				type: 'string',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['getLongVideoQuote'],
+					},
+				},
+				default: '',
+				description:
+					'URL of an uploaded or externally hosted video to measure and price. The duration is read server-side; nothing is created or charged.',
+			},
+			{
+				displayName: 'Post ID',
+				name: 'reschedulePostId',
+				type: 'string',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['reschedulePost'],
+					},
+				},
+				default: '',
+				description:
+					'The post to move. Only posts still pending with a future publish time are eligible.',
+			},
+			{
+				displayName: 'New Publish Time',
+				name: 'rescheduleWhen',
+				type: 'options',
+				displayOptions: {
+					show: {
+						operation: ['reschedulePost'],
+					},
+				},
+				options: [
+					{ name: 'Now', value: 'now' },
+					{ name: 'Schedule for Later', value: 'later' },
+				],
+				default: 'later',
+				description: 'Publish the post immediately, or move it to a new date',
+			},
+			{
+				displayName: 'New Schedule Date',
+				name: 'rescheduleDate',
+				type: 'dateTime',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['reschedulePost'],
+						rescheduleWhen: ['later'],
+					},
+				},
+				default: '',
+				description: 'The new date and time to publish the post',
+			},
+			{
+				displayName: 'New Caption',
+				name: 'rescheduleCaption',
+				type: 'string',
+				displayOptions: {
+					show: {
+						operation: ['reschedulePost'],
+					},
+				},
+				default: '',
+				description: 'Optionally replace the caption at the same time. Leave empty to keep it.',
+			},
+			{
+				displayName:
+					'Long video is capped at 60 minutes and charged by duration — 50 credits for every started 5 minutes. Platform limits differ: YouTube and Facebook take an hour, Instagram Reels stop at 15 minutes, and TikTok depends on the connected creator. Targets that cannot take the video are reported in "refusedTargets" and the post still publishes to the rest.',
+				name: 'longVideoNotice',
+				type: 'notice',
+				displayOptions: {
+					show: {
+						operation: ['publishLongVideo', 'publishLongVideoToAccount'],
+					},
+				},
+				default: '',
+			},
 		],
 	};
 
@@ -865,6 +977,207 @@ export class Posty5SocialPublisherPost implements INodeType {
 						method: 'POST',
 						endpoint,
 						body: imagePostBody,
+					});
+				} else if (
+					operation === 'publishLongVideo' ||
+					operation === 'publishLongVideoToAccount'
+				) {
+					// ─── Long video (up to 60 minutes) ───────────────────────
+					// The payload is the short-video payload. What differs is
+					// duration, which the server measures from the file — there
+					// is no duration field here, and one would be ignored,
+					// because the price is derived from it.
+					const isWorkspace = operation === 'publishLongVideo';
+					const workspaceId = isWorkspace
+						? (this.getNodeParameter('workspaceId', i) as string)
+						: undefined;
+					const accountId = !isWorkspace
+						? (this.getNodeParameter('accountId', i) as string)
+						: undefined;
+
+					const videoSource = this.getNodeParameter('videoSource', i) as string;
+					const thumbnailSource = this.getNodeParameter('thumbnailSource', i, 'none') as string;
+					const scheduledPublishTime = this.getNodeParameter('scheduledPublishTime', i) as string;
+
+					let videoURL: string;
+					let thumbURL: string | undefined;
+					let source: string;
+					let uploadedPostId: string | undefined;
+
+					if (videoSource === 'binary') {
+						const videoBinaryProperty = this.getNodeParameter('videoBinaryProperty', i) as string;
+						const videoBuffer = await this.helpers.getBinaryDataBuffer(i, videoBinaryProperty);
+
+						// Declaring the post type here is what buys the early
+						// refusal: the server checks plan gating and whether the
+						// balance covers even the shortest long video BEFORE an
+						// hour of footage is transferred.
+						const uploadUrlsResponse: any = await makeApiRequest.call(this, apiKey, {
+							method: 'POST',
+							endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/generate-upload-urls`,
+							body: {
+								videoFileType: 'video/mp4',
+								thumbFileType: thumbnailSource === 'binary' ? 'image/jpeg' : undefined,
+								postType: 'longVideo',
+							},
+						});
+
+						// Prefer the resumable transfer for a long video — this is
+						// the case a single PUT handles worst, since a dropped
+						// connection at 90% of an hour of footage otherwise starts
+						// again from zero. Servers without the resumable service
+						// omit the tus fields and the signed PUT still works.
+						if (supportsResumableUpload(uploadUrlsResponse.video)) {
+							await uploadResumable.call(this, uploadUrlsResponse.video, videoBuffer, {
+								contentType: 'video/mp4',
+								fileName: items[i].binary?.[videoBinaryProperty]?.fileName || 'video.mp4',
+							});
+						} else {
+							await uploadFile.call(this, uploadUrlsResponse.video.uploadFileURL, videoBuffer);
+						}
+						videoURL = uploadUrlsResponse.video.fileURL;
+						source = 'video-file';
+						uploadedPostId = uploadUrlsResponse.postId;
+
+						if (thumbnailSource === 'binary') {
+							const thumbnailBinaryProperty = this.getNodeParameter(
+								'thumbnailBinaryProperty',
+								i,
+							) as string;
+							if (items[i].binary?.[thumbnailBinaryProperty]) {
+								const thumbnailBuffer = await this.helpers.getBinaryDataBuffer(
+									i,
+									thumbnailBinaryProperty,
+								);
+								await uploadFile.call(
+									this,
+									uploadUrlsResponse.thumb.uploadFileURL,
+									thumbnailBuffer,
+								);
+								thumbURL = uploadUrlsResponse.thumb.fileURL;
+							}
+						} else if (thumbnailSource === 'url') {
+							thumbURL = this.getNodeParameter('thumbnailUrl', i) as string;
+						}
+					} else {
+						videoURL = this.getNodeParameter('videoUrl', i) as string;
+						source = 'video-url';
+						if (thumbnailSource === 'url') {
+							thumbURL = this.getNodeParameter('thumbnailUrl', i) as string;
+						}
+					}
+
+					const longVideoBody: any = {
+						workspaceId,
+						accountId,
+						videoURL,
+						source,
+					};
+
+					if (thumbURL) {
+						longVideoBody.thumbURL = thumbURL;
+					}
+
+					if (scheduledPublishTime === 'later') {
+						const scheduleDate = this.getNodeParameter('scheduleDate', i) as string;
+						longVideoBody.schedule = {
+							type: 'schedule',
+							scheduledAt: new Date(scheduleDate).toISOString(),
+						};
+					} else {
+						longVideoBody.schedule = { type: 'now' };
+					}
+
+					const lvYoutube = this.getNodeParameter('youtubeSettings', i, {}) as any;
+					if (Object.keys(lvYoutube).length > 0) {
+						longVideoBody.youtube = { ...lvYoutube };
+						if (lvYoutube.tags && typeof lvYoutube.tags === 'string') {
+							longVideoBody.youtube.tags = lvYoutube.tags
+								.split(',')
+								.map((t: string) => t.trim());
+						}
+					}
+
+					const lvTiktok = this.getNodeParameter('tiktokSettings', i, {}) as any;
+					if (Object.keys(lvTiktok).length > 0) {
+						longVideoBody.tiktok = lvTiktok;
+					}
+
+					const lvFacebook = this.getNodeParameter('facebookSettings', i, {}) as any;
+					if (Object.keys(lvFacebook).length > 0) {
+						longVideoBody.facebook = lvFacebook;
+					}
+
+					const lvInstagram = this.getNodeParameter('instagramSettings', i, {}) as any;
+					if (Object.keys(lvInstagram).length > 0) {
+						longVideoBody.instagram = lvInstagram;
+					}
+
+					const lvComment = this.getNodeParameter('comment', i, {}) as any;
+					if (
+						lvComment &&
+						typeof lvComment.text === 'string' &&
+						lvComment.text.trim().length > 0
+					) {
+						longVideoBody.comment = {
+							text: lvComment.text,
+							postToFacebook: lvComment.postToFacebook ?? true,
+							postToInstagram: lvComment.postToInstagram ?? true,
+							postToYoutube: lvComment.postToYoutube ?? true,
+							postToTiktok: false,
+						};
+					}
+
+					const target = isWorkspace ? 'workspace' : 'account';
+					const bySegment = source === 'video-file' ? 'by-file' : 'by-url';
+					const longVideoEndpoint =
+						`${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/long-video/${target}/${bySegment}` +
+						(uploadedPostId ? `/${uploadedPostId}` : '');
+
+					// The response carries the measured duration, the credits
+					// charged and any target dropped for exceeding its own
+					// limit — all of it lands in the item so a later node can
+					// branch on cost or on a partial publish.
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'POST',
+						endpoint: longVideoEndpoint,
+						body: longVideoBody,
+					});
+				} else if (operation === 'getLongVideoQuote') {
+					// Measures and prices a video without creating or charging
+					// anything, so a workflow can branch on cost before it
+					// commits to publishing.
+					const quoteVideoUrl = this.getNodeParameter('quoteVideoUrl', i) as string;
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'POST',
+						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/long-video/quote`,
+						body: { videoURL: quoteVideoUrl },
+					});
+				} else if (operation === 'reschedulePost') {
+					const reschedulePostId = this.getNodeParameter('reschedulePostId', i) as string;
+					const rescheduleWhen = this.getNodeParameter('rescheduleWhen', i, 'later') as string;
+					const rescheduleCaption = this.getNodeParameter('rescheduleCaption', i, '') as string;
+
+					const rescheduleBody: any = {
+						schedule:
+							rescheduleWhen === 'later'
+								? {
+										type: 'schedule',
+										scheduledAt: new Date(
+											this.getNodeParameter('rescheduleDate', i) as string,
+										).toISOString(),
+									}
+								: { type: 'now' },
+					};
+
+					if (rescheduleCaption.trim().length > 0) {
+						rescheduleBody.caption = rescheduleCaption;
+					}
+
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'PUT',
+						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${reschedulePostId}`,
+						body: rescheduleBody,
 					});
 				} else if (operation === 'getPostStatus') {
 					const postId = this.getNodeParameter('postId', i) as string;
