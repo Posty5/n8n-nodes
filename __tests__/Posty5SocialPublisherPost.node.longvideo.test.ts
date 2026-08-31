@@ -338,6 +338,23 @@ describe('Posty5SocialPublisherPost — long video', () => {
 		});
 	});
 
+	describe('deletePost', () => {
+		it('DELETEs the post', async () => {
+			const mock = createMockExecuteFunctions(
+				{ operation: 'deletePost', deletePostId: 'post_1' },
+				[{ json: {} }],
+				undefined,
+				{ result: { _id: 'post_1' } },
+			);
+
+			await node.execute.call(mock);
+
+			const [req] = requests(mock);
+			expect(req.method).toBe('DELETE');
+			expect(req.url).toContain('/api/social-publisher-post/post_1');
+		});
+	});
+
 	describe('continueOnFail', () => {
 		it('fails one oversized item without stopping the batch', async () => {
 			const mock = createMockExecuteFunctions(
