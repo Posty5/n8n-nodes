@@ -89,6 +89,13 @@ export class Posty5SocialPublisherPost implements INodeType {
 						action: 'Reschedule a post',
 					},
 					{
+						name: 'Delete Post',
+						value: 'deletePost',
+						description:
+							'Delete a post that has not published yet and release its uploaded media. Free — nothing was charged for a post that never went out.',
+						action: 'Delete a post',
+					},
+					{
 						name: 'Get Post Status',
 						value: 'getPostStatus',
 						description: 'Get the status of a publishing post',
@@ -678,6 +685,21 @@ export class Posty5SocialPublisherPost implements INodeType {
 				default: 50,
 				description: 'Max number of results to return',
 			},
+			{
+				displayName: 'Post ID',
+				name: 'deletePostId',
+				type: 'string',
+				required: true,
+				displayOptions: {
+					show: {
+						operation: ['deletePost'],
+					},
+				},
+				default: '',
+				description:
+					'The post to delete. Only posts that have not published yet are eligible; a published post must be taken down with Remove instead.',
+			},
+
 			// ─── Long video: quote + reschedule ──────────────────────────────
 			{
 				displayName: 'Video URL',
@@ -1178,6 +1200,14 @@ export class Posty5SocialPublisherPost implements INodeType {
 						method: 'PUT',
 						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${reschedulePostId}`,
 						body: rescheduleBody,
+					});
+				} else if (operation === 'deletePost') {
+					// Free, and irreversible for the caller: the post is gone and its
+					// uploaded media is released in the same request.
+					const deletePostId = this.getNodeParameter('deletePostId', i) as string;
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'DELETE',
+						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${deletePostId}`,
 					});
 				} else if (operation === 'getPostStatus') {
 					const postId = this.getNodeParameter('postId', i) as string;

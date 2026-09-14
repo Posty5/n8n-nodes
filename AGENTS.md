@@ -1,5 +1,11 @@
 # Agent Instructions
 
+> **Read [`../AI_RULES.md`](../AI_RULES.md) first.** It is the workspace rule
+> file (i18n key registration, interfaces in their own file, helpers instead of
+> on-the-fly functions, config files, SASS variables, naming, Angular and
+> module structure, service rules and class member order) and it outranks
+> everything in this project when the two disagree.
+
 Read in order:
 
 1. `AI.md`

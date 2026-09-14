@@ -40,7 +40,8 @@ describe('Posty5SocialPublisherPost', () => {
 			expect(operationValues).toContain('publishLongVideoToAccount');
 			expect(operationValues).toContain('getLongVideoQuote');
 			expect(operationValues).toContain('reschedulePost');
-			expect(operationValues).toHaveLength(11);
+			expect(operationValues).toContain('deletePost');
+			expect(operationValues).toHaveLength(12);
 
 			const publishOp = operations.find((op: any) => op.value === 'publishVideo');
 			expect(publishOp.name).toBe('Publish Video to Workspace');
