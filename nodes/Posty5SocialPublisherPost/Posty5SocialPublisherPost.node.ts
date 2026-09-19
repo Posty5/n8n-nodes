@@ -7,6 +7,7 @@ import {
 import { makeApiRequest, makePaginatedRequest, uploadFile } from '../../utils/api.helpers';
 import { API_ENDPOINTS } from '../../utils/constants';
 import { supportsResumableUpload, uploadResumable } from '../../utils/resumable-upload';
+import { buildCommentsPayload } from '../../utils/post-comments';
 
 export class Posty5SocialPublisherPost implements INodeType {
 	description: INodeTypeDescription = {
@@ -17,7 +18,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 		version: 1,
 		subtitle: '={{$parameter["operation"]}}',
 		description:
-			'Publish videos to social media platforms. Supports an optional post-publish auto-comment (Pro plan, +1 credit) for YouTube, Facebook and Instagram — TikTok is not supported.',
+			'Publish videos to social media platforms. Supports up to five post-publish comments (25 credits each) for YouTube, Facebook and Instagram — TikTok is not supported.',
 		defaults: {
 			name: 'Posty5 Social Publisher Post',
 		},
@@ -51,13 +52,13 @@ export class Posty5SocialPublisherPost implements INodeType {
 					{
 						name: 'Publish Image to Workspace',
 						value: 'publishImage',
-						description: 'Publish an image to social media platforms via workspace (5 credits, +1 if comment is set)',
+						description: 'Publish an image to social media platforms via workspace (50 credits, plus 25 per comment)',
 						action: 'Publish an image to workspace',
 					},
 					{
 						name: 'Publish Image to Account',
 						value: 'publishImageToAccount',
-						description: 'Publish an image to a single connected account (5 credits, +1 if comment is set)',
+						description: 'Publish an image to a single connected account (50 credits, plus 25 per comment)',
 						action: 'Publish an image to account',
 					},
 					{
@@ -470,7 +471,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				],
 			},
 
-			// Auto-Comment (post-publish comment, Pro plan, +1 credit)
+			// Post-publish comments — 25 credits each
 			{
 				displayName: 'Comment',
 				name: 'comment',
@@ -483,7 +484,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 					},
 				},
 				description:
-					'Optional post-publish comment (Pro plan, +1 credit). When Text is set, a comment is added under each enabled platform once the video/image is published.',
+					'DEPRECATED — use Comments instead. Kept so existing workflows keep running; it is mapped into the first entry of Comments when that is empty, and the two are never sent together.',
 				options: [
 					{
 						displayName: 'Text',
@@ -492,7 +493,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 						typeOptions: { rows: 3 },
 						default: '',
 						description:
-							'Comment text (1-2200 characters). Leave empty to skip auto-commenting.',
+							'Comment text (1-2200 characters). Leave empty to skip commenting.',
 					},
 					{
 						displayName: 'Post to Facebook',
@@ -522,6 +523,80 @@ export class Posty5SocialPublisherPost implements INodeType {
 						default: '',
 						description:
 							'TikTok comments are not supported by the platform. TikTok will always report "notSupported" on the comment status response.',
+					},
+				],
+			},
+
+			// Up to five comments, in the order they post. A fixedCollection
+			// rather than a plain collection because n8n's `multipleValues` is
+			// what gives an "Add Comment" button that produces a LIST.
+			{
+				displayName: 'Comments',
+				name: 'comments',
+				type: 'fixedCollection',
+				placeholder: 'Add Comment',
+				default: {},
+				typeOptions: { multipleValues: true, maxValue: 5, sortable: true },
+				displayOptions: {
+					show: {
+						operation: ['publishVideo', 'publishVideoToAccount', 'publishImage', 'publishImageToAccount'],
+					},
+				},
+				description:
+					'Up to five comments posted under each enabled platform once the post is published. 25 credits each, charged per comment that actually posts. TikTok is never one of them.',
+				options: [
+					{
+						displayName: 'Comment',
+						name: 'comment',
+						values: [
+							{
+								displayName: 'Text',
+								name: 'text',
+								type: 'string',
+								typeOptions: { rows: 3 },
+								default: '',
+								required: true,
+								description: 'Comment text (1-2200 characters)',
+							},
+							{
+								displayName: 'Delay (Minutes)',
+								name: 'delayMinutes',
+								type: 'number',
+								default: 0,
+								typeOptions: { minValue: 0, maxValue: 1440 },
+								description:
+									'How long to wait after the post is published. 0 posts it straight away; the maximum is 1440 (24 hours).',
+							},
+							{
+								displayName: 'Image URL',
+								name: 'imageUrl',
+								type: 'string',
+								default: '',
+								description:
+									'A publicly reachable image to attach. Facebook only — Instagram and YouTube comments are text-only, so an image bound for either is dropped with a reason rather than failing the comment.',
+							},
+							{
+								displayName: 'Post to Facebook',
+								name: 'postToFacebook',
+								type: 'boolean',
+								default: true,
+								description: 'Whether to add this comment under the Facebook post',
+							},
+							{
+								displayName: 'Post to Instagram',
+								name: 'postToInstagram',
+								type: 'boolean',
+								default: true,
+								description: 'Whether to add this comment under the Instagram post',
+							},
+							{
+								displayName: 'Post to YouTube',
+								name: 'postToYoutube',
+								type: 'boolean',
+								default: true,
+								description: 'Whether to add this comment under the YouTube post',
+							},
+						],
 					},
 				],
 			},
@@ -919,17 +994,15 @@ export class Posty5SocialPublisherPost implements INodeType {
 						postBody.instagramConfig = instagramSettings;
 					}
 
-					// Optional post-publish auto-comment (Pro plan, +1 credit).
-					// TikTok comments are not supported and will report `notSupported` in the status response.
-					const commentSettings = this.getNodeParameter('comment', i, {}) as any;
-					if (commentSettings && typeof commentSettings.text === 'string' && commentSettings.text.trim().length > 0) {
-						postBody.comment = {
-							text: commentSettings.text,
-							postToFacebook: commentSettings.postToFacebook ?? true,
-							postToInstagram: commentSettings.postToInstagram ?? true,
-							postToYoutube: commentSettings.postToYoutube ?? true,
-							postToTiktok: false,
-						};
+					// Post-publish comments — 25 credits each, and never both shapes:
+					// `comments` wins, the deprecated singular is used only when
+					// the list is empty. TikTok always reports `notSupported`.
+					const postComments = buildCommentsPayload(
+						this.getNodeParameter('comments', i, {}) as any,
+						this.getNodeParameter('comment', i, {}) as any,
+					);
+					if (postComments.length) {
+						postBody.comments = postComments;
 					}
 
 					// Create post
@@ -979,16 +1052,15 @@ export class Posty5SocialPublisherPost implements INodeType {
 						aiEnhanced,
 					};
 
-					// Optional auto-comment — reuse the existing Comment collection.
-					const commentSettings = this.getNodeParameter('comment', i, {}) as any;
-					if (commentSettings && typeof commentSettings.text === 'string' && commentSettings.text.trim().length > 0) {
-						imagePostBody.comment = {
-							text: commentSettings.text,
-							postToFacebook: commentSettings.postToFacebook ?? true,
-							postToInstagram: commentSettings.postToInstagram ?? true,
-							postToYoutube: commentSettings.postToYoutube ?? true,
-							postToTiktok: false,
-						};
+					// The same two collections as the video flow, through the same
+					// helper — two copies of this mapping is where one of them
+					// keeps sending the deprecated singular after the other stops.
+					const imageComments = buildCommentsPayload(
+						this.getNodeParameter('comments', i, {}) as any,
+						this.getNodeParameter('comment', i, {}) as any,
+					);
+					if (imageComments.length) {
+						imagePostBody.comments = imageComments;
 					}
 
 					const endpoint = isWorkspace

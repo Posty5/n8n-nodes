@@ -227,6 +227,24 @@ TikTok Direct Post is not exposed as a public repost workflow in these n8n nodes
 - **Facebook:** Title, description
 - **Instagram:** Description, share to feed
 
+**Post-publish comments:**
+
+Up to **five** comments per post, through the **Comments** collection. Each one
+carries its own text, its own delay (0-1440 minutes after the post goes live),
+its own optional image and its own per-platform switches.
+
+- **25 credits each**, charged per comment that actually posts. A comment aimed
+  at no enabled platform is dropped before it is charged.
+- **TikTok is never one of them.** TikTok exposes no public comment-posting
+  endpoint, so a comment aimed at it reports `notSupported` rather than failing.
+- **An image is Facebook only.** Instagram's and YouTube's comment endpoints are
+  text-only, so an image bound for either is dropped with a reason rather than
+  failing the comment.
+
+The older single **Comment** collection still works and is marked deprecated. It
+is mapped into the first entry of **Comments** when that is empty, and the two
+are never sent together — the API refuses a request carrying both.
+
 ## 💡 Workflow Examples
 
 ### Example 1: URL Shortener → QR Code
