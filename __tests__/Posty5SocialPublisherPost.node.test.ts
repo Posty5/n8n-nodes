@@ -59,11 +59,14 @@ describe('Posty5SocialPublisherPost', () => {
 	describe('Publish Video from Binary', () => {
 		it('should publish video from binary to single platform', async () => {
 			const mockUploadResponse = {
+				postId: 'post-123',
 				video: {
 					uploadFileURL: 'https://storage.example.com/video-123?signature=abc',
+					fileURL: 'https://cdn.example.com/2026-9-25/post-123/video.mp4',
 				},
 				thumb: {
 					uploadFileURL: 'https://storage.example.com/thumb-123?signature=def',
+					fileURL: 'https://cdn.example.com/2026-9-25/post-123/thumb.jpg',
 				},
 			};
 
@@ -123,11 +126,11 @@ describe('Posty5SocialPublisherPost', () => {
 				expect.objectContaining({
 					method: 'POST',
 					url: expect.stringMatching(
-						/\/api\/social-publisher-post\/short-video\/workspace\/by-file$/,
+						/\/api\/social-publisher-post\/short-video\/workspace\/by-file\/post-123$/,
 					),
 					body: expect.objectContaining({
 						workspaceId: 'workspace123',
-						videoURL: 'https://storage.example.com/video-123',
+						videoURL: 'https://cdn.example.com/2026-9-25/post-123/video.mp4',
 						source: 'video-upload',
 						scheduledPublishTime: 'now',
 						createdFrom: 'n8n',
@@ -141,11 +144,14 @@ describe('Posty5SocialPublisherPost', () => {
 
 		it('should publish video from binary with thumbnail', async () => {
 			const mockUploadResponse = {
+				postId: 'post-456',
 				video: {
 					uploadFileURL: 'https://storage.example.com/video-456?signature=abc',
+					fileURL: 'https://cdn.example.com/2026-9-25/post-456/video.mp4',
 				},
 				thumb: {
 					uploadFileURL: 'https://storage.example.com/thumb-456?signature=def',
+					fileURL: 'https://cdn.example.com/2026-9-25/post-456/thumb.jpg',
 				},
 			};
 
@@ -204,10 +210,10 @@ describe('Posty5SocialPublisherPost', () => {
 				expect.objectContaining({
 					method: 'POST',
 					url: expect.stringMatching(
-						/\/api\/social-publisher-post\/short-video\/workspace\/by-file$/,
+						/\/api\/social-publisher-post\/short-video\/workspace\/by-file\/post-456$/,
 					),
 					body: expect.objectContaining({
-						thumbURL: 'https://storage.example.com/thumb-456',
+						thumbURL: 'https://cdn.example.com/2026-9-25/post-456/thumb.jpg',
 						createdFrom: 'n8n',
 					}),
 				}),
@@ -218,11 +224,14 @@ describe('Posty5SocialPublisherPost', () => {
 
 		it('should publish video from binary to multiple platforms', async () => {
 			const mockUploadResponse = {
+				postId: 'post-789',
 				video: {
 					uploadFileURL: 'https://storage.example.com/video-789?signature=abc',
+					fileURL: 'https://cdn.example.com/2026-9-25/post-789/video.mp4',
 				},
 				thumb: {
 					uploadFileURL: 'https://storage.example.com/thumb-789?signature=def',
+					fileURL: 'https://cdn.example.com/2026-9-25/post-789/thumb.jpg',
 				},
 			};
 
@@ -262,7 +271,7 @@ describe('Posty5SocialPublisherPost', () => {
 				expect.objectContaining({
 					method: 'POST',
 					url: expect.stringMatching(
-						/\/api\/social-publisher-post\/short-video\/workspace\/by-file$/,
+						/\/api\/social-publisher-post\/short-video\/workspace\/by-file\/post-789$/,
 					),
 					body: expect.objectContaining({
 						createdFrom: 'n8n',
@@ -275,11 +284,14 @@ describe('Posty5SocialPublisherPost', () => {
 
 		it('should publish video from binary with scheduled time', async () => {
 			const mockUploadResponse = {
+				postId: 'post-scheduled',
 				video: {
 					uploadFileURL: 'https://storage.example.com/video-scheduled?signature=abc',
+					fileURL: 'https://cdn.example.com/2026-9-25/post-scheduled/video.mp4',
 				},
 				thumb: {
 					uploadFileURL: 'https://storage.example.com/thumb-scheduled?signature=def',
+					fileURL: 'https://cdn.example.com/2026-9-25/post-scheduled/thumb.jpg',
 				},
 			};
 
@@ -321,7 +333,7 @@ describe('Posty5SocialPublisherPost', () => {
 				expect.objectContaining({
 					method: 'POST',
 					url: expect.stringMatching(
-						/\/api\/social-publisher-post\/short-video\/workspace\/by-file$/,
+						/\/api\/social-publisher-post\/short-video\/workspace\/by-file\/post-scheduled$/,
 					),
 					body: expect.objectContaining({
 						scheduledPublishTime: expect.stringMatching(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/),
@@ -331,6 +343,104 @@ describe('Posty5SocialPublisherPost', () => {
 			);
 
 			expect(result[0][0].json).toEqual(mockPostResponse);
+		});
+	});
+
+	describe('Publish Image', () => {
+		// The server deletes an uploaded image's folder only when the folder's
+		// post id is the post's own, so the id `generate-upload-urls` reserved
+		// has to reach the create route.
+		const bucketFileURL = 'https://cdn.example.com/2026-9-25/post_img/thumb.jpg';
+
+		const createRequest = (mock: any) => (mock.helpers.httpRequest as jest.Mock).mock.calls[0][0];
+
+		it('creates a workspace image post under the reserved upload id', async () => {
+			const mock = createMockExecuteFunctions(
+				{
+					operation: 'publishImage',
+					imageWorkspaceId: 'workspace123',
+					imageSource: 'image-file',
+					imageBucketKey: bucketFileURL,
+					imageUploadPostId: ' post_img ',
+					imageCaption: 'Launch day',
+				},
+				[{ json: {} }],
+				{ apiKey: TEST_CONFIG.apiKey },
+				{ _id: 'post_img' },
+			);
+
+			await postNode.execute.call(mock);
+
+			const request = createRequest(mock);
+			expect(request.url).toMatch(/\/api\/social-publisher-post\/image\/workspace\/post_img$/);
+			expect(request.body.image).toEqual({ source: 'image-file', bucketKey: bucketFileURL });
+		});
+
+		it('creates an account image post under the reserved upload id', async () => {
+			const mock = createMockExecuteFunctions(
+				{
+					operation: 'publishImageToAccount',
+					imageAccountId: 'account123',
+					imageSource: 'image-file',
+					imageBucketKey: bucketFileURL,
+					imageUploadPostId: 'post_img',
+					imageCaption: 'Launch day',
+				},
+				[{ json: {} }],
+				{ apiKey: TEST_CONFIG.apiKey },
+				{ _id: 'post_img' },
+			);
+
+			await postNode.execute.call(mock);
+
+			expect(createRequest(mock).url).toMatch(
+				/\/api\/social-publisher-post\/image\/account\/post_img$/,
+			);
+		});
+
+		it('still creates the post when no upload id is given, under a fresh id', async () => {
+			const mock = createMockExecuteFunctions(
+				{
+					operation: 'publishImage',
+					imageWorkspaceId: 'workspace123',
+					imageSource: 'image-file',
+					imageBucketKey: bucketFileURL,
+					imageCaption: 'Launch day',
+				},
+				[{ json: {} }],
+				{ apiKey: TEST_CONFIG.apiKey },
+				{ _id: 'fresh' },
+			);
+
+			await postNode.execute.call(mock);
+
+			expect(createRequest(mock).url).toMatch(/\/api\/social-publisher-post\/image\/workspace$/);
+		});
+
+		it('never sends an id for an external image URL', async () => {
+			const mock = createMockExecuteFunctions(
+				{
+					operation: 'publishImage',
+					imageWorkspaceId: 'workspace123',
+					imageSource: 'image-url',
+					imageExternalUrl: 'https://example.com/launch.jpg',
+					// Left over from switching the source; must not be sent.
+					imageUploadPostId: 'post_img',
+					imageCaption: 'Launch day',
+				},
+				[{ json: {} }],
+				{ apiKey: TEST_CONFIG.apiKey },
+				{ _id: 'fresh' },
+			);
+
+			await postNode.execute.call(mock);
+
+			const request = createRequest(mock);
+			expect(request.url).toMatch(/\/api\/social-publisher-post\/image\/workspace$/);
+			expect(request.body.image).toEqual({
+				source: 'image-url',
+				externalUrl: 'https://example.com/launch.jpg',
+			});
 		});
 	});
 

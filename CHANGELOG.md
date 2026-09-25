@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **A short video uploaded from binary data was never deleted from storage.**
+  The API now deletes a post's media folder only when the folder belongs to that
+  post, and **Publish Video** created the post under a fresh ID instead of the one
+  `generate-upload-urls` reserved for the upload. It is now created under the
+  reserved ID, the same way **Publish Long Video** already did.
+- The same operations stored the signed upload URL with its query stripped as the
+  video and thumbnail URL. That host is the storage API, not the public CDN, so the
+  cleanup could not recognise the files as Posty5's even with a matching ID. They
+  now store the public `fileURL`, like every other client.
+
+### Added
+
+- **Upload Post ID** on **Publish Image** and **Publish Image to Account** when the
+  source is **Uploaded Bucket File**. The image is uploaded outside the node, so
+  the node cannot reserve an ID for it. Pass the `postId` returned with the
+  bucket file URL and the post owns its image. Leave it empty and the post is still
+  created, but the uploaded image is never deleted from storage.
+
 ## 4.3.0 - 2026-09-19
 
 ### Added
