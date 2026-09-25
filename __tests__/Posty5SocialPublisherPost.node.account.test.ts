@@ -12,11 +12,14 @@ describe('Posty5SocialPublisherPost - Account', () => {
 	describe('Publish Video to Account', () => {
 		it('should publish video from binary to account', async () => {
 			const mockUploadResponse = {
+				postId: 'post-acc-123',
 				video: {
 					uploadFileURL: 'https://storage.example.com/video-acc-123?signature=abc',
+					fileURL: 'https://cdn.example.com/2026-9-25/post-acc-123/video.mp4',
 				},
 				thumb: {
 					uploadFileURL: 'https://storage.example.com/thumb-acc-123?signature=def',
+					fileURL: 'https://cdn.example.com/2026-9-25/post-acc-123/thumb.jpg',
 				},
 			};
 
@@ -67,11 +70,11 @@ describe('Posty5SocialPublisherPost - Account', () => {
 				expect.objectContaining({
 					method: 'POST',
 					url: expect.stringMatching(
-						/\/api\/social-publisher-post\/short-video\/account\/by-file$/,
+						/\/api\/social-publisher-post\/short-video\/account\/by-file\/post-acc-123$/,
 					),
 					body: expect.objectContaining({
 						accountId: 'account123',
-						videoURL: 'https://storage.example.com/video-acc-123',
+						videoURL: 'https://cdn.example.com/2026-9-25/post-acc-123/video.mp4',
 						source: 'video-upload',
 						tiktokConfig: expect.objectContaining({
 							caption: 'Account Video',
@@ -134,11 +137,14 @@ describe('Posty5SocialPublisherPost - Account', () => {
 	describe('Publish Video to Account - Binary Variants', () => {
 		it('should publish video from binary with thumbnail to account', async () => {
 			const mockUploadResponse = {
+				postId: 'post-acc-456',
 				video: {
 					uploadFileURL: 'https://storage.example.com/video-acc-456?signature=abc',
+					fileURL: 'https://cdn.example.com/2026-9-25/post-acc-456/video.mp4',
 				},
 				thumb: {
 					uploadFileURL: 'https://storage.example.com/thumb-acc-456?signature=def',
+					fileURL: 'https://cdn.example.com/2026-9-25/post-acc-456/thumb.jpg',
 				},
 			};
 
@@ -197,11 +203,11 @@ describe('Posty5SocialPublisherPost - Account', () => {
 				expect.objectContaining({
 					method: 'POST',
 					url: expect.stringMatching(
-						/\/api\/social-publisher-post\/short-video\/account\/by-file$/,
+						/\/api\/social-publisher-post\/short-video\/account\/by-file\/post-acc-456$/,
 					),
 					body: expect.objectContaining({
 						accountId: 'account456',
-						thumbURL: 'https://storage.example.com/thumb-acc-456',
+						thumbURL: 'https://cdn.example.com/2026-9-25/post-acc-456/thumb.jpg',
 						createdFrom: 'n8n',
 					}),
 				}),
@@ -212,11 +218,14 @@ describe('Posty5SocialPublisherPost - Account', () => {
 
 		it('should publish video from binary to multiple platforms on account', async () => {
 			const mockUploadResponse = {
+				postId: 'post-acc-multi',
 				video: {
 					uploadFileURL: 'https://storage.example.com/video-acc-multi?signature=abc',
+					fileURL: 'https://cdn.example.com/2026-9-25/post-acc-multi/video.mp4',
 				},
 				thumb: {
 					uploadFileURL: 'https://storage.example.com/thumb-acc-multi?signature=def',
+					fileURL: 'https://cdn.example.com/2026-9-25/post-acc-multi/thumb.jpg',
 				},
 			};
 
@@ -256,7 +265,7 @@ describe('Posty5SocialPublisherPost - Account', () => {
 				expect.objectContaining({
 					method: 'POST',
 					url: expect.stringMatching(
-						/\/api\/social-publisher-post\/short-video\/account\/by-file$/,
+						/\/api\/social-publisher-post\/short-video\/account\/by-file\/post-acc-multi$/,
 					),
 					body: expect.objectContaining({
 						accountId: 'account789',
@@ -270,11 +279,14 @@ describe('Posty5SocialPublisherPost - Account', () => {
 
 		it('should publish video from binary with scheduled time to account', async () => {
 			const mockUploadResponse = {
+				postId: 'post-acc-sched',
 				video: {
 					uploadFileURL: 'https://storage.example.com/video-acc-sched?signature=abc',
+					fileURL: 'https://cdn.example.com/2026-9-25/post-acc-sched/video.mp4',
 				},
 				thumb: {
 					uploadFileURL: 'https://storage.example.com/thumb-acc-sched?signature=def',
+					fileURL: 'https://cdn.example.com/2026-9-25/post-acc-sched/thumb.jpg',
 				},
 			};
 
@@ -316,7 +328,7 @@ describe('Posty5SocialPublisherPost - Account', () => {
 				expect.objectContaining({
 					method: 'POST',
 					url: expect.stringMatching(
-						/\/api\/social-publisher-post\/short-video\/account\/by-file$/,
+						/\/api\/social-publisher-post\/short-video\/account\/by-file\/post-acc-sched$/,
 					),
 					body: expect.objectContaining({
 						accountId: 'account-sched',

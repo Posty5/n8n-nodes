@@ -218,6 +218,13 @@ offer the resumable service.
 - Direct video URL
 - Direct video file URL for content you created or have rights to publish
 
+**Uploaded images:** **Publish Image** with the **Uploaded Bucket File** source
+takes a file you already uploaded through `generate-upload-urls`, so the node
+cannot reserve a post ID for it. Also pass the `postId` from that response as
+**Upload Post ID**. Posty5 deletes an uploaded file only from the folder of the
+post that owns it, so without the ID the image stays in storage after the post
+is published or deleted.
+
 TikTok Direct Post is not exposed as a public repost workflow in these n8n nodes. Do not use TikTok publishing to copy arbitrary third-party videos from TikTok, YouTube, Facebook, Instagram, or any other platform.
 
 **Platform-Specific Settings:**

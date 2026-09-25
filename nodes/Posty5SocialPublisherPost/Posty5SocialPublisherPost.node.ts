@@ -638,7 +638,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				],
 				default: 'image-url',
 				description:
-					'Where the image lives. "External URL" sends the URL directly; "Uploaded Bucket File" requires uploading via /generate-upload-urls first.',
+					'Where the image lives. "External URL" sends the URL directly; "Uploaded Bucket File" requires uploading via /generate-upload-urls first, and keeping the postId it returns.',
 			},
 			{
 				displayName: 'Image URL',
@@ -667,6 +667,20 @@ export class Posty5SocialPublisherPost implements INodeType {
 				},
 				default: '',
 				description: 'fileURL returned by /generate-upload-urls after you uploaded the image',
+			},
+			{
+				displayName: 'Upload Post ID',
+				name: 'imageUploadPostId',
+				type: 'string',
+				displayOptions: {
+					show: {
+						operation: ['publishImage', 'publishImageToAccount'],
+						imageSource: ['image-file'],
+					},
+				},
+				default: '',
+				description:
+					'The postId returned together with the Bucket File URL when you requested the upload. The post is created under it so it owns the uploaded image. Leave it empty and the image is never deleted from storage — not when the post is deleted, and not by the cleanup after publishing.',
 			},
 			{
 				displayName: 'Caption',
@@ -889,6 +903,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 					let videoURL: string;
 					let thumbURL: string | undefined;
 					let source: string;
+					let uploadedPostId: string | undefined;
 
 					// Handle video
 					if (videoSource === 'binary') {
@@ -905,10 +920,14 @@ export class Posty5SocialPublisherPost implements INodeType {
 							},
 						});
 
-						// Upload video
+						// Upload video. The post stores the public `fileURL`, not the
+						// signed URL minus its query: that one is the storage API
+						// host, which the publisher cannot fetch and the cleanup does
+						// not recognise as ours.
 						await uploadFile.call(this, uploadUrlsResponse.video.uploadFileURL, videoBuffer);
-						videoURL = uploadUrlsResponse.video.uploadFileURL.split('?')[0];
+						videoURL = uploadUrlsResponse.video.fileURL;
 						source = 'video-upload';
+						uploadedPostId = uploadUrlsResponse.postId;
 
 						// Handle thumbnail
 						if (thumbnailSource === 'binary') {
@@ -926,7 +945,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 									uploadUrlsResponse.thumb.uploadFileURL,
 									thumbnailBuffer,
 								);
-								thumbURL = uploadUrlsResponse.thumb.uploadFileURL.split('?')[0];
+								thumbURL = uploadUrlsResponse.thumb.fileURL;
 							}
 						} else if (thumbnailSource === 'url') {
 							thumbURL = this.getNodeParameter('thumbnailUrl', i) as string;
@@ -1005,15 +1024,16 @@ export class Posty5SocialPublisherPost implements INodeType {
 						postBody.comments = postComments;
 					}
 
-					// Create post
-					let endpoint = '';
-					const isFileUpload = source === 'video-upload';
-
-					if (operation === 'publishVideo') {
-						endpoint = `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}${isFileUpload ? '/short-video/workspace/by-file' : '/short-video/workspace/by-url'}`;
-					} else {
-						endpoint = `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}${isFileUpload ? '/short-video/account/by-file' : '/short-video/account/by-url'}`;
-					}
+					// Create post. An uploaded video is created under the id
+					// `generate-upload-urls` reserved: its files live in that id's
+					// folder, and the server only ever deletes a folder whose id
+					// matches the post's own — a post given a fresh id leaks its
+					// upload for good.
+					const target = operation === 'publishVideo' ? 'workspace' : 'account';
+					const bySegment = source === 'video-upload' ? 'by-file' : 'by-url';
+					const endpoint =
+						`${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/short-video/${target}/${bySegment}` +
+						(uploadedPostId ? `/${uploadedPostId}` : '');
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'POST',
@@ -1037,11 +1057,17 @@ export class Posty5SocialPublisherPost implements INodeType {
 					const caption = this.getNodeParameter('imageCaption', i) as string;
 					const aiEnhanced = this.getNodeParameter('imageAiEnhanced', i, false) as boolean;
 
+					// The image was uploaded outside this node, so the node cannot
+					// reserve its id — the caller did, with `generate-upload-urls`,
+					// and passes it back. The server deletes an uploaded image's
+					// folder only when the folder's id is the post's own.
 					const image: any = { source: imageSource };
+					let uploadedPostId = '';
 					if (imageSource === 'image-url') {
 						image.externalUrl = this.getNodeParameter('imageExternalUrl', i) as string;
 					} else {
 						image.bucketKey = this.getNodeParameter('imageBucketKey', i) as string;
+						uploadedPostId = (this.getNodeParameter('imageUploadPostId', i, '') as string).trim();
 					}
 
 					const imagePostBody: any = {
@@ -1063,9 +1089,9 @@ export class Posty5SocialPublisherPost implements INodeType {
 						imagePostBody.comments = imageComments;
 					}
 
-					const endpoint = isWorkspace
-						? `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/image/workspace`
-						: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/image/account`;
+					const endpoint =
+						`${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/image/${isWorkspace ? 'workspace' : 'account'}` +
+						(uploadedPostId ? `/${uploadedPostId}` : '');
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'POST',
