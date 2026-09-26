@@ -9,6 +9,7 @@
 | `posty5FormSubmission` | get/get-adjacent/change-status/list. | `nodes/Posty5FormSubmission/Posty5FormSubmission.node.ts` |
 | `posty5SocialPublisherWorkspace` | get/list/get-for-new-post. | `nodes/Posty5SocialPublisherWorkspace/Posty5SocialPublisherWorkspace.node.ts` |
 | `posty5SocialPublisherPost` | publish video/image, status, list, defaults. | `nodes/Posty5SocialPublisherPost/Posty5SocialPublisherPost.node.ts` |
+| `posty5Store` | dropshipping: supplier, supplierProduct, productLink, supplierOrder, fulfilmentGroup, order resources (21 operations). No trigger. | `nodes/Posty5Store/Posty5Store.node.ts` |
 
 This is a compatibility surface. Treat exported names, operations, parameter values, types, and behavior as semver-sensitive.
 

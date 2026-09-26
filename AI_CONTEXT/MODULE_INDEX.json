@@ -38,6 +38,11 @@
       "primary_path": "nodes/Posty5SocialPublisherPost/Posty5SocialPublisherPost.node.ts"
     },
     {
+      "name": "store",
+      "purpose": "Dropshipping: suppliers, supplier products and imports, product links, supplier orders, order parts. Properties split per resource under descriptions/.",
+      "primary_path": "nodes/Posty5Store/Posty5Store.node.ts"
+    },
+    {
       "name": "api-utils",
       "purpose": "HTTP envelope handling, pagination, createdFrom tagging, and signed uploads.",
       "primary_path": "utils/api.helpers.ts"

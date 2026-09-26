@@ -1,6 +1,21 @@
 # Changelog
 
-## Unreleased
+## 4.4.0 - 2026-09-26
+
+### Added
+
+- **Posty5 Store** node for dropshipping: Supplier (Get Catalogue, Get Many,
+  Test, Get Balance), Supplier Product (Get Many, Get, Resolve URL, Preview
+  Import, Import, Get Import Status), Product Link (Get Many, Sync), Supplier
+  Order (Get Many, Get, Retry, Pay, Cancel), Fulfilment Group (Submit, Fulfil
+  Manually) and Order (Get with Split Parts, Get Many).
+- `makeApiRequest` accepts `stampCreatedFrom: false`; the store node uses it on
+  every supplier POST. The default is unchanged for the other nodes.
+
+### Documentation
+
+- Three workflow examples (needs-attention alerts, import from a spreadsheet,
+  tracking per part) and why there is no trigger.
 
 ### Fixed
 

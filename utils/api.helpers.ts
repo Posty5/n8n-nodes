@@ -11,6 +11,12 @@ export interface IApiRequestOptions {
 	endpoint: string;
 	body?: any;
 	qs?: any;
+	/**
+	 * Add `createdFrom: 'n8n'` to a POST body (the default). The store node turns
+	 * it off for `/api/store-suppliers`: those bodies are validated by schemas that
+	 * never declared the key, and a body should not carry what its route ignores.
+	 */
+	stampCreatedFrom?: boolean;
 }
 
 /**
@@ -41,8 +47,8 @@ export async function makeApiRequest(
 		requestOptions.body = options.body;
 	}
 
-	// Add createdFrom to all POST request bodies
-	if (options.method === 'POST') {
+	// Add createdFrom to POST request bodies, unless the caller opts out
+	if (options.method === 'POST' && options.stampCreatedFrom !== false) {
 		requestOptions.body = { ...(requestOptions.body as Record<string, any>), createdFrom: 'n8n' };
 	}
 

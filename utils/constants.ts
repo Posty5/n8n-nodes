@@ -12,6 +12,8 @@ export const API_ENDPOINTS = {
 	FORM_SUBMISSION: '/api/html-hosting-form-submission',
 	SOCIAL_PUBLISHER_WORKSPACE: '/api/social-publisher-workspace',
 	SOCIAL_PUBLISHER_POST: '/api/social-publisher-post',
+	STORE_SUPPLIERS: '/api/store-suppliers',
+	STORE_ORDERS: '/api/store-orders',
 } as const;
 
 export const DEFAULT_PAGINATION = {

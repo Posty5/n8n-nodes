@@ -1,7 +1,7 @@
 {
     "name": "@posty5/n8n-nodes-posty5",
-    "version": "4.3.0",
-    "description": "N8N community nodes for Posty5 - URL shortening, QR codes, HTML hosting, and social media publishing",
+    "version": "4.4.0",
+    "description": "N8N community nodes for Posty5 - URL shortening, QR codes, HTML hosting, social media publishing and online-store dropshipping",
     "keywords": [
         "n8n-community-node-package",
         "n8n-community-node",
@@ -10,6 +10,8 @@
         "url-shortener",
         "qr-code",
         "social-media",
+        "online-store",
+        "dropshipping",
         "automation"
     ],
     "license": "MIT",
@@ -52,7 +54,8 @@
             "dist/nodes/Posty5HtmlHosting/Posty5HtmlHosting.node.js",
             "dist/nodes/Posty5FormSubmission/Posty5FormSubmission.node.js",
             "dist/nodes/Posty5SocialPublisherWorkspace/Posty5SocialPublisherWorkspace.node.js",
-            "dist/nodes/Posty5SocialPublisherPost/Posty5SocialPublisherPost.node.js"
+            "dist/nodes/Posty5SocialPublisherPost/Posty5SocialPublisherPost.node.js",
+            "dist/nodes/Posty5Store/Posty5Store.node.js"
         ]
     },
     "devDependencies": {

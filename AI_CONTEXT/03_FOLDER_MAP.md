@@ -5,7 +5,7 @@
 | Path | Purpose |
 | --- | --- |
 | `credentials` | n8n credential declarations. |
-| `nodes` | Six node implementations. |
+| `nodes` | Node implementations, one folder each. A multi-resource node (`Posty5Store`) keeps its per-resource properties in `descriptions/`. |
 | `utils` | Posty5 HTTP and upload helpers/constants. |
 | `types` | Shared request/response/task types. |
 | `__tests__` | Jest node tests. |

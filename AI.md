@@ -1,6 +1,6 @@
 # Posty5 n8n Nodes - AI Entry Point
 
-This repository is the n8n community node package. A published n8n community package that exposes Posty5 short links, QR codes, HTML hosting, form submissions, social workspaces, and social posts as workflow nodes.
+This repository is the n8n community node package. A published n8n community package that exposes Posty5 short links, QR codes, HTML hosting, form submissions, social workspaces, social posts, and store dropshipping (suppliers, supplier orders, order parts) as workflow nodes.
 
 ## Required reading order
 

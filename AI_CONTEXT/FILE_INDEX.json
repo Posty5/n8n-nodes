@@ -32,6 +32,22 @@
       "role": "Constants"
     },
     {
+      "path": "nodes/Posty5Store/Posty5Store.node.ts",
+      "role": "Store dropshipping node: resource list + execute()"
+    },
+    {
+      "path": "nodes/Posty5Store/descriptions",
+      "role": "Per-resource operation and field properties of the store node"
+    },
+    {
+      "path": "utils/store.helpers.ts",
+      "role": "Store node helpers (endpoint builders, order-part split, empty-filter strip)"
+    },
+    {
+      "path": "types/store.types.ts",
+      "role": "Store node order/part types"
+    },
+    {
       "path": "nodes",
       "role": "Nodes"
     },
@@ -45,7 +61,7 @@
     },
     {
       "path": "nodes",
-      "role": "Six node implementations."
+      "role": "Seven node implementations."
     },
     {
       "path": "utils",
