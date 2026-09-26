@@ -9,6 +9,13 @@
   Import, Import, Get Import Status), Product Link (Get Many, Sync), Supplier
   Order (Get Many, Get, Retry, Pay, Cancel), Fulfilment Group (Submit, Fulfil
   Manually) and Order (Get with Split Parts, Get Many).
+- **Supplier Order → Get Many** pages by cursor, matching the API's list
+  envelope (`{ items, pagination }`): **Return All** follows
+  `pagination.nextCursor` until `hasMore` is false; otherwise **Limit** is sent
+  as `pageSize` (max 100), a **Cursor** filter continues from a previous page,
+  and `nextCursor` rides on the last row. There is no **Page** field.
+- `storeGetAllByCursor` and `rowsWithNextCursor` in `utils/store.helpers.ts`;
+  **Order → Get Many** now uses `rowsWithNextCursor` too (same output).
 - `makeApiRequest` accepts `stampCreatedFrom: false`; the store node uses it on
   every supplier POST. The default is unchanged for the other nodes.
 

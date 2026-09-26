@@ -64,11 +64,11 @@ export const supplierOrderFields: INodeProperties[] = [
 		displayOptions: { show: { ...show, operation: ['retry'] } },
 	},
 	{
-		displayName: 'Page',
-		name: 'page',
-		type: 'number',
-		typeOptions: { minValue: 1 },
-		default: 1,
+		displayName: 'Return All',
+		name: 'returnAll',
+		type: 'boolean',
+		default: false,
+		description: 'Whether to return all results or only up to a given limit',
 		displayOptions: { show: { ...show, operation: ['getMany'] } },
 	},
 	{
@@ -78,7 +78,7 @@ export const supplierOrderFields: INodeProperties[] = [
 		typeOptions: { minValue: 1, maxValue: STORE_SUPPLIER_PAGE_SIZES.SUPPLIER_ORDERS_MAX },
 		default: 50,
 		description: 'Max number of results to return',
-		displayOptions: { show: { ...show, operation: ['getMany'] } },
+		displayOptions: { show: { ...show, operation: ['getMany'], returnAll: [false] } },
 	},
 	{
 		displayName: 'Filters',
@@ -88,6 +88,7 @@ export const supplierOrderFields: INodeProperties[] = [
 		default: {},
 		displayOptions: { show: { ...show, operation: ['getMany'] } },
 		options: [
+			{ displayName: 'Cursor', name: 'cursor', type: 'string', default: '', description: 'The nextCursor of the previous page' },
 			{ displayName: 'Order ID', name: 'orderId', type: 'string', default: '', description: 'Only the supplier orders of this store order' },
 			{
 				displayName: 'Needs Review',

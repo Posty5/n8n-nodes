@@ -9,8 +9,10 @@ import { API_ENDPOINTS, STORE_SUPPLIER_PAGE_SIZES } from '../../utils/constants'
 import {
 	buildGroupActionEndpoint,
 	buildSupplierOrderActionEndpoint,
+	rowsWithNextCursor,
 	splitOrderParts,
 	storeGet,
+	storeGetAllByCursor,
 	storeSupplierPost,
 } from '../../utils/store.helpers';
 import type { IStoreOrderWithParts } from '../../types/store.types';
@@ -165,10 +167,15 @@ export class Posty5Store implements INodeType {
 					}
 				} else if (resource === 'supplierOrder') {
 					if (operation === 'getMany') {
+						// Cursor-paged in the platform's list envelope, like the orders search.
 						const filters = this.getNodeParameter('filters', i, {}) as Record<string, unknown>;
-						const page = this.getNodeParameter('page', i, 1) as number;
-						const limit = this.getNodeParameter('limit', i, 50) as number;
-						responseData = (await storeGet.call(this, apiKey, `${suppliers}/${storeId}/orders`, { ...filters, page, pageSize: limit }))?.items || [];
+						const endpoint = `${suppliers}/${storeId}/orders`;
+						if (this.getNodeParameter('returnAll', i, false) as boolean) {
+							responseData = await storeGetAllByCursor.call(this, apiKey, endpoint, filters, STORE_SUPPLIER_PAGE_SIZES.SUPPLIER_ORDERS_MAX);
+						} else {
+							const limit = this.getNodeParameter('limit', i, 50) as number;
+							responseData = rowsWithNextCursor(await storeGet.call(this, apiKey, endpoint, { ...filters, pageSize: limit }));
+						}
 					} else {
 						const supplierOrderId = this.getNodeParameter('supplierOrderId', i) as string;
 						if (operation === 'get') {
@@ -208,12 +215,9 @@ export class Posty5Store implements INodeType {
 					} else if (operation === 'getMany') {
 						const filters = this.getNodeParameter('filters', i, {}) as Record<string, unknown>;
 						const limit = this.getNodeParameter('limit', i, 50) as number;
-						const result = await storeGet.call(this, apiKey, `${API_ENDPOINTS.STORE_ORDERS}/${storeId}`, { ...filters, pageSize: limit });
-						const rows: IDataObject[] = result?.items || [];
-						const nextCursor = result?.pagination?.nextCursor;
-						// The cursor rides on the last row, so the next run can continue from it.
-						if (rows.length && nextCursor) rows[rows.length - 1] = { ...rows[rows.length - 1], nextCursor };
-						responseData = rows;
+						responseData = rowsWithNextCursor(
+							await storeGet.call(this, apiKey, `${API_ENDPOINTS.STORE_ORDERS}/${storeId}`, { ...filters, pageSize: limit }),
+						);
 					}
 				}
 

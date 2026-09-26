@@ -51,6 +51,25 @@ export interface IStoreSupplierOrder {
 	[key: string]: unknown;
 }
 
+/**
+ * The pagination block of a cursor-paged store list — the platform's list
+ * envelope (`req.end_Searchable`), used by the orders search and the
+ * supplier-order queue alike.
+ */
+export interface IStoreCursorPagination {
+	nextCursor?: string | null;
+	previousCursor?: string | null;
+	hasMore?: boolean;
+	totalCount?: number;
+	pageSize?: number;
+}
+
+/** One page of a cursor-paged store list. */
+export interface IStoreCursorPage<T> {
+	items?: T[];
+	pagination?: IStoreCursorPagination;
+}
+
 /** One part of a store order. */
 export interface IOrderFulfilmentGroup {
 	key: string;

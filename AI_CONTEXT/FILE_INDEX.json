@@ -41,11 +41,11 @@
     },
     {
       "path": "utils/store.helpers.ts",
-      "role": "Store node helpers (endpoint builders, order-part split, empty-filter strip)"
+      "role": "Store node helpers (endpoint builders, order-part split, empty-filter strip, cursor paging: storeGetAllByCursor / rowsWithNextCursor)"
     },
     {
       "path": "types/store.types.ts",
-      "role": "Store node order/part types"
+      "role": "Store node order/part types and the cursor list envelope"
     },
     {
       "path": "nodes",

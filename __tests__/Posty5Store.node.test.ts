@@ -56,7 +56,7 @@ describe('Posty5Store', () => {
 			expect(options.every((o: any) => typeof o.action === 'string')).toBe(true);
 		});
 
-		it('caps each page-number Limit at what the api accepts', () => {
+		it('caps each Limit at what the api accepts', () => {
 			// The api refuses (400) rather than clamps: catalogue pageSize ≤ 48, supplier orders ≤ 100.
 			const browse = property('limit', 'supplierProduct');
 			expect(browse.typeOptions.maxValue).toBe(48);
@@ -65,6 +65,15 @@ describe('Posty5Store', () => {
 			const queue = property('limit', 'supplierOrder');
 			expect(queue.typeOptions.maxValue).toBe(100);
 			expect(queue.default).toBeLessThanOrEqual(100);
+			expect(STORE_SUPPLIER_PAGE_SIZES.SUPPLIER_ORDERS_MAX).toBe(100);
+		});
+
+		it('pages the supplier-order queue by cursor: Return All, a Limit hidden by it, no Page', () => {
+			expect(property('page', 'supplierOrder')).toBeUndefined();
+			expect(property('returnAll', 'supplierOrder').default).toBe(false);
+			expect(property('limit', 'supplierOrder').displayOptions.show.returnAll).toEqual([false]);
+			const filters = property('filters', 'supplierOrder').options.map((o: any) => o.name);
+			expect(filters).toContain('cursor');
 		});
 
 		it('has no field that could hold a supplier credential', () => {
@@ -76,13 +85,57 @@ describe('Posty5Store', () => {
 	describe('Requests', () => {
 		it('lists supplier orders needing review, one item per row, empty filters stripped', async () => {
 			const { output, calls } = await run(
-				{ resource: 'supplierOrder', operation: 'getMany', page: 1, limit: 20, filters: { needsReview: true, status: '' } },
-				{ items: [{ _id: 'a' }, { _id: 'b' }], page: 1, pageSize: 20, total: 2 },
+				{ resource: 'supplierOrder', operation: 'getMany', limit: 20, filters: { needsReview: true, status: '' } },
+				{ items: [{ _id: 'a' }, { _id: 'b' }], pagination: { nextCursor: 'c2', hasMore: true, totalCount: 30, pageSize: 20 } },
 			);
+			expect(calls).toHaveLength(1);
 			expect(calls[0].method).toBe('GET');
 			expect(calls[0].url).toBe(`${BASE}/orders`);
-			expect(calls[0].qs).toEqual({ needsReview: true, page: 1, pageSize: 20 });
+			expect(calls[0].qs).toEqual({ needsReview: true, pageSize: 20 });
 			expect(output.map((item) => item.json._id)).toEqual(['a', 'b']);
+			// The cursor rides on the last row, as on the orders list.
+			expect(output[1].json.nextCursor).toBe('c2');
+			expect(output[0].json.nextCursor).toBeUndefined();
+		});
+
+		it('continues the supplier-order queue from a Cursor filter', async () => {
+			const { calls } = await run(
+				{ resource: 'supplierOrder', operation: 'getMany', limit: 10, filters: { cursor: 'c2' } },
+				{ items: [], pagination: { nextCursor: null, hasMore: false } },
+			);
+			expect(calls[0].qs).toEqual({ cursor: 'c2', pageSize: 10 });
+		});
+
+		it('returns every supplier order by following nextCursor until hasMore is false', async () => {
+			const node = new Posty5Store();
+			const fns = createMockExecuteFunctions(
+				{ storeId: 's1', resource: 'supplierOrder', operation: 'getMany', returnAll: true, limit: 5, filters: { status: 'failed' } },
+				undefined,
+				{ apiKey: 'k' },
+			);
+			(fns.helpers.httpRequest as jest.Mock)
+				.mockResolvedValueOnce({ result: { items: [{ _id: 'a' }, { _id: 'b' }], pagination: { nextCursor: 'c2', hasMore: true } } })
+				.mockResolvedValueOnce({ result: { items: [{ _id: 'c' }], pagination: { nextCursor: 'c3', hasMore: true } } })
+				.mockResolvedValueOnce({ result: { items: [{ _id: 'd' }], pagination: { nextCursor: null, hasMore: false } } });
+			const output = (await node.execute.call(fns))[0];
+			const calls = (fns.helpers.httpRequest as jest.Mock).mock.calls.map(([options]) => options);
+			expect(calls.map((call) => call.qs)).toEqual([
+				{ status: 'failed', pageSize: STORE_SUPPLIER_PAGE_SIZES.SUPPLIER_ORDERS_MAX },
+				{ status: 'failed', cursor: 'c2', pageSize: STORE_SUPPLIER_PAGE_SIZES.SUPPLIER_ORDERS_MAX },
+				{ status: 'failed', cursor: 'c3', pageSize: STORE_SUPPLIER_PAGE_SIZES.SUPPLIER_ORDERS_MAX },
+			]);
+			expect(calls.every((call) => call.url === `${BASE}/orders` && !('page' in call.qs))).toBe(true);
+			expect(output.map((item) => item.json._id)).toEqual(['a', 'b', 'c', 'd']);
+			expect(output.some((item) => 'nextCursor' in item.json)).toBe(false);
+		});
+
+		it('stops Return All when the api repeats the cursor it was sent', async () => {
+			const { calls, output } = await run(
+				{ resource: 'supplierOrder', operation: 'getMany', returnAll: true, filters: { cursor: 'c2' } },
+				{ items: [{ _id: 'a' }], pagination: { nextCursor: 'c2', hasMore: true } },
+			);
+			expect(calls).toHaveLength(1);
+			expect(output).toHaveLength(1);
 		});
 
 		it('browses the catalogue with a pageSize the api accepts on default settings', async () => {

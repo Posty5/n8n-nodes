@@ -262,7 +262,7 @@ paused one, import supplier products and follow each part of an order.
 - **Supplier** — Get Catalogue, Get Many (connections), Test, Get Balance
 - **Supplier Product** — Get Many (browse), Get, Resolve URL, Preview Import, Import, Get Import Status
 - **Product Link** — Get Many, Sync
-- **Supplier Order** — Get Many (filter Needs Review), Get, Retry (option Accept New Cost), Pay, Cancel
+- **Supplier Order** — Get Many (Return All or Limit; filters Needs Review, Status, Order ID, Supplier Connection ID, Cursor), Get, Retry (option Accept New Cost), Pay, Cancel
 - **Fulfilment Group** (an order part, addressed by order ID + part key) — Submit (option Pay Now), Fulfil Manually
 - **Order** — Get (option **Split Parts**: one item per part, with its supplier order), Get Many (filter Needs Attention)
 
@@ -290,10 +290,13 @@ charged like adding products; nothing else here is charged. **Retry**, **Pay** a
 **Submit** answer a paused outcome as an error — use *Continue On Fail* to keep
 the reason in the item.
 
-**Pagination:** each **Get Many** outputs one item per row. Supplier lists
-(connections aside) take **Page** and **Limit**; **Order → Get Many** takes a
-**Limit** and a **Cursor** filter, and puts `nextCursor` on the last row it
-returns, so the next run can continue from it.
+**Pagination:** each **Get Many** outputs one item per row. **Supplier Product
+→ Get Many** (the supplier's catalogue) takes **Page** and **Limit**.
+**Supplier Order → Get Many** and **Order → Get Many** page by cursor: they take
+a **Limit** (sent as `pageSize`) and a **Cursor** filter, and put `nextCursor`
+on the last row they return, so the next run can continue from it. **Supplier
+Order → Get Many** also has **Return All**, which follows `nextCursor` 100 rows
+at a time until the API says there is no more (`hasMore` false).
 
 **Errors:** **Product Link → Sync** runs at most once a minute per link; a second
 run inside that minute fails with `Posty5 API Error: This product was synced a
