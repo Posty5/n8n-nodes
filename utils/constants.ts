@@ -21,6 +21,18 @@ export const DEFAULT_PAGINATION = {
 	pageSize: 50,
 } as const;
 
+/**
+ * Page sizes the `/api/store-suppliers` list routes accept. They mirror the api's
+ * Joi schemas (`suppliers/schema.ts`): a larger `pageSize` is refused with a 400,
+ * not clamped, so the node's Limit fields are capped at the same values.
+ */
+export const STORE_SUPPLIER_PAGE_SIZES = {
+	/** Catalogue browse (`GET /:storeId/:id/products`) — the api's `CATALOGUE_MAX_PAGE_SIZE`. */
+	CATALOGUE_MAX: 48,
+	/** Supplier order queue (`GET /:storeId/orders`). */
+	SUPPLIER_ORDERS_MAX: 100,
+} as const;
+
 export const API_TIMEOUTS = {
 	DEFAULT: 30000, // 30 seconds
 	UPLOAD: 120000, // 2 minutes for uploads

@@ -5,13 +5,13 @@ import {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { makeApiRequest } from '../../utils/api.helpers';
-import { API_ENDPOINTS } from '../../utils/constants';
+import { API_ENDPOINTS, STORE_SUPPLIER_PAGE_SIZES } from '../../utils/constants';
 import {
 	buildGroupActionEndpoint,
 	buildSupplierOrderActionEndpoint,
 	splitOrderParts,
-	stripEmpty,
+	storeGet,
+	storeSupplierPost,
 } from '../../utils/store.helpers';
 import type { IStoreOrderWithParts } from '../../types/store.types';
 import { fulfilmentGroupFields, fulfilmentGroupOperations } from './descriptions/fulfilment-group.description';
@@ -99,12 +99,6 @@ export class Posty5Store implements INodeType {
 		const apiKey = credentials.apiKey as string;
 		const suppliers = API_ENDPOINTS.STORE_SUPPLIERS;
 
-		/** A POST to the supplier routes, without the createdFrom stamp their schemas never declared. */
-		const supplierPost = (endpoint: string, body: Record<string, unknown> = {}) =>
-			makeApiRequest.call(this, apiKey, { method: 'POST', endpoint, body, stampCreatedFrom: false });
-		const get = (endpoint: string, qs?: Record<string, unknown>) =>
-			makeApiRequest.call(this, apiKey, { method: 'GET', endpoint, ...(qs ? { qs: stripEmpty(qs) } : {}) });
-
 		for (let i = 0; i < items.length; i++) {
 			try {
 				const storeId = this.getNodeParameter('storeId', i) as string;
@@ -112,34 +106,34 @@ export class Posty5Store implements INodeType {
 
 				if (resource === 'supplier') {
 					if (operation === 'getCatalogue') {
-						responseData = (await get(`${suppliers}/${storeId}/catalogue`))?.items || [];
+						responseData = (await storeGet.call(this, apiKey, `${suppliers}/${storeId}/catalogue`))?.items || [];
 					} else if (operation === 'getMany') {
-						responseData = (await get(`${suppliers}/${storeId}`))?.items || [];
+						responseData = (await storeGet.call(this, apiKey, `${suppliers}/${storeId}`))?.items || [];
 					} else if (operation === 'test') {
 						const integrationId = this.getNodeParameter('integrationId', i) as string;
-						responseData = await supplierPost(`${suppliers}/${storeId}/${integrationId}/test`);
+						responseData = await storeSupplierPost.call(this, apiKey, `${suppliers}/${storeId}/${integrationId}/test`);
 					} else if (operation === 'getBalance') {
 						const integrationId = this.getNodeParameter('integrationId', i) as string;
-						responseData = await get(`${suppliers}/${storeId}/${integrationId}/balance`);
+						responseData = await storeGet.call(this, apiKey, `${suppliers}/${storeId}/${integrationId}/balance`);
 					}
 				} else if (resource === 'supplierProduct') {
 					if (operation === 'getImportStatus') {
 						const jobId = this.getNodeParameter('jobId', i) as string;
-						responseData = await get(`${suppliers}/${storeId}/imports/${encodeURIComponent(jobId)}`);
+						responseData = await storeGet.call(this, apiKey, `${suppliers}/${storeId}/imports/${encodeURIComponent(jobId)}`);
 					} else {
 						const integrationId = this.getNodeParameter('integrationId', i) as string;
 						const base = `${suppliers}/${storeId}/${integrationId}`;
 						if (operation === 'getMany') {
 							const filters = this.getNodeParameter('filters', i, {}) as Record<string, unknown>;
 							const page = this.getNodeParameter('page', i, 1) as number;
-							const limit = this.getNodeParameter('limit', i, 50) as number;
-							responseData = (await get(`${base}/products`, { ...filters, page, pageSize: limit }))?.items || [];
+							const limit = this.getNodeParameter('limit', i, STORE_SUPPLIER_PAGE_SIZES.CATALOGUE_MAX) as number;
+							responseData = (await storeGet.call(this, apiKey, `${base}/products`, { ...filters, page, pageSize: limit }))?.items || [];
 						} else if (operation === 'get') {
 							const supplierProductId = this.getNodeParameter('supplierProductId', i) as string;
-							responseData = await get(`${base}/products/${encodeURIComponent(supplierProductId)}`);
+							responseData = await storeGet.call(this, apiKey, `${base}/products/${encodeURIComponent(supplierProductId)}`);
 						} else if (operation === 'resolveUrl') {
 							const url = this.getNodeParameter('url', i) as string;
-							responseData = await supplierPost(`${base}/products/resolve-url`, { url });
+							responseData = await storeSupplierPost.call(this, apiKey, `${base}/products/resolve-url`, { url });
 						} else if (operation === 'previewImport' || operation === 'import') {
 							const ids = (this.getNodeParameter('supplierProductIds', i) as string)
 								.split(',')
@@ -158,35 +152,37 @@ export class Posty5Store implements INodeType {
 									: {}),
 								...(operation === 'import' && options.allowDuplicate ? { allowDuplicate: true } : {}),
 							};
-							responseData = await supplierPost(`${base}/${operation === 'import' ? 'import' : 'import/preview'}`, body);
+							responseData = await storeSupplierPost.call(this, apiKey, `${base}/${operation === 'import' ? 'import' : 'import/preview'}`, body);
 						}
 					}
 				} else if (resource === 'productLink') {
 					if (operation === 'getMany') {
 						const filters = this.getNodeParameter('filters', i, {}) as Record<string, unknown>;
-						responseData = (await get(`${suppliers}/${storeId}/links`, filters))?.items || [];
+						responseData = (await storeGet.call(this, apiKey, `${suppliers}/${storeId}/links`, filters))?.items || [];
 					} else if (operation === 'sync') {
 						const linkId = this.getNodeParameter('linkId', i) as string;
-						responseData = await supplierPost(`${suppliers}/${storeId}/links/${linkId}/sync`);
+						responseData = await storeSupplierPost.call(this, apiKey, `${suppliers}/${storeId}/links/${linkId}/sync`);
 					}
 				} else if (resource === 'supplierOrder') {
 					if (operation === 'getMany') {
 						const filters = this.getNodeParameter('filters', i, {}) as Record<string, unknown>;
 						const page = this.getNodeParameter('page', i, 1) as number;
 						const limit = this.getNodeParameter('limit', i, 50) as number;
-						responseData = (await get(`${suppliers}/${storeId}/orders`, { ...filters, page, pageSize: limit }))?.items || [];
+						responseData = (await storeGet.call(this, apiKey, `${suppliers}/${storeId}/orders`, { ...filters, page, pageSize: limit }))?.items || [];
 					} else {
 						const supplierOrderId = this.getNodeParameter('supplierOrderId', i) as string;
 						if (operation === 'get') {
-							responseData = await get(`${suppliers}/${storeId}/orders/${supplierOrderId}`);
+							responseData = await storeGet.call(this, apiKey, `${suppliers}/${storeId}/orders/${supplierOrderId}`);
 						} else if (operation === 'retry') {
 							const acceptCost = this.getNodeParameter('acceptCost', i, false) as boolean;
-							responseData = await supplierPost(
+							responseData = await storeSupplierPost.call(
+								this,
+								apiKey,
 								buildSupplierOrderActionEndpoint(storeId, supplierOrderId, 'retry'),
 								acceptCost ? { acceptCost: true } : {},
 							);
 						} else if (operation === 'pay' || operation === 'cancel') {
-							responseData = await supplierPost(buildSupplierOrderActionEndpoint(storeId, supplierOrderId, operation));
+							responseData = await storeSupplierPost.call(this, apiKey, buildSupplierOrderActionEndpoint(storeId, supplierOrderId, operation));
 						}
 					}
 				} else if (resource === 'fulfilmentGroup') {
@@ -194,23 +190,25 @@ export class Posty5Store implements INodeType {
 					const groupKey = this.getNodeParameter('groupKey', i) as string;
 					if (operation === 'submit') {
 						const payNow = this.getNodeParameter('payNow', i, false) as boolean;
-						responseData = await supplierPost(
+						responseData = await storeSupplierPost.call(
+							this,
+							apiKey,
 							buildGroupActionEndpoint(storeId, orderId, groupKey, 'submit'),
 							payNow ? { payNow: true } : {},
 						);
 					} else if (operation === 'fulfilManually') {
-						responseData = await supplierPost(buildGroupActionEndpoint(storeId, orderId, groupKey, 'fulfil-manually'));
+						responseData = await storeSupplierPost.call(this, apiKey, buildGroupActionEndpoint(storeId, orderId, groupKey, 'fulfil-manually'));
 					}
 				} else if (resource === 'order') {
 					if (operation === 'get') {
 						const orderId = this.getNodeParameter('orderId', i) as string;
 						const splitParts = this.getNodeParameter('splitParts', i, false) as boolean;
-						const order = (await get(`${API_ENDPOINTS.STORE_ORDERS}/${storeId}/${orderId}`)) as IStoreOrderWithParts;
+						const order = (await storeGet.call(this, apiKey, `${API_ENDPOINTS.STORE_ORDERS}/${storeId}/${orderId}`)) as IStoreOrderWithParts;
 						responseData = (splitParts ? splitOrderParts(order) : order) as IDataObject | IDataObject[];
 					} else if (operation === 'getMany') {
 						const filters = this.getNodeParameter('filters', i, {}) as Record<string, unknown>;
 						const limit = this.getNodeParameter('limit', i, 50) as number;
-						const result = await get(`${API_ENDPOINTS.STORE_ORDERS}/${storeId}`, { ...filters, pageSize: limit });
+						const result = await storeGet.call(this, apiKey, `${API_ENDPOINTS.STORE_ORDERS}/${storeId}`, { ...filters, pageSize: limit });
 						const rows: IDataObject[] = result?.items || [];
 						const nextCursor = result?.pagination?.nextCursor;
 						// The cursor rides on the last row, so the next run can continue from it.

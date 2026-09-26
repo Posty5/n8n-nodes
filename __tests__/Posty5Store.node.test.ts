@@ -1,6 +1,7 @@
 import type { INodeExecutionData } from 'n8n-workflow';
 import { Posty5Store } from '../nodes/Posty5Store/Posty5Store.node';
 import { Posty5ShortLink } from '../nodes/Posty5ShortLink/Posty5ShortLink.node';
+import { STORE_SUPPLIER_PAGE_SIZES } from '../utils/constants';
 import { createMockExecuteFunctions } from './setup';
 
 const BASE = 'https://api.posty5.com/api/store-suppliers/s1';
@@ -55,6 +56,17 @@ describe('Posty5Store', () => {
 			expect(options.every((o: any) => typeof o.action === 'string')).toBe(true);
 		});
 
+		it('caps each page-number Limit at what the api accepts', () => {
+			// The api refuses (400) rather than clamps: catalogue pageSize ≤ 48, supplier orders ≤ 100.
+			const browse = property('limit', 'supplierProduct');
+			expect(browse.typeOptions.maxValue).toBe(48);
+			expect(browse.default).toBe(STORE_SUPPLIER_PAGE_SIZES.CATALOGUE_MAX);
+			expect(STORE_SUPPLIER_PAGE_SIZES.CATALOGUE_MAX).toBe(48);
+			const queue = property('limit', 'supplierOrder');
+			expect(queue.typeOptions.maxValue).toBe(100);
+			expect(queue.default).toBeLessThanOrEqual(100);
+		});
+
 		it('has no field that could hold a supplier credential', () => {
 			const names = node.description.properties.map((p) => p.name.toLowerCase());
 			expect(names.some((n) => /apikey|secret|password|credential|token/.test(n))).toBe(false);
@@ -71,6 +83,22 @@ describe('Posty5Store', () => {
 			expect(calls[0].url).toBe(`${BASE}/orders`);
 			expect(calls[0].qs).toEqual({ needsReview: true, page: 1, pageSize: 20 });
 			expect(output.map((item) => item.json._id)).toEqual(['a', 'b']);
+		});
+
+		it('browses the catalogue with a pageSize the api accepts on default settings', async () => {
+			const node = new Posty5Store();
+			const limitDefault = (node.description.properties.find(
+				(p) => p.name === 'limit' && (p.displayOptions?.show?.resource as string[]).includes('supplierProduct'),
+			) as any).default;
+			const withDefault = await run(
+				{ resource: 'supplierProduct', operation: 'getMany', integrationId: 'i1', page: 1, limit: limitDefault },
+				{ items: [] },
+			);
+			expect(withDefault.calls[0].url).toBe(`${BASE}/i1/products`);
+			expect(withDefault.calls[0].qs.pageSize).toBeLessThanOrEqual(48);
+			// No limit parameter at all (the execute fallback) must stay inside the cap too.
+			const withFallback = await run({ resource: 'supplierProduct', operation: 'getMany', integrationId: 'i1' }, { items: [] });
+			expect(withFallback.calls[0].qs).toEqual({ page: 1, pageSize: 48 });
 		});
 
 		it('retries a supplier order by its id, without createdFrom', async () => {

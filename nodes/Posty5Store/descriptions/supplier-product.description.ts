@@ -1,4 +1,5 @@
 import type { INodeProperties } from 'n8n-workflow';
+import { STORE_SUPPLIER_PAGE_SIZES } from '../../../utils/constants';
 
 const show = { resource: ['supplierProduct'] };
 
@@ -108,8 +109,11 @@ export const supplierProductFields: INodeProperties[] = [
 		displayName: 'Limit',
 		name: 'limit',
 		type: 'number',
-		typeOptions: { minValue: 1 },
-		default: 50,
+		typeOptions: { minValue: 1, maxValue: STORE_SUPPLIER_PAGE_SIZES.CATALOGUE_MAX },
+		// The lint rule wants 50, but the api refuses a catalogue pageSize above 48 with a 400.
+		// A literal because the lint rules read it; the test pins it to STORE_SUPPLIER_PAGE_SIZES.CATALOGUE_MAX.
+		// eslint-disable-next-line n8n-nodes-base/node-param-default-wrong-for-limit
+		default: 48,
 		description: 'Max number of results to return',
 		displayOptions: { show: { ...show, operation: ['getMany'] } },
 	},

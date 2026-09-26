@@ -2,6 +2,8 @@
  * Helpers for the Posty5 Store node (dropshipping).
  */
 
+import type { IExecuteFunctions } from 'n8n-workflow';
+import { makeApiRequest } from './api.helpers';
 import { API_ENDPOINTS } from './constants';
 import type {
 	FulfilmentGroupAction,
@@ -45,6 +47,30 @@ export function splitOrderParts(order: IStoreOrderWithParts): IOrderPartItem[] {
 		orderNumber: order.orderNumber,
 		supplierOrder: supplierOrders.find((row) => row.fulfilmentGroupKey === group.key) || null,
 	}));
+}
+
+/**
+ * A POST to the `/api/store-suppliers` routes, without the `createdFrom` stamp
+ * their schemas never declared. Call it with the node's context:
+ * `storeSupplierPost.call(this, apiKey, endpoint, body)`.
+ */
+export function storeSupplierPost(
+	this: IExecuteFunctions,
+	apiKey: string,
+	endpoint: string,
+	body: Record<string, unknown> = {},
+): ReturnType<typeof makeApiRequest> {
+	return makeApiRequest.call(this, apiKey, { method: 'POST', endpoint, body, stampCreatedFrom: false });
+}
+
+/** A GET for the store node, with empty filter values dropped from the query. */
+export function storeGet(
+	this: IExecuteFunctions,
+	apiKey: string,
+	endpoint: string,
+	qs?: Record<string, unknown>,
+): ReturnType<typeof makeApiRequest> {
+	return makeApiRequest.call(this, apiKey, { method: 'GET', endpoint, ...(qs ? { qs: stripEmpty(qs) } : {}) });
 }
 
 /** Drop empty filter values so the api sees only what the user chose. */

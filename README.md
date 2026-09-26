@@ -295,10 +295,13 @@ the reason in the item.
 **Limit** and a **Cursor** filter, and puts `nextCursor` on the last row it
 returns, so the next run can continue from it.
 
-**Errors:** a 429 on **Product Link → Sync** means the link was synced moments
-ago — wait and run again. A 403 on **Pay** or **Submit → Pay Now** means the API
-key lacks `suppliers.orders.manage`; elsewhere, check that the store's
-plan includes dropshipping.
+**Errors:** **Product Link → Sync** runs at most once a minute per link; a second
+run inside that minute fails with `Posty5 API Error: This product was synced a
+moment ago…` (an HTTP 400, not a 429) — wait a minute and run again. A 403 on
+**Pay** or **Submit → Pay Now** means the API key lacks
+`suppliers.orders.manage`; elsewhere, check that the store's plan includes
+dropshipping. **Supplier Product → Get Many** takes at most 48 rows a page and
+**Supplier Order → Get Many** at most 100; the API refuses a larger Limit.
 
 ## 💡 Workflow Examples
 

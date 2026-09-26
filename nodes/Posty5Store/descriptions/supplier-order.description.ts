@@ -1,4 +1,5 @@
 import type { INodeProperties } from 'n8n-workflow';
+import { STORE_SUPPLIER_PAGE_SIZES } from '../../../utils/constants';
 
 const show = { resource: ['supplierOrder'] };
 
@@ -74,7 +75,7 @@ export const supplierOrderFields: INodeProperties[] = [
 		displayName: 'Limit',
 		name: 'limit',
 		type: 'number',
-		typeOptions: { minValue: 1 },
+		typeOptions: { minValue: 1, maxValue: STORE_SUPPLIER_PAGE_SIZES.SUPPLIER_ORDERS_MAX },
 		default: 50,
 		description: 'Max number of results to return',
 		displayOptions: { show: { ...show, operation: ['getMany'] } },
