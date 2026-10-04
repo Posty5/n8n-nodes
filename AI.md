@@ -1,5 +1,7 @@
 # Posty5 n8n Nodes - AI Entry Point
 
+> New feature? It ships with an article, a guide page, and SDK + MCP coverage when it has a public API — see [`../AI_RULES.md`](../AI_RULES.md) §14.
+
 This repository is the n8n community node package. A published n8n community package that exposes Posty5 short links, QR codes, HTML hosting, form submissions, social workspaces, social posts, and store dropshipping (suppliers, supplier orders, order parts) as workflow nodes.
 
 ## Required reading order
