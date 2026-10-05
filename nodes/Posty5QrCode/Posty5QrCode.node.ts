@@ -9,7 +9,7 @@ import { executeGetAnalytics, executeGetStatistics } from '../../utils/analytics
 import { LINK_ANALYTICS_PROPERTIES, LINK_STATISTICS_PROPERTIES } from '../../utils/analytics.properties';
 import { API_ENDPOINTS } from '../../utils/constants';
 import { buildCommonCreateFields, buildCommonUpdateFields, firstText } from '../../utils/link-tool.helpers';
-import { buildQrCodeTarget } from '../../utils/qr-target.helpers';
+import { buildQrCodeTarget, readQrMode } from '../../utils/qr-target.helpers';
 import { getQrTemplates, requireTemplateId } from '../../utils/qr-templates.helpers';
 import type { ILinkToolAdditionalFields } from '../../types/common';
 import type {
@@ -186,6 +186,70 @@ export class Posty5QrCode implements INodeType {
 				},
 				default: '',
 				description: 'A friendly name for the QR code. On Update, leave it empty to keep the current name.',
+			},
+
+			// Mode (static / dynamic). Hidden for Wi-Fi: a phone joins the network from
+			// the image itself, so there is no link to redirect (the API answers 400).
+			{
+				displayName: 'Mode',
+				name: 'mode',
+				type: 'options',
+				displayOptions: {
+					show: {
+						operation: ['create'],
+					},
+					hide: {
+						qrType: ['wifi'],
+					},
+				},
+				options: [
+					{
+						name: 'Static',
+						value: 'static',
+						description: 'The image encodes the content itself',
+					},
+					{
+						name: 'Dynamic',
+						value: 'dynamic',
+						description: 'The image encodes a Posty5 link that redirects to the content',
+					},
+				],
+				default: 'static',
+				description:
+					'Dynamic: the image points to a Posty5 link, so you can change where it goes later without reprinting',
+			},
+			{
+				displayName: 'Mode',
+				name: 'mode',
+				type: 'options',
+				displayOptions: {
+					show: {
+						operation: ['update'],
+					},
+					hide: {
+						qrType: ['wifi'],
+					},
+				},
+				options: [
+					{
+						name: 'Keep Current',
+						value: '',
+						description: 'Do not change the mode',
+					},
+					{
+						name: 'Static',
+						value: 'static',
+						description: 'The image encodes the content itself',
+					},
+					{
+						name: 'Dynamic',
+						value: 'dynamic',
+						description: 'The image encodes a Posty5 link that redirects to the content',
+					},
+				],
+				default: '',
+				description:
+					'Dynamic: the image points to a Posty5 link, so you can change where it goes later without reprinting',
 			},
 
 			// URL Type fields
@@ -527,6 +591,17 @@ export class Posty5QrCode implements INodeType {
 						description: 'Filter by reference ID',
 					},
 					{
+						displayName: 'Mode',
+						name: 'mode',
+						type: 'options',
+						options: [
+							{ name: 'Static', value: 'static' },
+							{ name: 'Dynamic', value: 'dynamic' },
+						],
+						default: 'static',
+						description: 'Only QR codes of this mode',
+					},
+					{
 						displayName: 'Search',
 						name: 'search',
 						type: 'string',
@@ -578,6 +653,10 @@ export class Posty5QrCode implements INodeType {
 						options: {},
 					};
 					if (name) body.name = name;
+					// Static is the API default: send `mode` only for dynamic, so saved
+					// workflows (no value) keep sending the same body.
+					const mode = readQrMode(this.getNodeParameter('mode', i, 'static'));
+					if (mode === 'dynamic') body.mode = mode;
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'POST',
@@ -628,6 +707,9 @@ export class Posty5QrCode implements INodeType {
 					};
 					const name = firstText(this.getNodeParameter('name', i, ''), stored.name);
 					if (name) body.name = name;
+					// Empty ("Keep Current") sends nothing; the API keeps the stored mode.
+					const mode = readQrMode(this.getNodeParameter('mode', i, ''));
+					if (mode) body.mode = mode;
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'PUT',
@@ -647,6 +729,8 @@ export class Posty5QrCode implements INodeType {
 					const qs: IListParams = {};
 					if (filters.tag) qs.tag = filters.tag;
 					if (filters.refId) qs.refId = filters.refId;
+					const modeFilter = readQrMode(filters.mode);
+					if (modeFilter) qs.mode = modeFilter;
 					if (filters.search) {
 						qs.name = filters.search;
 					}

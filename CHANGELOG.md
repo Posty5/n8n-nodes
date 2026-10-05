@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased - dynamic QR codes
+
+Needs the Posty5 API's dynamic QR release. No node version bump.
+
+### Added
+
+- Posty5 QR Code: a **Mode** option (Static / Dynamic) on Create (default
+  Static) and Update (default Keep Current), hidden for WiFi. Create sends
+  `mode` only for Dynamic and Update only when one is picked, so saved
+  workflows send the same body as before. List gains a Mode filter. Outputs
+  pass through `mode` and `dynamicSince`.
+
 ## 4.6.0 - Unreleased
 
 Needs the Posty5 API's link + QR truth-pass and visit analytics releases

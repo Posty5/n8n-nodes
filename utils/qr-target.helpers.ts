@@ -13,6 +13,7 @@ import type {
 	IQRCodeSmsTarget,
 	IQRCodeTarget,
 	IQRCodeWifiTarget,
+	QrCodeMode,
 	QrParameterReader,
 } from '../types/qr-code.types';
 
@@ -75,4 +76,14 @@ export function buildQrCodeTarget(qrType: string, read: QrParameterReader): IQRC
 		default:
 			throw new Error(`Unsupported QR type "${qrType}". Use one of: ${QR_CODE_TYPES.join(', ')}.`);
 	}
+}
+
+/**
+ * A Mode parameter value as the API takes it: `static`, `dynamic`, or
+ * `undefined` for anything else (an empty "Keep Current", or an expression that
+ * resolved to an empty string), so the caller sends no `mode` at all.
+ */
+export function readQrMode(value: unknown): QrCodeMode | undefined {
+	const mode = toText(value).trim().toLowerCase();
+	return mode === 'static' || mode === 'dynamic' ? mode : undefined;
 }

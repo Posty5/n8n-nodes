@@ -1,4 +1,4 @@
-import { buildQrCodeTarget } from '../utils/qr-target.helpers';
+import { buildQrCodeTarget, readQrMode } from '../utils/qr-target.helpers';
 
 /** A parameter reader over a plain object, like the node's `getNodeParameter` with a fallback. */
 function reader(values: Record<string, unknown>) {
@@ -53,6 +53,16 @@ describe('qr-target.helpers', () => {
 			expect(() => buildQrCodeTarget('contact', reader({}))).toThrow(
 				'Unsupported QR type "contact"',
 			);
+		});
+	});
+
+	describe('readQrMode', () => {
+		it('should pass static and dynamic and drop anything else', () => {
+			expect(readQrMode('static')).toBe('static');
+			expect(readQrMode(' Dynamic ')).toBe('dynamic');
+			expect(readQrMode('')).toBeUndefined();
+			expect(readQrMode(undefined)).toBeUndefined();
+			expect(readQrMode('other')).toBeUndefined();
 		});
 	});
 });

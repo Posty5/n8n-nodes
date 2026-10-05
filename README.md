@@ -95,16 +95,23 @@ Generate QR codes for 7 different types.
 
 | Operation | What it sends |
 | --- | --- |
-| Create | QR Type, its content fields and **Template** (required), plus Name and Additional Fields: Tag, Reference ID, Landing Page with its Page Title and Page Description. |
+| Create | QR Type, its content fields and **Template** (required), plus Name, **Mode** and Additional Fields: Tag, Reference ID, Landing Page with its Page Title and Page Description. |
 | Get | Retrieve QR code details. |
 | Get Analytics | Scans, unique visitors and bot visits over a range, a series and breakdowns, as on the Short Link node. See [Get Analytics](#get-analytics-short-link-and-qr-code). |
 | Get Statistics | Counts over all your QR codes, as on the Short Link node (top list `topQRCodes`). See [Get Statistics](#get-statistics-short-link-and-qr-code). |
-| List | Filters: Search (name), Tag, Reference ID. |
-| Update | Reads the QR code, then saves the content you enter with everything else kept. Template may stay empty to keep the current one. |
+| List | Filters: Search (name), Tag, Reference ID, Mode. |
+| Update | Reads the QR code, then saves the content you enter with everything else kept. Template may stay empty to keep the current one; Mode defaults to Keep Current. |
 | Delete | Remove QR codes. |
 
 The design comes from the template, and Posty5 builds the encoded text from the
 content fields: the node sends the content as `qrCodeTarget` and nothing else.
+
+**Mode.** Static (the default) encodes the content in the image. Dynamic: the
+image points to a Posty5 link, so you can change where it goes later without
+reprinting. Mode is hidden for WiFi, which cannot be dynamic (the API answers
+400). Create sends `mode` only for Dynamic, so saved workflows keep producing
+static codes; Update sends it only when you pick one. Outputs carry `mode` and
+`dynamicSince` (null for a static code).
 
 ### Get Analytics (Short Link and QR Code)
 

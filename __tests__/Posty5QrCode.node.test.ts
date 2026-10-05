@@ -505,6 +505,77 @@ describe('Posty5QrCode', () => {
 		});
 	});
 
+	describe('Mode (dynamic QR)', () => {
+		function mockCreate(parameters: Record<string, any>) {
+			return createMockExecuteFunctions(
+				{ operation: 'create', qrType: 'url', templateId: 'tpl-123', url: 'https://example.com', additionalFields: {}, ...parameters },
+				[{ json: {} }],
+				{ apiKey: TEST_CONFIG.apiKey },
+				{ _id: 'qr1', mode: 'dynamic', dynamicSince: '2026-10-01T00:00:00.000Z' },
+			);
+		}
+
+		it('should offer Mode on Create (default static) and Update (default keep), hidden for Wi-Fi', () => {
+			const modes = qrCodeNode.description.properties.filter((p) => p.name === 'mode');
+			expect(modes.map((p) => [p.displayOptions?.show?.operation, p.default])).toEqual([
+				[['create'], 'static'],
+				[['update'], ''],
+			]);
+			for (const mode of modes) expect(mode.displayOptions?.hide?.qrType).toEqual(['wifi']);
+		});
+
+		it('should not send mode on Create when it is unset (saved workflows) or static', async () => {
+			for (const parameters of [{}, { mode: 'static' }]) {
+				const mockExecuteFunctions = mockCreate(parameters);
+				await qrCodeNode.execute.call(mockExecuteFunctions);
+				expect(requestBody(mockExecuteFunctions)).not.toHaveProperty('mode');
+			}
+		});
+
+		it('should send mode dynamic on Create and pass mode and dynamicSince through', async () => {
+			const mockExecuteFunctions = mockCreate({ mode: 'dynamic' });
+
+			const result = await qrCodeNode.execute.call(mockExecuteFunctions);
+
+			expect(requestBody(mockExecuteFunctions).mode).toBe('dynamic');
+			expect(result[0][0].json).toEqual(
+				expect.objectContaining({ mode: 'dynamic', dynamicSince: '2026-10-01T00:00:00.000Z' }),
+			);
+		});
+
+		it('should send mode on Update only when one is picked', async () => {
+			for (const [mode, expected] of [['', undefined], ['dynamic', 'dynamic'], ['static', 'static']]) {
+				const mockExecuteFunctions = createMockExecuteFunctions(
+					{ operation: 'update', qrCodeId: 'qr123', qrType: 'url', url: 'https://example.com', additionalFields: {}, mode },
+					[{ json: {} }],
+					{ apiKey: TEST_CONFIG.apiKey },
+				);
+				(mockExecuteFunctions.helpers.httpRequest as jest.Mock)
+					.mockResolvedValueOnce({ result: { _id: 'qr123', name: 'Stored', templateId: 'tpl-stored' } })
+					.mockResolvedValueOnce({ result: { _id: 'qr123' } });
+
+				await qrCodeNode.execute.call(mockExecuteFunctions);
+
+				expect(requestBody(mockExecuteFunctions, 1).mode).toBe(expected);
+			}
+		});
+
+		it('should send the List mode filter', async () => {
+			const mockExecuteFunctions = createMockExecuteFunctions(
+				{ operation: 'list', returnAll: false, limit: 50, filters: { mode: 'dynamic' } },
+				[{ json: {} }],
+				{ apiKey: TEST_CONFIG.apiKey },
+				{ items: [] },
+			);
+
+			await qrCodeNode.execute.call(mockExecuteFunctions);
+
+			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
+				expect.objectContaining({ qs: expect.objectContaining({ mode: 'dynamic' }) }),
+			);
+		});
+	});
+
 	describe('Delete Operation', () => {
 		it('should delete QR code by ID', async () => {
 			const mockResponse = {

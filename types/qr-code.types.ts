@@ -152,6 +152,9 @@ export interface IQRCodeTarget {
 	geolocation?: IQRCodeGeolocationTarget;
 }
 
+/** Static: the image encodes the content. Dynamic: it encodes a Posty5 link that redirects. */
+export type QrCodeMode = 'static' | 'dynamic';
+
 /**
  * QR Code response interface
  */
@@ -173,6 +176,10 @@ export interface IQRCode {
 	updatedAt?: string;
 	qrCodeLandingPageURL?: string;
 	qrCodeDownloadURL?: string;
+	/** `static` when absent (codes stored before dynamic QR codes existed). */
+	mode?: QrCodeMode;
+	/** When the code last became dynamic; `null` for a static code. */
+	dynamicSince?: string | null;
 }
 
 /**
@@ -205,6 +212,8 @@ export interface IQRCodeWriteRequest {
 	createdFrom?: string;
 	qrCodeTarget: IQRCodeTarget;
 	options: IQRCodeOptions;
+	/** Absent: static on create, unchanged on update. Wi-Fi cannot be dynamic (API 400). */
+	mode?: QrCodeMode;
 }
 
 /**
@@ -226,6 +235,7 @@ export interface IListParams {
 	isEnableLandingPage?: boolean;
 	status?: QrCodeStatusType;
 	createdFrom?: string;
+	mode?: QrCodeMode;
 }
 
 /**
