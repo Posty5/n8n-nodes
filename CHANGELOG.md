@@ -2,6 +2,12 @@
 
 ## 4.5.0 - 2026-10-05
 
+### Fixed
+
+- **Reschedule Post** sends `scheduleType` + `scheduledAt` flat, as the API's
+  edit route requires. It sent the create routes' `schedule` object, which the
+  API refused, so rescheduling never worked.
+
 ### Changed
 
 - **Test** on the **Posty5 API** credential now asks the API which key it is
