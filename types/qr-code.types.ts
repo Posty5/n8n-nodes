@@ -156,6 +156,30 @@ export interface IQRCodeTarget {
 export type QrCodeMode = 'static' | 'dynamic';
 
 /**
+ * Scan rules of a dynamic QR code (Starter plan and above). Each value or null;
+ * all empty means never gated. A sent object replaces the stored rules whole.
+ */
+export interface IQRCodeAccess {
+	/** ISO date-time; scans before it are gated. */
+	activeFrom?: string | null;
+	/** ISO date-time, after activeFrom; scans from it are gated. */
+	expiresAt?: string | null;
+	/** Integer ≥ 1; scans beyond it are gated. */
+	maxVisits?: number | null;
+	/** http(s) URL (≤ 2048) that gated scans go to. */
+	fallbackUrl?: string | null;
+}
+
+/** The node's Scan Rules collection as n8n hands it over. */
+export interface IQRCodeScanRulesParameter {
+	activeFrom?: unknown;
+	expiresAt?: unknown;
+	maxVisits?: unknown;
+	fallbackUrl?: unknown;
+	clearScanRules?: unknown;
+}
+
+/**
  * QR Code response interface
  */
 export interface IQRCode {
@@ -180,6 +204,8 @@ export interface IQRCode {
 	mode?: QrCodeMode;
 	/** When the code last became dynamic; `null` for a static code. */
 	dynamicSince?: string | null;
+	/** Scan rules; `null` when the code has none. */
+	access?: IQRCodeAccess | null;
 }
 
 /**
@@ -214,6 +240,8 @@ export interface IQRCodeWriteRequest {
 	options: IQRCodeOptions;
 	/** Absent: static on create, unchanged on update. Wi-Fi cannot be dynamic (API 400). */
 	mode?: QrCodeMode;
+	/** Absent: unchanged on update. `null`: clear every scan rule. Dynamic codes only. */
+	access?: IQRCodeAccess | null;
 }
 
 /**

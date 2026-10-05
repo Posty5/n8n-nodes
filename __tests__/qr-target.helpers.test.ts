@@ -1,4 +1,4 @@
-import { buildQrCodeTarget, readQrMode } from '../utils/qr-target.helpers';
+import { buildQrAccess, buildQrCodeTarget, readQrMode } from '../utils/qr-target.helpers';
 
 /** A parameter reader over a plain object, like the node's `getNodeParameter` with a fallback. */
 function reader(values: Record<string, unknown>) {
@@ -63,6 +63,31 @@ describe('qr-target.helpers', () => {
 			expect(readQrMode('')).toBeUndefined();
 			expect(readQrMode(undefined)).toBeUndefined();
 			expect(readQrMode('other')).toBeUndefined();
+		});
+	});
+
+	describe('buildQrAccess', () => {
+		it('returns undefined when nothing is set (keep the stored rules)', () => {
+			expect(buildQrAccess(undefined)).toBeUndefined();
+			expect(buildQrAccess({})).toBeUndefined();
+			expect(buildQrAccess({ activeFrom: '', expiresAt: ' ', fallbackUrl: '', maxVisits: '' })).toBeUndefined();
+		});
+
+		it('returns null for Clear Scan Rules, over any other field', () => {
+			expect(buildQrAccess({ clearScanRules: true, maxVisits: 5 })).toBeNull();
+			expect(buildQrAccess({ clearScanRules: 'true' })).toBeNull();
+		});
+
+		it('builds the access object with ISO dates and skips empty values', () => {
+			expect(
+				buildQrAccess({
+					expiresAt: '2026-12-31T00:00:00.000Z',
+					maxVisits: 100,
+					fallbackUrl: ' https://example.com/over ',
+					activeFrom: '',
+					clearScanRules: false,
+				}),
+			).toEqual({ expiresAt: '2026-12-31T00:00:00.000Z', maxVisits: 100, fallbackUrl: 'https://example.com/over' });
 		});
 	});
 });

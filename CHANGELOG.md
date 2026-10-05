@@ -28,6 +28,10 @@ Needs the Posty5 API's dynamic QR release. No node version bump.
   `mode` only for Dynamic and Update only when one is picked, so saved
   workflows send the same body as before. List gains a Mode filter. Outputs
   pass through `mode` and `dynamicSince`.
+- Posty5 QR Code: a **Scan Rules** collection (Active From, Expires At, Max
+  Scans, Fallback URL, Clear Scan Rules) on Create (Dynamic only) and Update,
+  hidden for WiFi. Sent as `access`; empty sends nothing (Update keeps the
+  rules), Clear sends `access: null`. Starter plan and above.
 
 ## 4.6.0 - Unreleased
 

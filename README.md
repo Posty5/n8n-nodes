@@ -115,6 +115,11 @@ reprinting. Mode is hidden for WiFi, which cannot be dynamic (the API answers
 static codes; Update sends it only when you pick one. Outputs carry `mode` and
 `dynamicSince` (null for a static code).
 
+**Scan Rules** (dynamic codes, Starter plan and above): Active From, Expires At,
+Max Scans and Fallback URL (where gated scans go). Shown on Create for Dynamic
+and on Update. On Update, leave it empty to keep the current rules; any rule set
+replaces all of them, and Clear Scan Rules removes them. Outputs carry `access`.
+
 ### Create Many (Short Link and QR Code)
 
 *Create Many* turns every input item into one row and sends them to

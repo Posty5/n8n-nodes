@@ -10,6 +10,8 @@ import { QR_CODE_TYPES, QR_WIFI_AUTH } from './constants';
 import { toText } from './link-tool.helpers';
 import type {
 	IQRCodeEmailTarget,
+	IQRCodeAccess,
+	IQRCodeScanRulesParameter,
 	IQRCodeSmsTarget,
 	IQRCodeTarget,
 	IQRCodeWifiTarget,
@@ -86,4 +88,38 @@ export function buildQrCodeTarget(qrType: string, read: QrParameterReader): IQRC
 export function readQrMode(value: unknown): QrCodeMode | undefined {
 	const mode = toText(value).trim().toLowerCase();
 	return mode === 'static' || mode === 'dynamic' ? mode : undefined;
+}
+
+/** A date-time parameter as ISO, or `undefined` when empty (an expression that resolved to ''). */
+function readDateTime(value: unknown): string | undefined {
+	if (value instanceof Date) return value.toISOString();
+	const text = toText(value).trim();
+	if (!text) return undefined;
+	const parsed = new Date(text);
+	// Leave anything unparseable as typed: the API's 400 names the field.
+	return Number.isNaN(parsed.getTime()) ? text : parsed.toISOString();
+}
+
+/**
+ * The `access` body value from the Scan Rules collection:
+ * - `undefined`: nothing set, send no `access` (Update keeps the stored rules);
+ * - `null`: Clear Scan Rules is on, send `access: null`;
+ * - otherwise the rules object, which replaces the stored rules as a whole.
+ * Empty values (including expressions that resolve to '') are skipped.
+ */
+export function buildQrAccess(rules: IQRCodeScanRulesParameter | undefined): IQRCodeAccess | null | undefined {
+	if (!rules) return undefined;
+	if (rules.clearScanRules === true || toText(rules.clearScanRules).trim().toLowerCase() === 'true') return null;
+
+	const access: IQRCodeAccess = {};
+	const activeFrom = readDateTime(rules.activeFrom);
+	if (activeFrom) access.activeFrom = activeFrom;
+	const expiresAt = readDateTime(rules.expiresAt);
+	if (expiresAt) access.expiresAt = expiresAt;
+	const maxVisitsText = toText(rules.maxVisits).trim();
+	if (maxVisitsText) access.maxVisits = Number(maxVisitsText);
+	const fallbackUrl = toText(rules.fallbackUrl).trim();
+	if (fallbackUrl) access.fallbackUrl = fallbackUrl;
+
+	return Object.keys(access).length ? access : undefined;
 }

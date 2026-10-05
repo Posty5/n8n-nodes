@@ -13,12 +13,13 @@ import { buildLinkBulkProperties } from '../../utils/link-bulk.properties';
 import { buildQrCodeBulkRow, QR_CODE_BULK_ROUTE } from './helpers';
 import type { IBulkNodeOptions } from '../../types/link-bulk.types';
 import { buildCommonCreateFields, buildCommonUpdateFields, firstText } from '../../utils/link-tool.helpers';
-import { buildQrCodeTarget, readQrMode } from '../../utils/qr-target.helpers';
+import { buildQrAccess, buildQrCodeTarget, readQrMode } from '../../utils/qr-target.helpers';
 import { getQrTemplates, requireTemplateId } from '../../utils/qr-templates.helpers';
 import type { ILinkToolAdditionalFields } from '../../types/common';
 import type {
 	IListParams,
 	IQRCodeFullDetailsResponse,
+	IQRCodeScanRulesParameter,
 	IQRCodeWriteRequest,
 } from '../../types/qr-code.types';
 
@@ -459,6 +460,121 @@ export class Posty5QrCode implements INodeType {
 				description: 'Longitude coordinate',
 			},
 
+			// Scan rules (dynamic codes only, Starter plan and above). Create: shown
+			// only for Dynamic. Update: always (the API answers 400 on a static code).
+			{
+				displayName: 'Scan Rules',
+				name: 'scanRules',
+				type: 'collection',
+				placeholder: 'Add Rule',
+				default: {},
+				displayOptions: {
+					show: {
+						operation: ['create'],
+						mode: ['dynamic'],
+					},
+					hide: {
+						qrType: ['wifi'],
+					},
+				},
+				description: 'Limit when and how often a dynamic QR code works. Leave empty for no rules.',
+				options: [
+					{
+						displayName: 'Active From',
+						name: 'activeFrom',
+						type: 'dateTime',
+						default: '',
+						description: 'Scans before this moment go to the Fallback URL',
+					},
+					{
+						displayName: 'Expires At',
+						name: 'expiresAt',
+						type: 'dateTime',
+						default: '',
+						description: 'Scans from this moment go to the Fallback URL. Must be after Active From.',
+					},
+					{
+						displayName: 'Max Scans',
+						name: 'maxVisits',
+						type: 'number',
+						typeOptions: { minValue: 1, numberPrecision: 0 },
+						default: 1,
+						description: 'Scans allowed; later scans go to the Fallback URL',
+					},
+					{
+						displayName: 'Fallback URL',
+						name: 'fallbackUrl',
+						type: 'string',
+						default: '',
+						placeholder: 'https://example.com/offer-ended',
+						description: 'Where gated scans go (http or https)',
+					},
+					{
+						displayName: 'Clear Scan Rules',
+						name: 'clearScanRules',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to remove every scan rule from the code (overrides the other fields)',
+					},
+				],
+			},
+			{
+				displayName: 'Scan Rules',
+				name: 'scanRules',
+				type: 'collection',
+				placeholder: 'Add Rule',
+				default: {},
+				displayOptions: {
+					show: {
+						operation: ['update'],
+					},
+					hide: {
+						qrType: ['wifi'],
+					},
+				},
+				description:
+					'Dynamic codes only. Leave empty to keep the current rules; any rule set here replaces all of them.',
+				options: [
+					{
+						displayName: 'Active From',
+						name: 'activeFrom',
+						type: 'dateTime',
+						default: '',
+						description: 'Scans before this moment go to the Fallback URL',
+					},
+					{
+						displayName: 'Expires At',
+						name: 'expiresAt',
+						type: 'dateTime',
+						default: '',
+						description: 'Scans from this moment go to the Fallback URL. Must be after Active From.',
+					},
+					{
+						displayName: 'Max Scans',
+						name: 'maxVisits',
+						type: 'number',
+						typeOptions: { minValue: 1, numberPrecision: 0 },
+						default: 1,
+						description: 'Scans allowed; later scans go to the Fallback URL',
+					},
+					{
+						displayName: 'Fallback URL',
+						name: 'fallbackUrl',
+						type: 'string',
+						default: '',
+						placeholder: 'https://example.com/offer-ended',
+						description: 'Where gated scans go (http or https)',
+					},
+					{
+						displayName: 'Clear Scan Rules',
+						name: 'clearScanRules',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to remove every scan rule from the code (overrides the other fields)',
+					},
+				],
+			},
+
 			// Additional fields for Create/Update
 			{
 				displayName: 'Additional Fields',
@@ -679,6 +795,10 @@ export class Posty5QrCode implements INodeType {
 					// workflows (no value) keep sending the same body.
 					const mode = readQrMode(this.getNodeParameter('mode', i, 'static'));
 					if (mode === 'dynamic') body.mode = mode;
+					if (mode === 'dynamic') {
+						const access = buildQrAccess(this.getNodeParameter('scanRules', i, {}) as IQRCodeScanRulesParameter);
+						if (access !== undefined) body.access = access;
+					}
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'POST',
@@ -732,6 +852,9 @@ export class Posty5QrCode implements INodeType {
 					// Empty ("Keep Current") sends nothing; the API keeps the stored mode.
 					const mode = readQrMode(this.getNodeParameter('mode', i, ''));
 					if (mode) body.mode = mode;
+					// Empty Scan Rules keeps the stored rules; Clear sends access: null.
+					const access = buildQrAccess(this.getNodeParameter('scanRules', i, {}) as IQRCodeScanRulesParameter);
+					if (access !== undefined) body.access = access;
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'PUT',

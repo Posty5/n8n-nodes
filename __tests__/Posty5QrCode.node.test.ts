@@ -576,6 +576,71 @@ describe('Posty5QrCode', () => {
 		});
 	});
 
+	describe('Scan rules (dynamic QR)', () => {
+		const rules = { expiresAt: '2026-12-31T00:00:00.000Z', maxVisits: 10, fallbackUrl: 'https://example.com/over' };
+
+		function mockUpdate(scanRules: Record<string, any>) {
+			const mockExecuteFunctions = createMockExecuteFunctions(
+				{ operation: 'update', qrCodeId: 'qr123', qrType: 'url', url: 'https://example.com', additionalFields: {}, mode: '', scanRules },
+				[{ json: {} }],
+				{ apiKey: TEST_CONFIG.apiKey },
+			);
+			(mockExecuteFunctions.helpers.httpRequest as jest.Mock)
+				.mockResolvedValueOnce({ result: { _id: 'qr123', name: 'Stored', templateId: 'tpl-stored' } })
+				.mockResolvedValueOnce({ result: { _id: 'qr123' } });
+			return mockExecuteFunctions;
+		}
+
+		it('should show Scan Rules on Create only for Dynamic, on Update always, never for Wi-Fi', () => {
+			const props = qrCodeNode.description.properties.filter((p) => p.name === 'scanRules');
+			expect(props.map((p) => [p.displayOptions?.show?.operation, p.displayOptions?.show?.mode])).toEqual([
+				[['create'], ['dynamic']],
+				[['update'], undefined],
+			]);
+			for (const prop of props) expect(prop.displayOptions?.hide?.qrType).toEqual(['wifi']);
+		});
+
+		it('should send access on a dynamic Create', async () => {
+			const mockExecuteFunctions = createMockExecuteFunctions(
+				{ operation: 'create', qrType: 'url', templateId: 'tpl-123', url: 'https://example.com', additionalFields: {}, mode: 'dynamic', scanRules: rules },
+				[{ json: {} }],
+				{ apiKey: TEST_CONFIG.apiKey },
+				{ _id: 'qr1' },
+			);
+
+			await qrCodeNode.execute.call(mockExecuteFunctions);
+
+			expect(requestBody(mockExecuteFunctions).access).toEqual(rules);
+		});
+
+		it('should not send access on a static Create', async () => {
+			const mockExecuteFunctions = createMockExecuteFunctions(
+				{ operation: 'create', qrType: 'url', templateId: 'tpl-123', url: 'https://example.com', additionalFields: {}, mode: 'static', scanRules: rules },
+				[{ json: {} }],
+				{ apiKey: TEST_CONFIG.apiKey },
+				{ _id: 'qr1' },
+			);
+
+			await qrCodeNode.execute.call(mockExecuteFunctions);
+
+			expect(requestBody(mockExecuteFunctions)).not.toHaveProperty('access');
+		});
+
+		it('should keep (omit), replace, or clear (null) access on Update', async () => {
+			const keep = mockUpdate({});
+			await qrCodeNode.execute.call(keep);
+			expect(requestBody(keep, 1)).not.toHaveProperty('access');
+
+			const replace = mockUpdate(rules);
+			await qrCodeNode.execute.call(replace);
+			expect(requestBody(replace, 1).access).toEqual(rules);
+
+			const clear = mockUpdate({ clearScanRules: true, maxVisits: 3 });
+			await qrCodeNode.execute.call(clear);
+			expect(requestBody(clear, 1).access).toBeNull();
+		});
+	});
+
 	describe('Delete Operation', () => {
 		it('should delete QR code by ID', async () => {
 			const mockResponse = {
