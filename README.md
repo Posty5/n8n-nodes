@@ -41,7 +41,13 @@ npm install n8n-nodes-posty5
 
 1. Add **Posty5 API** credentials
 2. Paste your API key
-3. (Optional) Set custom base URL (default: `https://api.posty5.com`)
+3. Click **Test**. It asks the API which key this is (`GET /api/api-key/current`):
+   a good key passes, a wrong or revoked one fails with "Invalid or revoked API
+   key". Requests go to `https://api.posty5.com`; there is no base URL to set.
+
+Every request the nodes send carries `X-Posty5-Client: posty5-n8n/<package version>`
+(from 4.5.0), which the API uses to tell n8n traffic apart. It is not a
+credential and needs no setup.
 
 ## 📋 Available Nodes
 

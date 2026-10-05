@@ -1,5 +1,24 @@
 # Changelog
 
+## 4.5.0 - 2026-10-05
+
+### Changed
+
+- **Test** on the **Posty5 API** credential now asks the API which key it is
+  (`GET /api/api-key/current`) instead of listing one short link. A wrong or
+  revoked key fails with "Invalid or revoked API key"; a successful answer has
+  to name the key (`result.apiKey._id`) to pass. The test request also carries
+  the API origin itself — before, it had none, so it could fail for every key.
+- Every request the nodes make to the API sends
+  `X-Posty5-Client: posty5-n8n/<package version>`, so the API can tell n8n
+  traffic apart. The version is compiled in from `package.json`; nothing to
+  configure. Signed-URL and resumable uploads are unchanged.
+
+### Requires
+
+- The `GET /api/api-key/current` route on the API. Against an API without it,
+  **Test** fails for every key; the nodes themselves are unaffected.
+
 ## 4.4.0 - 2026-09-26
 
 ### Added

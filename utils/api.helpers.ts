@@ -4,7 +4,7 @@
  */
 
 import { IExecuteFunctions, IHttpRequestOptions } from 'n8n-workflow';
-import { POSTY5_API_BASE_URL } from './constants';
+import { POSTY5_API_BASE_URL, Posty5ClientConst } from './constants';
 
 export interface IApiRequestOptions {
 	method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -39,6 +39,7 @@ export async function makeApiRequest(
 		headers: {
 			'X-API-Key': apiKey,
 			'Content-Type': 'application/json',
+			[Posty5ClientConst.HEADER]: Posty5ClientConst.VALUE,
 		},
 		json: true,
 	};

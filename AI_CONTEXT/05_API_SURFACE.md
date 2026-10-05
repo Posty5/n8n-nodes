@@ -2,7 +2,7 @@
 
 | Public surface | Behavior | Source |
 | --- | --- | --- |
-| `posty5Api` | Credential with apiKey; authenticates using X-API-Key. | `credentials/Posty5Api.credentials.ts` |
+| `posty5Api` | Credential with apiKey; authenticates using X-API-Key. Test: `GET /api/api-key/current` on `POSTY5_API_BASE_URL` (since 4.5.0). | `credentials/Posty5Api.credentials.ts` |
 | `posty5ShortLink` | create/delete/get/list/update. | `nodes/Posty5ShortLink/Posty5ShortLink.node.ts` |
 | `posty5QrCode` | create/delete/get/list/update across seven QR types. | `nodes/Posty5QrCode/Posty5QrCode.node.ts` |
 | `posty5HtmlHosting` | file/GitHub create/update, get/list/delete, cache/forms. | `nodes/Posty5HtmlHosting/Posty5HtmlHosting.node.ts` |

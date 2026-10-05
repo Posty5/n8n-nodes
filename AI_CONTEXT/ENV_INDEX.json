@@ -18,6 +18,20 @@
       "sensitive": false
     },
     {
+      "name": "Posty5ClientConst",
+      "purpose": "X-Posty5-Client: posty5-n8n/<package.json version>, sent by makeApiRequest and the credential test; version compiled in through resolveJsonModule.",
+      "source": "utils/constants.ts",
+      "category": "request",
+      "sensitive": false
+    },
+    {
+      "name": "CredentialTestConst",
+      "purpose": "Status, response key path and messages for the credential test rules.",
+      "source": "utils/constants.ts",
+      "category": "credential",
+      "sensitive": false
+    },
+    {
       "name": "createdFrom",
       "purpose": "POST requests are tagged as n8n by the shared helper.",
       "source": "utils/api.helpers.ts",

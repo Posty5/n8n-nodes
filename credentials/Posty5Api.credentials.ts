@@ -1,9 +1,17 @@
 import {
 	IAuthenticateGeneric,
+	IAuthenticateRuleResponseCode,
+	IAuthenticateRuleResponseSuccessBody,
 	ICredentialTestRequest,
 	ICredentialType,
 	INodeProperties,
 } from 'n8n-workflow';
+import {
+	API_ENDPOINTS,
+	CredentialTestConst,
+	POSTY5_API_BASE_URL,
+	Posty5ClientConst,
+} from '../utils/constants';
 
 export class Posty5Api implements ICredentialType {
 	name = 'posty5Api';
@@ -33,14 +41,39 @@ export class Posty5Api implements ICredentialType {
 		},
 	};
 
+	/**
+	 * Asks the API which key this is. A credential test has no node defaults to
+	 * borrow, so `baseURL` is set here, from the constant the nodes use.
+	 */
 	test: ICredentialTestRequest = {
 		request: {
-			url: '/api/short-link',
+			baseURL: POSTY5_API_BASE_URL,
+			url: API_ENDPOINTS.API_KEY_CURRENT,
 			method: 'GET',
-			qs: {
-				page: 1,
-				pageSize: 1,
+			headers: {
+				[Posty5ClientConst.HEADER]: Posty5ClientConst.VALUE,
 			},
 		},
+		// n8n-workflow types `rules` as a list of one kind, but its credential tester
+		// reads every rule by `type`: `responseCode` when the request fails,
+		// `responseSuccessBody` when it succeeds (failing when the value at `key`
+		// equals `value`). One list carrying both is what gives this test both checks.
+		rules: [
+			{
+				type: 'responseCode',
+				properties: {
+					value: CredentialTestConst.INVALID_KEY_STATUS,
+					message: CredentialTestConst.INVALID_KEY_MESSAGE,
+				},
+			} satisfies IAuthenticateRuleResponseCode,
+			{
+				type: 'responseSuccessBody',
+				properties: {
+					key: CredentialTestConst.KEY_ID_PATH,
+					value: undefined,
+					message: CredentialTestConst.NO_KEY_ID_MESSAGE,
+				},
+			} satisfies IAuthenticateRuleResponseSuccessBody,
+		] as ICredentialTestRequest['rules'],
 	};
 }
