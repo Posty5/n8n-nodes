@@ -8,6 +8,10 @@ import { makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
 import { executeGetAnalytics, executeGetStatistics } from '../../utils/analytics.helpers';
 import { LINK_ANALYTICS_PROPERTIES, LINK_STATISTICS_PROPERTIES } from '../../utils/analytics.properties';
 import { API_ENDPOINTS } from '../../utils/constants';
+import { executeBulkCreate, prepareBulkRows, readBulkDefaults } from '../../utils/link-bulk.helpers';
+import { buildLinkBulkProperties } from '../../utils/link-bulk.properties';
+import { buildShortLinkBulkRow, shortLinkBulkRoute } from './helpers';
+import type { IBulkNodeOptions } from '../../types/link-bulk.types';
 import {
 	buildCommonCreateFields,
 	buildCommonUpdateFields,
@@ -59,6 +63,12 @@ export class Posty5ShortLink implements INodeType {
 						action: 'Create a short link',
 					},
 					{
+						name: 'Create Many',
+						value: 'createMany',
+						description: 'Create one short link per input item in batched API calls',
+						action: 'Create many short links',
+					},
+					{
 						name: 'Delete',
 						value: 'delete',
 						description: 'Delete a short link',
@@ -106,7 +116,7 @@ export class Posty5ShortLink implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['create'],
+						operation: ['create', 'createMany'],
 					},
 				},
 				default: '',
@@ -152,7 +162,7 @@ export class Posty5ShortLink implements INodeType {
 				type: 'string',
 				displayOptions: {
 					show: {
-						operation: ['create', 'update'],
+						operation: ['create', 'createMany', 'update'],
 					},
 				},
 				default: '',
@@ -164,7 +174,7 @@ export class Posty5ShortLink implements INodeType {
 				type: 'string',
 				displayOptions: {
 					show: {
-						operation: ['create'],
+						operation: ['create', 'createMany'],
 					},
 				},
 				default: '',
@@ -371,6 +381,9 @@ export class Posty5ShortLink implements INodeType {
 
 			// Get Statistics operation fields (shared with the other link-tool node)
 			...LINK_STATISTICS_PROPERTIES,
+
+			// Create Many operation fields (shared with the other link-tool node)
+			...buildLinkBulkProperties(true),
 		],
 	};
 
@@ -387,6 +400,15 @@ export class Posty5ShortLink implements INodeType {
 
 		const credentials = await this.getCredentials('posty5Api');
 		const apiKey = credentials.apiKey as string;
+
+		// Create Many reads every item once and answers one item per input item.
+		if (operation === 'createMany') {
+			if (!items.length) return [[]];
+			const defaults = readBulkDefaults(this.getNodeParameter('bulkDefaults', 0, {}) as Record<string, unknown>);
+			const options = this.getNodeParameter('bulkOptions', 0, {}) as IBulkNodeOptions;
+			const prepared = prepareBulkRows(items.length, (i) => buildShortLinkBulkRow(this, i, defaults));
+			return [await executeBulkCreate(this, apiKey, shortLinkBulkRoute(options.fetchMetadata !== false), prepared, defaults, options)];
+		}
 
 		for (let i = 0; i < items.length; i++) {
 			try {

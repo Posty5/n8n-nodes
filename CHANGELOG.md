@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased - bulk create and Posty5 Trigger
+
+Needs the Posty5 API's sync bulk routes and `/api/webhook-endpoints`
+(feature `link-qr-bulk-and-webhooks`). Additive; node versions stay 1.
+
+### Added
+
+- **Create Many** on **Posty5 Short Link** and **Posty5 QR Code**: one record per
+  input item via `POST /api/short-link/bulk` / `POST /api/qr-code/bulk` in
+  chunks of up to 100, with `Idempotency-Key` per chunk, *Defaults*, *Batch
+  Size*, *Fetch Page Metadata* (short links) and *Fail on Any Row Error*. One
+  output item per input item; refused rows are `failed` items.
+- **Posty5 Trigger**: starts a workflow on short-link visits, dynamic QR scans
+  and milestones. Registers/removes its own webhook endpoint, verifies every
+  request (Standard Webhooks), splits batched deliveries into items.
+- `makeApiRequest` takes optional extra `headers`.
+
 ## Unreleased - dynamic QR codes
 
 Needs the Posty5 API's dynamic QR release. No node version bump.

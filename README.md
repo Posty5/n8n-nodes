@@ -65,6 +65,7 @@ Create and manage shortened URLs. Each link counts its visits.
 | Get Statistics | Counts over all your short links: totals, visits per day, links created per day, top 10 links by visits. See [Get Statistics](#get-statistics-short-link-and-qr-code). |
 | List | Filters: Search (name), Destination URL Contains, Tag, Reference ID, Landing Page Enabled. |
 | Update | Reads the link, then saves it with your changes on top: anything you leave alone keeps its stored value. Template may stay empty to keep the current one. Destination URL is under Additional Fields. The Custom Slug cannot be changed. |
+| Create Many | One short link per input item in batched calls (up to 100 rows per request): Destination URL, Name, Custom Slug, Template, Row Fields (Tag, Reference ID), **Defaults** (Template ID, Tag, Reference ID) and Options (Batch Size, Fetch Page Metadata, Fail on Any Row Error). See [Create Many](#create-many-short-link-and-qr-code). |
 | Delete | Remove links. |
 
 **Template** is a dropdown of your QR code templates and the public ones; the
@@ -101,6 +102,7 @@ Generate QR codes for 7 different types.
 | Get Statistics | Counts over all your QR codes, as on the Short Link node (top list `topQRCodes`). See [Get Statistics](#get-statistics-short-link-and-qr-code). |
 | List | Filters: Search (name), Tag, Reference ID, Mode. |
 | Update | Reads the QR code, then saves the content you enter with everything else kept. Template may stay empty to keep the current one; Mode defaults to Keep Current. |
+| Create Many | One QR code per input item in batched calls (up to 100 rows per request): QR Type and its fields, Name, Mode, Template, Row Fields (Tag, Reference ID), **Defaults** and Options (Batch Size, Fail on Any Row Error). See [Create Many](#create-many-short-link-and-qr-code). |
 | Delete | Remove QR codes. |
 
 The design comes from the template, and Posty5 builds the encoded text from the
@@ -112,6 +114,26 @@ reprinting. Mode is hidden for WiFi, which cannot be dynamic (the API answers
 400). Create sends `mode` only for Dynamic, so saved workflows keep producing
 static codes; Update sends it only when you pick one. Outputs carry `mode` and
 `dynamicSince` (null for a static code).
+
+### Create Many (Short Link and QR Code)
+
+*Create Many* turns every input item into one row and sends them to
+`POST /api/short-link/bulk` / `POST /api/qr-code/bulk` in chunks of
+**Batch Size** (default and maximum 100): 250 items are 3 requests. Each chunk
+carries `Idempotency-Key: n8n-<executionId>-<nodeName>-<chunk>`, so retrying the
+same execution is not charged twice; a new run creates new records.
+
+- Output: one item per input item, in order, paired to it: `status`
+  (`created` / `failed`), `id`, `shortUrl` or `qrCodeDownloadURL`, `errors`.
+- A row Posty5 refuses is an output item with `status: "failed"`. Turn on
+  **Fail on Any Row Error** to stop the workflow instead (rows already created
+  stay created).
+- An item with no Template and no **Defaults → Template ID** fails locally and
+  is not sent.
+- A whole-request error (plan gate, credits) stops the node, or with *Continue
+  On Fail* is output as `error` on every item of that chunk.
+- QR *Type* and every field are per item, so one run can mix types. Landing
+  page and Android/iOS fields are not part of a bulk row.
 
 ### Get Analytics (Short Link and QR Code)
 
@@ -339,8 +361,9 @@ paused one, import supplier products and follow each part of an order.
 - Import supplier products from a spreadsheet of product IDs
 - Push tracking numbers of shipped parts to a sheet or a customer message
 
-> **No trigger.** The API does not push supplier-order events to merchants, so a
-> trigger would only poll. Use a **Schedule Trigger** with **Supplier Order → Get
+> **No store trigger yet.** The API does not push supplier-order events to
+> merchants (Posty5 Trigger covers link visits, QR scans and milestones), so a
+> store trigger would only poll. Use a **Schedule Trigger** with **Supplier Order → Get
 > Many** (Example 5) — every 15 minutes matches how often Posty5 itself checks
 > suppliers for updates.
 >
@@ -372,6 +395,32 @@ moment ago…` (an HTTP 400, not a 429) — wait a minute and run again. A 403 o
 `suppliers.orders.manage`; elsewhere, check that the store's plan includes
 dropshipping. **Supplier Product → Get Many** takes at most 48 rows a page and
 **Supplier Order → Get Many** at most 100; the API refuses a larger Limit.
+
+### 9. Posty5 Trigger
+
+Starts a workflow when a short link is visited, a QR code is scanned or a
+visit/scan milestone is reached. Activating the workflow registers a Posty5
+webhook endpoint for the node's URL; deactivating it removes the endpoint.
+
+| Setting | Meaning |
+| --- | --- |
+| Events | *Short Link Visited*, *QR Code Scanned*, *Short Link Visit Milestone*, *QR Code Scan Milestone* |
+| Links | All my links and QR codes, or specific short link / QR code IDs (comma-separated) |
+| Options | Include Bot Visits (off), Milestones (`100,1000`, up to 10), Delivery (each event, or batched every 1 min / 5 min / 1 h), Split Batches Into Items (on) |
+
+- **n8n must be reachable over public HTTPS**: n8n Cloud, or self-hosted with
+  `WEBHOOK_URL` set to a public HTTPS address (or a tunnel). Posty5 refuses
+  private or plain-HTTP URLs.
+- Every request is verified (Standard Webhooks signature, 5-minute replay
+  window) before the workflow runs; a forged one gets 401.
+- **Static QR codes never produce events** — the image holds the content
+  itself. A scan of a short link's QR image arrives as *Short Link Visited* with
+  `channel: "qr"`; dynamic QR codes send *QR Code Scanned*.
+- Each item is the event envelope (`id`, `type`, `createdAt`, `data`) plus
+  `webhookId` for de-duplication.
+- Rotating the endpoint's secret in the dashboard breaks verification: rotate
+  by deactivating and re-activating the workflow. An endpoint Posty5 disabled
+  after repeated failures is recreated on the next activation.
 
 ## 💡 Workflow Examples
 
@@ -498,6 +547,24 @@ Google Sheets (append order number, part label, tracking number)
 
 A supplier order carries the delivery address only when the API key's owner may
 see customer data. Forwarding the output to a third-party channel forwards it too.
+
+### Example 9: Slack Message on Click
+
+```
+Posty5 Trigger (Short Link Visited, specific short link)
+  ↓
+Slack → Send Message ("{{$json.data.target.name}} opened from {{$json.data.visit.country}}")
+```
+
+### Example 10: Sheet Rows → Short Links (Create Many)
+
+```
+Google Sheets → Get Rows (800 rows)
+  ↓
+Posty5 Short Link → Create Many (Destination URL = {{$json.url}}, Defaults → Template ID)
+  ↓   8 API calls, one output item per row
+Google Sheets → Update Row (shortUrl, status)
+```
 
 ## 🔧 Advanced Features
 

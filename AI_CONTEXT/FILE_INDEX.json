@@ -110,6 +110,46 @@
     {
       "path": "__mocks__",
       "role": "n8n-workflow test mock."
+    },
+    {
+      "path": "utils/link-bulk.helpers.ts",
+      "role": "Create Many: row preparation, chunking, Idempotency-Key, per-item output"
+    },
+    {
+      "path": "utils/link-bulk.properties.ts",
+      "role": "Create Many shared properties (template, row fields, defaults, options)"
+    },
+    {
+      "path": "types/link-bulk.types.ts",
+      "role": "Bulk create row/result interfaces (mirror API + SDK)"
+    },
+    {
+      "path": "nodes/Posty5ShortLink/helpers.ts",
+      "role": "Short Link bulk row mapping + bulk route body"
+    },
+    {
+      "path": "nodes/Posty5QrCode/helpers.ts",
+      "role": "QR Code bulk row mapping (buildQrCodeTarget) + bulk route body"
+    },
+    {
+      "path": "nodes/Posty5Trigger/Posty5Trigger.node.ts",
+      "role": "Trigger node: webhookMethods (checkExists/create/delete) + webhook()"
+    },
+    {
+      "path": "nodes/Posty5Trigger/helpers.ts",
+      "role": "Trigger: endpoint body, endpoint match, Standard Webhooks verify, batch split"
+    },
+    {
+      "path": "nodes/Posty5Trigger/config.ts",
+      "role": "Trigger: static event list, tolerance, messages"
+    },
+    {
+      "path": "nodes/Posty5Trigger/descriptions.ts",
+      "role": "Trigger properties"
+    },
+    {
+      "path": "types/webhook.types.ts",
+      "role": "Webhook endpoint/envelope interfaces"
     }
   ]
 }

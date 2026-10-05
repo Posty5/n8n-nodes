@@ -3,7 +3,7 @@
  * Utility functions for making API requests using n8n's native HTTP helpers
  */
 
-import { IExecuteFunctions, IHttpRequestOptions, ILoadOptionsFunctions } from 'n8n-workflow';
+import { IExecuteFunctions, IHookFunctions, IHttpRequestOptions, ILoadOptionsFunctions } from 'n8n-workflow';
 import { POSTY5_API_BASE_URL, Posty5ClientConst } from './constants';
 import type { IPosty5ApiError } from '../types/common';
 
@@ -18,6 +18,8 @@ export interface IApiRequestOptions {
 	 * never declared the key, and a body should not carry what its route ignores.
 	 */
 	stampCreatedFrom?: boolean;
+	/** Extra request headers (e.g. `Idempotency-Key`), merged over the fixed ones. */
+	headers?: Record<string, string>;
 }
 
 /**
@@ -28,7 +30,7 @@ export interface IApiRequestOptions {
  * @returns API response
  */
 export async function makeApiRequest(
-	this: IExecuteFunctions | ILoadOptionsFunctions,
+	this: IExecuteFunctions | ILoadOptionsFunctions | IHookFunctions,
 	apiKey: string,
 	options: IApiRequestOptions,
 ): Promise<any> {
@@ -41,6 +43,7 @@ export async function makeApiRequest(
 			'X-API-Key': apiKey,
 			'Content-Type': 'application/json',
 			[Posty5ClientConst.HEADER]: Posty5ClientConst.VALUE,
+			...(options.headers || {}),
 		},
 		json: true,
 	};

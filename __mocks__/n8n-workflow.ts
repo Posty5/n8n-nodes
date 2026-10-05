@@ -61,11 +61,14 @@ export class NodeOperationError extends Error {
 	node: any;
 	context: { itemIndex?: number };
 
-	constructor(node: any, error: Error | string, options: { itemIndex?: number } = {}) {
+	description?: string;
+
+	constructor(node: any, error: Error | string, options: { itemIndex?: number; description?: string } = {}) {
 		super(typeof error === 'string' ? error : error.message);
 		this.name = 'NodeOperationError';
 		this.node = node;
 		this.context = { itemIndex: options.itemIndex };
+		this.description = options.description;
 	}
 }
 

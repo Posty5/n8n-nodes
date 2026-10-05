@@ -41,6 +41,16 @@
       "name": "Store dropshipping workflows",
       "owner": "store",
       "source": "nodes/Posty5Store/Posty5Store.node.ts"
+    },
+    {
+      "name": "Link + QR Create Many (sync bulk create)",
+      "owner": "short-link",
+      "source": "utils/link-bulk.helpers.ts"
+    },
+    {
+      "name": "Posty5 Trigger (visit / scan / milestone webhooks)",
+      "owner": "trigger",
+      "source": "nodes/Posty5Trigger/Posty5Trigger.node.ts"
     }
   ]
 }

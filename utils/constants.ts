@@ -41,6 +41,7 @@ export const API_ENDPOINTS = {
 	SOCIAL_PUBLISHER_POST: '/api/social-publisher-post',
 	STORE_SUPPLIERS: '/api/store-suppliers',
 	STORE_ORDERS: '/api/store-orders',
+	WEBHOOK_ENDPOINTS: '/api/webhook-endpoints',
 } as const;
 
 export const DEFAULT_PAGINATION = {
@@ -156,6 +157,33 @@ export const DAY_KEY_PATTERN = /^\d{4}-\d{2}-\d{2}/;
 
 /** Milliseconds in one calendar day (day keys are shifted on UTC midnights, so no DST applies). */
 export const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * *Create Many* on the Short Link and QR Code nodes: `POST <SHORT_LINK|QR_CODE>/bulk`
+ * (link-qr-bulk-and-webhooks contract). Rows are sent in chunks of at most
+ * `MAX_BATCH_SIZE`; each chunk carries `Idempotency-Key:
+ * n8n-<executionId>-<nodeName>-<chunk>`, so retrying the same execution is
+ * charged once while a new run is not deduped.
+ */
+export const LINK_BULK = {
+	PATH_SEGMENT: 'bulk',
+	MAX_BATCH_SIZE: 100,
+	DEFAULT_BATCH_SIZE: 100,
+	IDEMPOTENCY_HEADER: 'Idempotency-Key',
+	IDEMPOTENCY_PREFIX: 'n8n',
+	/** `templateType` both bulk bodies send (the SDKs send the same). */
+	TEMPLATE_TYPE: 'user',
+	ROW_STATUS_CREATED: 'created',
+	ROW_STATUS_FAILED: 'failed',
+} as const;
+
+/** Errors *Create Many* raises. */
+export const LINK_BULK_MESSAGES = {
+	TEMPLATE_REQUIRED:
+		'Template is required: pick one in the Template field or set Defaults > Template ID. The Posty5 API refuses a create made with an API key without it.',
+	ROW_FAILED: 'Posty5 refused a row of Create Many',
+	MISSING_ROW_RESULT: 'The Posty5 API returned no result for this row',
+} as const;
 
 export const API_TIMEOUTS = {
 	DEFAULT: 30000, // 30 seconds

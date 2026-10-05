@@ -8,6 +8,10 @@ import { makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
 import { executeGetAnalytics, executeGetStatistics } from '../../utils/analytics.helpers';
 import { LINK_ANALYTICS_PROPERTIES, LINK_STATISTICS_PROPERTIES } from '../../utils/analytics.properties';
 import { API_ENDPOINTS } from '../../utils/constants';
+import { executeBulkCreate, prepareBulkRows, readBulkDefaults } from '../../utils/link-bulk.helpers';
+import { buildLinkBulkProperties } from '../../utils/link-bulk.properties';
+import { buildQrCodeBulkRow, QR_CODE_BULK_ROUTE } from './helpers';
+import type { IBulkNodeOptions } from '../../types/link-bulk.types';
 import { buildCommonCreateFields, buildCommonUpdateFields, firstText } from '../../utils/link-tool.helpers';
 import { buildQrCodeTarget, readQrMode } from '../../utils/qr-target.helpers';
 import { getQrTemplates, requireTemplateId } from '../../utils/qr-templates.helpers';
@@ -50,6 +54,12 @@ export class Posty5QrCode implements INodeType {
 						value: 'create',
 						description: 'Create a new QR code',
 						action: 'Create a QR code',
+					},
+					{
+						name: 'Create Many',
+						value: 'createMany',
+						description: 'Create one QR code per input item in batched API calls',
+						action: 'Create many QR codes',
 					},
 					{
 						name: 'Delete',
@@ -98,7 +108,7 @@ export class Posty5QrCode implements INodeType {
 				type: 'options',
 				displayOptions: {
 					show: {
-						operation: ['create', 'update'],
+						operation: ['create', 'createMany', 'update'],
 					},
 				},
 				options: [
@@ -181,7 +191,7 @@ export class Posty5QrCode implements INodeType {
 				type: 'string',
 				displayOptions: {
 					show: {
-						operation: ['create', 'update'],
+						operation: ['create', 'createMany', 'update'],
 					},
 				},
 				default: '',
@@ -196,7 +206,7 @@ export class Posty5QrCode implements INodeType {
 				type: 'options',
 				displayOptions: {
 					show: {
-						operation: ['create'],
+						operation: ['create', 'createMany'],
 					},
 					hide: {
 						qrType: ['wifi'],
@@ -260,7 +270,7 @@ export class Posty5QrCode implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['create', 'update'],
+						operation: ['create', 'createMany', 'update'],
 						qrType: ['url'],
 					},
 				},
@@ -276,7 +286,7 @@ export class Posty5QrCode implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['create', 'update'],
+						operation: ['create', 'createMany', 'update'],
 						qrType: ['freeText'],
 					},
 				},
@@ -292,7 +302,7 @@ export class Posty5QrCode implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['create', 'update'],
+						operation: ['create', 'createMany', 'update'],
 						qrType: ['email'],
 					},
 				},
@@ -305,7 +315,7 @@ export class Posty5QrCode implements INodeType {
 				type: 'string',
 				displayOptions: {
 					show: {
-						operation: ['create', 'update'],
+						operation: ['create', 'createMany', 'update'],
 						qrType: ['email'],
 					},
 				},
@@ -318,7 +328,7 @@ export class Posty5QrCode implements INodeType {
 				type: 'string',
 				displayOptions: {
 					show: {
-						operation: ['create', 'update'],
+						operation: ['create', 'createMany', 'update'],
 						qrType: ['email'],
 					},
 				},
@@ -334,7 +344,7 @@ export class Posty5QrCode implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['create', 'update'],
+						operation: ['create', 'createMany', 'update'],
 						qrType: ['wifi'],
 					},
 				},
@@ -347,7 +357,7 @@ export class Posty5QrCode implements INodeType {
 				type: 'options',
 				displayOptions: {
 					show: {
-						operation: ['create', 'update'],
+						operation: ['create', 'createMany', 'update'],
 						qrType: ['wifi'],
 					},
 				},
@@ -365,7 +375,7 @@ export class Posty5QrCode implements INodeType {
 				type: 'string',
 				displayOptions: {
 					show: {
-						operation: ['create', 'update'],
+						operation: ['create', 'createMany', 'update'],
 						qrType: ['wifi'],
 						wifiAuthType: ['WPA', 'WEP'],
 					},
@@ -382,7 +392,7 @@ export class Posty5QrCode implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['create', 'update'],
+						operation: ['create', 'createMany', 'update'],
 						qrType: ['call'],
 					},
 				},
@@ -398,7 +408,7 @@ export class Posty5QrCode implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['create', 'update'],
+						operation: ['create', 'createMany', 'update'],
 						qrType: ['sms'],
 					},
 				},
@@ -411,7 +421,7 @@ export class Posty5QrCode implements INodeType {
 				type: 'string',
 				displayOptions: {
 					show: {
-						operation: ['create', 'update'],
+						operation: ['create', 'createMany', 'update'],
 						qrType: ['sms'],
 					},
 				},
@@ -427,7 +437,7 @@ export class Posty5QrCode implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['create', 'update'],
+						operation: ['create', 'createMany', 'update'],
 						qrType: ['geolocation'],
 					},
 				},
@@ -441,7 +451,7 @@ export class Posty5QrCode implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['create', 'update'],
+						operation: ['create', 'createMany', 'update'],
 						qrType: ['geolocation'],
 					},
 				},
@@ -616,6 +626,9 @@ export class Posty5QrCode implements INodeType {
 
 			// Get Statistics operation fields (shared with the other link-tool node)
 			...LINK_STATISTICS_PROPERTIES,
+
+			// Create Many operation fields (shared with the other link-tool node)
+			...buildLinkBulkProperties(false),
 		],
 	};
 
@@ -632,6 +645,15 @@ export class Posty5QrCode implements INodeType {
 
 		const credentials = await this.getCredentials('posty5Api');
 		const apiKey = credentials.apiKey as string;
+
+		// Create Many reads every item once and answers one item per input item.
+		if (operation === 'createMany') {
+			if (!items.length) return [[]];
+			const defaults = readBulkDefaults(this.getNodeParameter('bulkDefaults', 0, {}) as Record<string, unknown>);
+			const options = this.getNodeParameter('bulkOptions', 0, {}) as IBulkNodeOptions;
+			const prepared = prepareBulkRows(items.length, (i) => buildQrCodeBulkRow(this, i, defaults));
+			return [await executeBulkCreate(this, apiKey, QR_CODE_BULK_ROUTE, prepared, defaults, options)];
+		}
 
 		for (let i = 0; i < items.length; i++) {
 			try {

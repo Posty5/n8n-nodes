@@ -27,6 +27,8 @@ export function createMockExecuteFunctions(
 		}),
 		getCredentials: jest.fn().mockResolvedValue(credentials),
 		getNode: jest.fn().mockReturnValue({ name: 'Posty5 Test Node', type: 'test', typeVersion: 1 }),
+		// Create Many builds each chunk's Idempotency-Key from it.
+		getExecutionId: jest.fn().mockReturnValue('exec-1'),
 		// n8n's default workflow time zone (GENERIC_TIMEZONE).
 		getTimezone: jest.fn().mockReturnValue('America/New_York'),
 		helpers: {
