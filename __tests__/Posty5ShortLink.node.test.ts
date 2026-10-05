@@ -1,5 +1,6 @@
 import type { IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
 import { Posty5ShortLink } from '../nodes/Posty5ShortLink/Posty5ShortLink.node';
+import { describeGetAnalyticsOperation } from './link-analytics.shared';
 import { createMockExecuteFunctions, TEST_CONFIG } from './setup';
 
 /** The body of the n-th request the node made. */
@@ -44,6 +45,8 @@ describe('Posty5ShortLink', () => {
 			expect(operationValues).toContain('update');
 			expect(operationValues).toContain('delete');
 			expect(operationValues).toContain('list');
+			expect(operationValues).toContain('getAnalytics');
+			expect(operationValues).toContain('getStatistics');
 		});
 
 		it('should require posty5Api credentials', () => {
@@ -400,6 +403,13 @@ describe('Posty5ShortLink', () => {
 			expect(result[0]).toHaveLength(1);
 			expect(result[0][0].json).toEqual(mockResponse);
 		});
+	});
+
+	describeGetAnalyticsOperation({
+		createNode: () => new Posty5ShortLink(),
+		idParameter: 'shortLinkId',
+		basePath: '/api/short-link',
+		notFoundMessage: 'The Short Link Is Not Found',
 	});
 
 	describe('Update Operation (fetch-then-put)', () => {

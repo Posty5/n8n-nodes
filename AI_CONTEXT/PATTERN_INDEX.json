@@ -31,6 +31,11 @@
       "name": "Fetch-then-put update",
       "rule": "An update whose PUT replaces the record GETs it first and sends the stored values back with the user's fields on top; a collection key the user added is the value to store.",
       "example": "nodes/Posty5ShortLink/Posty5ShortLink.node.ts"
+    },
+    {
+      "name": "Shared operation across nodes",
+      "rule": "An operation two nodes expose identically keeps its properties in one utils/<name>.properties.ts array spread into each node and its execution in one helper; each node keeps only its ID field and one execute branch.",
+      "example": "utils/analytics.properties.ts"
     }
   ]
 }

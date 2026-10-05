@@ -3,8 +3,8 @@
 | Public surface | Behavior | Source |
 | --- | --- | --- |
 | `posty5Api` | Credential with apiKey; authenticates using X-API-Key. | `credentials/Posty5Api.credentials.ts` |
-| `posty5ShortLink` | create/delete/get/list/update. Template dropdown (`methods.loadOptions.getQrTemplates`) required on create, optional on update. Update is fetch-then-put (GET, then PUT with `baseUrl`, never `customLandingId`). S13 fields: Landing Page, Page Title/Description, Android/iOS URL, Tag, Reference ID. List: Search = name, Destination URL Contains, Landing Page Enabled. | `nodes/Posty5ShortLink/Posty5ShortLink.node.ts` |
-| `posty5QrCode` | create/delete/get/list/update across seven QR types. Sends `qrCodeTarget: { type, <type>: {...} }` and `options: {}` (no `options.text`, the server builds it); same Template dropdown; update is fetch-then-put. | `nodes/Posty5QrCode/Posty5QrCode.node.ts` |
+| `posty5ShortLink` | create/delete/get/getAnalytics/getStatistics/list/update. Template dropdown (`methods.loadOptions.getQrTemplates`) required on create, optional on update. Update is fetch-then-put (GET, then PUT with `baseUrl`, never `customLandingId`). S13 fields: Landing Page, Page Title/Description, Android/iOS URL, Tag, Reference ID. List: Search = name, Destination URL Contains, Landing Page Enabled. getAnalytics: `GET /api/short-link/:id/analytics` (see below). | `nodes/Posty5ShortLink/Posty5ShortLink.node.ts` |
+| `posty5QrCode` | create/delete/get/getAnalytics/getStatistics/list/update across seven QR types. Sends `qrCodeTarget: { type, <type>: {...} }` and `options: {}` (no `options.text`, the server builds it); same Template dropdown; update is fetch-then-put. getAnalytics: `GET /api/qr-code/:id/analytics`. | `nodes/Posty5QrCode/Posty5QrCode.node.ts` |
 | `posty5HtmlHosting` | file/GitHub create/update, get/list/delete, cache/forms. | `nodes/Posty5HtmlHosting/Posty5HtmlHosting.node.ts` |
 | `posty5FormSubmission` | get/get-adjacent/change-status/list. | `nodes/Posty5FormSubmission/Posty5FormSubmission.node.ts` |
 | `posty5SocialPublisherWorkspace` | get/list/get-for-new-post. | `nodes/Posty5SocialPublisherWorkspace/Posty5SocialPublisherWorkspace.node.ts` |
@@ -14,3 +14,24 @@
 This is a compatibility surface. Treat exported names, operations, parameter values, types, and behavior as semver-sensitive.
 
 Machine-readable routing metadata lives in [ROUTE_INDEX.json](ROUTE_INDEX.json).
+
+## Get Analytics (4.6.0, feature `link-qr-visit-analytics`)
+
+Both link-tool nodes share `utils/analytics.properties.ts` (parameters) and
+`utils/analytics.helpers.ts` (`executeGetAnalytics`). Query (contract C2): `from`/`to`
+as `YYYY-MM-DD` (presets: today and the N-1 days before, "today" in the Time Zone
+option else the workflow zone `getTimezone()` else UTC; Custom: the picked days),
+`interval`, `tz` always (that same zone), `breakdown=all` (toggle, default on) or a
+comma list (empty list omitted = API default, every allowed breakdown), `limit`
+only when set (1-50, API default 10). Unknown ID: API 400 "The Short Link Is Not
+Found" / "The QR Code Is Not Found", surfaced as `Posty5 API Error: ...`. Output: the API answer unchanged, or *Series as Items* (one
+item per `series` point, each with `meta`). A 403 becomes `NodeApiError` with the
+API message unchanged (D11); other errors keep the `Posty5 API Error:` text.
+
+## Get Statistics (4.6.0)
+
+`executeGetStatistics` (`utils/analytics.helpers.ts`), properties
+`LINK_STATISTICS_PROPERTIES`: `GET /api/short-link/statistics` or
+`GET /api/qr-code/statistics` with `period` (`today|7d|30d|month|custom`, default
+`30d`) and, for Custom, `from`/`to` as `YYYY-MM-DD`. Output: the `{ range, data }`
+answer unchanged (D12).

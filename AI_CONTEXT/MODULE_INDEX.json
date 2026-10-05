@@ -49,7 +49,7 @@
     },
     {
       "name": "link-tool-utils",
-      "purpose": "Shared by the Short Link and QR Code nodes: template dropdown (loadOptions) and resolution, qrCodeTarget builder, create/update body pieces (fetch-then-put).",
+      "purpose": "Shared by the Short Link and QR Code nodes: template dropdown (loadOptions) and resolution, qrCodeTarget builder, create/update body pieces (fetch-then-put), Get Analytics (utils/analytics.helpers.ts + analytics.properties.ts).",
       "primary_path": "utils/link-tool.helpers.ts"
     }
   ]

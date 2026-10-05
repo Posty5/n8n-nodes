@@ -1,5 +1,6 @@
 import type { IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
 import { Posty5QrCode } from '../nodes/Posty5QrCode/Posty5QrCode.node';
+import { describeGetAnalyticsOperation } from './link-analytics.shared';
 import { createMockExecuteFunctions, TEST_CONFIG } from './setup';
 
 /** The body of the n-th request the node made. */
@@ -39,6 +40,8 @@ describe('Posty5QrCode', () => {
 			expect(operationValues).toContain('update');
 			expect(operationValues).toContain('delete');
 			expect(operationValues).toContain('list');
+			expect(operationValues).toContain('getAnalytics');
+			expect(operationValues).toContain('getStatistics');
 		});
 
 		it('should define all QR types', () => {
@@ -354,6 +357,13 @@ describe('Posty5QrCode', () => {
 			expect(result[0][0].json.qrType).toBe('wifi');
 			expect(result[0][0].json.wifi).toBeDefined();
 		});
+	});
+
+	describeGetAnalyticsOperation({
+		createNode: () => new Posty5QrCode(),
+		idParameter: 'qrCodeId',
+		basePath: '/api/qr-code',
+		notFoundMessage: 'The QR Code Is Not Found',
 	});
 
 	describe('Update Operation (fetch-then-put)', () => {

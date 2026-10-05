@@ -5,6 +5,8 @@ import {
 	INodeTypeDescription,
 } from 'n8n-workflow';
 import { makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
+import { executeGetAnalytics, executeGetStatistics } from '../../utils/analytics.helpers';
+import { LINK_ANALYTICS_PROPERTIES, LINK_STATISTICS_PROPERTIES } from '../../utils/analytics.properties';
 import { API_ENDPOINTS } from '../../utils/constants';
 import {
 	buildCommonCreateFields,
@@ -67,6 +69,18 @@ export class Posty5ShortLink implements INodeType {
 						value: 'get',
 						description: 'Get a short link by ID',
 						action: 'Get a short link',
+					},
+					{
+						name: 'Get Analytics',
+						value: 'getAnalytics',
+						description: 'Get visits, unique visitors, a series and breakdowns of a short link',
+						action: 'Get analytics for a short link',
+					},
+					{
+						name: 'Get Statistics',
+						value: 'getStatistics',
+						description: 'Get counts over all your short links: totals, visits per day and the top 10 by visits',
+						action: 'Get statistics for short links',
 					},
 					{
 						name: 'List',
@@ -265,7 +279,7 @@ export class Posty5ShortLink implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['get', 'update', 'delete'],
+						operation: ['get', 'getAnalytics', 'update', 'delete'],
 					},
 				},
 				default: '',
@@ -351,6 +365,12 @@ export class Posty5ShortLink implements INodeType {
 					},
 				],
 			},
+
+			// Get Analytics operation fields (shared with the other link-tool node)
+			...LINK_ANALYTICS_PROPERTIES,
+
+			// Get Statistics operation fields (shared with the other link-tool node)
+			...LINK_STATISTICS_PROPERTIES,
 		],
 	};
 
@@ -401,6 +421,16 @@ export class Posty5ShortLink implements INodeType {
 						method: 'GET',
 						endpoint: `${API_ENDPOINTS.SHORT_LINK}/${shortLinkId}`,
 					});
+				} else if (operation === 'getAnalytics') {
+					responseData = await executeGetAnalytics(
+						this,
+						apiKey,
+						API_ENDPOINTS.SHORT_LINK,
+						this.getNodeParameter('shortLinkId', i),
+						i,
+					);
+				} else if (operation === 'getStatistics') {
+					responseData = await executeGetStatistics(this, apiKey, API_ENDPOINTS.SHORT_LINK, i);
 				} else if (operation === 'update') {
 					const shortLinkId = this.getNodeParameter('shortLinkId', i) as string;
 					const additionalFields = this.getNodeParameter(

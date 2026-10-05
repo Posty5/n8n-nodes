@@ -5,6 +5,7 @@
 
 import { IExecuteFunctions, IHttpRequestOptions, ILoadOptionsFunctions } from 'n8n-workflow';
 import { POSTY5_API_BASE_URL } from './constants';
+import type { IPosty5ApiError } from '../types/common';
 
 export interface IApiRequestOptions {
 	method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -70,10 +71,25 @@ export async function makeApiRequest(
 
 		return response;
 	} catch (error: any) {
-		// Enhance error message with API details
-		const errorMessage = error.response?.body?.message || error.message || 'Unknown error';
-		throw new Error(`Posty5 API Error: ${errorMessage}`);
+		throw toPosty5ApiError(error);
 	}
+}
+
+/**
+ * The error `makeApiRequest` throws for a failed request. The API's message is
+ * read from the answer: `response.data` is where n8n's `httpRequest` (axios)
+ * puts the parsed body, `response.body` is the older request-library shape.
+ * The HTTP status is kept as `httpCode` so a caller can map one status (the
+ * analytics plan-gate 403) to a `NodeApiError` without parsing the message.
+ */
+export function toPosty5ApiError(error: any): IPosty5ApiError {
+	const apiMessage: string | undefined = error?.response?.data?.message || error?.response?.body?.message || undefined;
+	const errorMessage = apiMessage || error?.message || 'Unknown error';
+	const apiError: IPosty5ApiError = new Error(`Posty5 API Error: ${errorMessage}`);
+	const status = error?.response?.status ?? error?.response?.statusCode ?? error?.statusCode ?? error?.httpCode;
+	if (status !== undefined && status !== null) apiError.httpCode = String(status);
+	if (apiMessage) apiError.apiMessage = apiMessage;
+	return apiError;
 }
 
 /**

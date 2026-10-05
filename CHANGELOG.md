@@ -1,5 +1,39 @@
 # Changelog
 
+## 4.6.0 - Unreleased
+
+Needs the Posty5 API's link + QR visit analytics release
+(`GET /api/short-link/:id/analytics`, `GET /api/qr-code/:id/analytics`). Builds
+on 4.5.0; node versions stay 1.
+
+### Added
+
+- **Get Analytics** on **Posty5 Short Link** and **Posty5 QR Code**: visits,
+  unique visitors and bot visits over a range, a day/week/month series, and
+  breakdowns by country, device, OS, browser, referrer, channel (click or scan)
+  and language. **Range** is *Last 7 / 30 / 90 Days* (today included, "today"
+  in the Time Zone option else the workflow's time zone) or *Custom* From/To,
+  sent as `YYYY-MM-DD`; the zone is always sent as `tz`. **Interval**; **All
+  Breakdowns My Plan Allows** (on by default, `breakdown=all`) or a
+  **Breakdowns** list; **Options** → Breakdown Rows (1–50, API default 10) and
+  Time Zone. **Output** *Series as Items* returns one item per series point,
+  each carrying `meta`. Reading analytics costs no credits.
+- **Get Statistics** on both nodes: account-wide counts
+  (`GET /api/short-link/statistics`, `GET /api/qr-code/statistics`) for a
+  **Period** (Today, Last 7 Days, Last 30 Days, This Month, Custom From/To):
+  totals with the in-range visits, visits and records created per UTC day, and
+  the top 10 by visits. One item, the API answer unchanged.
+- A breakdown or a range your plan does not include fails with the API's own
+  plan message as an n8n API error (HTTP 403); `breakdown=all` lists such
+  breakdowns in `meta.locked` instead of failing.
+
+### Fixed
+
+- API error messages: with n8n's current HTTP helper the API's `message` was
+  never read (the node looked only at the older `response.body`), so failures
+  showed "Request failed with status code …". The message is now read from the
+  response body either way, and the HTTP status is kept on the error.
+
 ## 4.5.0 - Unreleased
 
 Needs the Posty5 API's link + QR truth-pass release: Android/iOS URLs and the

@@ -10,6 +10,8 @@ export interface IExecuteFunctions {
 	getInputData(): INodeExecutionData[];
 	getNodeParameter(parameterName: string, itemIndex: number, fallbackValue?: any): any;
 	getCredentials(type: string): Promise<any>;
+	getNode(): any;
+	getTimezone(): string;
 	helpers: {
 		httpRequest(options: any): Promise<any>;
 		getBinaryDataBuffer(itemIndex: number, propertyName: string): Promise<Buffer>;
@@ -50,4 +52,38 @@ export interface IHttpRequestOptions {
 	qs?: any;
 	json?: boolean;
 	returnFullResponse?: boolean;
+}
+
+export type JsonObject = Record<string, any>;
+
+/** Stand-in for n8n's `NodeOperationError`: the message, the node and the item it failed on. */
+export class NodeOperationError extends Error {
+	node: any;
+	context: { itemIndex?: number };
+
+	constructor(node: any, error: Error | string, options: { itemIndex?: number } = {}) {
+		super(typeof error === 'string' ? error : error.message);
+		this.name = 'NodeOperationError';
+		this.node = node;
+		this.context = { itemIndex: options.itemIndex };
+	}
+}
+
+/** Stand-in for n8n's `NodeApiError`: like the real one, an explicit `message` / `httpCode` wins. */
+export class NodeApiError extends Error {
+	node: any;
+	httpCode: string | null;
+	context: { itemIndex?: number };
+
+	constructor(
+		node: any,
+		errorResponse: JsonObject,
+		options: { message?: string; httpCode?: string; itemIndex?: number } = {},
+	) {
+		super(options.message ?? errorResponse.message);
+		this.name = 'NodeApiError';
+		this.node = node;
+		this.httpCode = options.httpCode ?? errorResponse.httpCode ?? null;
+		this.context = { itemIndex: options.itemIndex };
+	}
 }

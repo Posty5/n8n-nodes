@@ -5,6 +5,8 @@ import {
 	INodeTypeDescription,
 } from 'n8n-workflow';
 import { makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
+import { executeGetAnalytics, executeGetStatistics } from '../../utils/analytics.helpers';
+import { LINK_ANALYTICS_PROPERTIES, LINK_STATISTICS_PROPERTIES } from '../../utils/analytics.properties';
 import { API_ENDPOINTS } from '../../utils/constants';
 import { buildCommonCreateFields, buildCommonUpdateFields, firstText } from '../../utils/link-tool.helpers';
 import { buildQrCodeTarget } from '../../utils/qr-target.helpers';
@@ -60,6 +62,18 @@ export class Posty5QrCode implements INodeType {
 						value: 'get',
 						description: 'Get a QR code by ID',
 						action: 'Get a QR code',
+					},
+					{
+						name: 'Get Analytics',
+						value: 'getAnalytics',
+						description: 'Get scans, unique visitors, a series and breakdowns of a QR code',
+						action: 'Get analytics for a QR code',
+					},
+					{
+						name: 'Get Statistics',
+						value: 'getStatistics',
+						description: 'Get counts over all your QR codes: totals, visits per day and the top 10 by visits',
+						action: 'Get statistics for QR codes',
 					},
 					{
 						name: 'List',
@@ -449,7 +463,7 @@ export class Posty5QrCode implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['get', 'update', 'delete'],
+						operation: ['get', 'getAnalytics', 'update', 'delete'],
 					},
 				},
 				default: '',
@@ -521,6 +535,12 @@ export class Posty5QrCode implements INodeType {
 					},
 				],
 			},
+
+			// Get Analytics operation fields (shared with the other link-tool node)
+			...LINK_ANALYTICS_PROPERTIES,
+
+			// Get Statistics operation fields (shared with the other link-tool node)
+			...LINK_STATISTICS_PROPERTIES,
 		],
 	};
 
@@ -570,6 +590,16 @@ export class Posty5QrCode implements INodeType {
 						method: 'GET',
 						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`,
 					});
+				} else if (operation === 'getAnalytics') {
+					responseData = await executeGetAnalytics(
+						this,
+						apiKey,
+						API_ENDPOINTS.QR_CODE,
+						this.getNodeParameter('qrCodeId', i),
+						i,
+					);
+				} else if (operation === 'getStatistics') {
+					responseData = await executeGetStatistics(this, apiKey, API_ENDPOINTS.QR_CODE, i);
 				} else if (operation === 'update') {
 					const qrCodeId = this.getNodeParameter('qrCodeId', i) as string;
 					const qrType = this.getNodeParameter('qrType', i) as string;

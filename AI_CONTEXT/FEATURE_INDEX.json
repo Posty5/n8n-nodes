@@ -18,6 +18,11 @@
       "source": "nodes/Posty5QrCode/Posty5QrCode.node.ts"
     },
     {
+      "name": "Link + QR visit analytics (Get Analytics)",
+      "owner": "short-link",
+      "source": "utils/analytics.helpers.ts"
+    },
+    {
       "name": "HTML hosting automation",
       "owner": "html-hosting",
       "source": "nodes/Posty5HtmlHosting/Posty5HtmlHosting.node.ts"

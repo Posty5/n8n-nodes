@@ -119,3 +119,16 @@ export interface ILinkToolCommonBody {
 	isEnableLandingPage?: boolean;
 	pageInfo?: ILinkToolPageInfo;
 }
+
+/**
+ * The error `makeApiRequest` throws. Its message stays
+ * `Posty5 API Error: <message>`; the HTTP status and the API's own message ride
+ * along so an operation can map a status (e.g. the plan-gate 403) without
+ * parsing the text.
+ */
+export interface IPosty5ApiError extends Error {
+	/** HTTP status as a string (`'403'`), when the request got an answer. */
+	httpCode?: string;
+	/** The API's `message`, unprefixed, when the answer carried one. */
+	apiMessage?: string;
+}
