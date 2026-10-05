@@ -48,6 +48,38 @@
       "role": "Store node order/part types and the cursor list envelope"
     },
     {
+      "path": "utils/qr-templates.helpers.ts",
+      "role": "Template field of the Short Link and QR Code nodes: getQrTemplates loadOptions (user-lookup then public-lookup), requireTemplateId (field, legacy collection value, stored)"
+    },
+    {
+      "path": "utils/qr-target.helpers.ts",
+      "role": "buildQrCodeTarget: qrCodeTarget { type, <type>: {...} } for the seven QR types; no options.text"
+    },
+    {
+      "path": "utils/link-tool.helpers.ts",
+      "role": "Short Link + QR Code body pieces: create fields, fetch-then-put update merge, page info, Android/iOS URL fields"
+    },
+    {
+      "path": "utils/analytics.helpers.ts",
+      "role": "Get Analytics + Get Statistics (Short Link + QR Code): executeGetAnalytics, executeGetStatistics, workflow time zone (resolveAnalyticsTimeZone), range presets -> from/to day keys, C2 query (breakdown=all / comma list), Series as Items output, 403 -> NodeApiError"
+    },
+    {
+      "path": "utils/analytics.properties.ts",
+      "role": "Get Analytics and Get Statistics parameters shared by the Short Link and QR Code nodes (LINK_ANALYTICS_PROPERTIES, LINK_STATISTICS_PROPERTIES)"
+    },
+    {
+      "path": "utils/date.helpers.ts",
+      "role": "Day keys (YYYY-MM-DD): toDayKey in an IANA zone, shiftDayKey, parseDayKey of a dateTime value, isKnownTimeZone"
+    },
+    {
+      "path": "types/link-analytics.types.ts",
+      "role": "Get Analytics parameters, query and the C2 answer (totals, series, breakdowns, meta)"
+    },
+    {
+      "path": "__tests__/link-analytics.shared.ts",
+      "role": "Get Analytics node suite run by both the Short Link and QR Code test files"
+    },
+    {
       "path": "nodes",
       "role": "Nodes"
     },

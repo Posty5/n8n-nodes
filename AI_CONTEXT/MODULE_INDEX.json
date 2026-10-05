@@ -46,6 +46,11 @@
       "name": "api-utils",
       "purpose": "HTTP envelope handling, pagination, createdFrom tagging, the X-Posty5-Client header, and signed uploads.",
       "primary_path": "utils/api.helpers.ts"
+    },
+    {
+      "name": "link-tool-utils",
+      "purpose": "Shared by the Short Link and QR Code nodes: template dropdown (loadOptions) and resolution, qrCodeTarget builder, create/update body pieces (fetch-then-put), Get Analytics (utils/analytics.helpers.ts + analytics.properties.ts).",
+      "primary_path": "utils/link-tool.helpers.ts"
     }
   ]
 }

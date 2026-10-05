@@ -5,8 +5,18 @@ import {
 	INodeTypeDescription,
 } from 'n8n-workflow';
 import { makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
+import { executeGetAnalytics, executeGetStatistics } from '../../utils/analytics.helpers';
+import { LINK_ANALYTICS_PROPERTIES, LINK_STATISTICS_PROPERTIES } from '../../utils/analytics.properties';
 import { API_ENDPOINTS } from '../../utils/constants';
-import type { IListParams } from '../../types/qr-code.types';
+import { buildCommonCreateFields, buildCommonUpdateFields, firstText } from '../../utils/link-tool.helpers';
+import { buildQrCodeTarget } from '../../utils/qr-target.helpers';
+import { getQrTemplates, requireTemplateId } from '../../utils/qr-templates.helpers';
+import type { ILinkToolAdditionalFields } from '../../types/common';
+import type {
+	IListParams,
+	IQRCodeFullDetailsResponse,
+	IQRCodeWriteRequest,
+} from '../../types/qr-code.types';
 
 export class Posty5QrCode implements INodeType {
 	description: INodeTypeDescription = {
@@ -52,6 +62,18 @@ export class Posty5QrCode implements INodeType {
 						value: 'get',
 						description: 'Get a QR code by ID',
 						action: 'Get a QR code',
+					},
+					{
+						name: 'Get Analytics',
+						value: 'getAnalytics',
+						description: 'Get scans, unique visitors, a series and breakdowns of a QR code',
+						action: 'Get analytics for a QR code',
+					},
+					{
+						name: 'Get Statistics',
+						value: 'getStatistics',
+						description: 'Get counts over all your QR codes: totals, visits per day and the top 10 by visits',
+						action: 'Get statistics for QR codes',
 					},
 					{
 						name: 'List',
@@ -121,6 +143,39 @@ export class Posty5QrCode implements INodeType {
 
 			// Common fields
 			{
+				displayName: 'Template Name or ID',
+				name: 'templateId',
+				type: 'options',
+				required: true,
+				typeOptions: {
+					loadOptionsMethod: 'getQrTemplates',
+				},
+				displayOptions: {
+					show: {
+						operation: ['create'],
+					},
+				},
+				default: '',
+				description:
+					'The design of the QR code. Required by the Posty5 API for API-key calls. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+			},
+			{
+				displayName: 'Template Name or ID',
+				name: 'templateId',
+				type: 'options',
+				typeOptions: {
+					loadOptionsMethod: 'getQrTemplates',
+				},
+				displayOptions: {
+					show: {
+						operation: ['update'],
+					},
+				},
+				default: '',
+				description:
+					'The design of the QR code. Leave empty to keep the current one. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+			},
+			{
 				displayName: 'Name',
 				name: 'name',
 				type: 'string',
@@ -130,7 +185,7 @@ export class Posty5QrCode implements INodeType {
 					},
 				},
 				default: '',
-				description: 'A friendly name for the QR code',
+				description: 'A friendly name for the QR code. On Update, leave it empty to keep the current name.',
 			},
 
 			// URL Type fields
@@ -344,46 +399,58 @@ export class Posty5QrCode implements INodeType {
 				},
 				options: [
 					{
-						displayName: 'Tag',
-						name: 'tag',
+						displayName: 'Landing Page',
+						name: 'isEnableLandingPage',
+						type: 'boolean',
+						default: false,
+						description:
+							'Whether the QR code\'s Posty5 page shows the title and description below',
+					},
+					{
+						displayName: 'Page Description',
+						name: 'pageDescription',
 						type: 'string',
+						displayOptions: {
+							show: {
+								isEnableLandingPage: [true],
+							},
+						},
 						default: '',
-						description: 'Organization tag for filtering',
+						description: 'Landing page description',
+					},
+					{
+						displayName: 'Page Title',
+						name: 'pageTitle',
+						type: 'string',
+						displayOptions: {
+							show: {
+								isEnableLandingPage: [true],
+							},
+						},
+						default: '',
+						description: 'Landing page title. Required when Landing Page is on.',
 					},
 					{
 						displayName: 'Reference ID',
 						name: 'refId',
 						type: 'string',
 						default: '',
-						description: 'External reference ID',
+						description: 'External reference ID. On Update, an empty value clears it.',
 					},
 					{
-						displayName: 'Template ID',
+						displayName: 'Tag',
+						name: 'tag',
+						type: 'string',
+						default: '',
+						description: 'Organization tag for filtering. On Update, an empty value clears it.',
+					},
+					{
+						displayName: 'Template ID (Deprecated)',
 						name: 'templateId',
 						type: 'string',
 						default: '',
-						description: 'QR code template/style ID',
-					},
-					{
-						displayName: 'Enable Monetization',
-						name: 'isEnableMonetization',
-						type: 'boolean',
-						default: false,
-						description: 'Whether to enable monetization for this QR code',
-					},
-					{
-						displayName: 'Page Title',
-						name: 'pageTitle',
-						type: 'string',
-						default: '',
-						description: 'Landing page title',
-					},
-					{
-						displayName: 'Page Description',
-						name: 'pageDescription',
-						type: 'string',
-						default: '',
-						description: 'Landing page description',
+						description:
+							'Use the Template field instead. Read only when Template is empty, so workflows saved before version 4.6.0 keep their template.',
 					},
 				],
 			},
@@ -396,7 +463,7 @@ export class Posty5QrCode implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['get', 'update', 'delete'],
+						operation: ['get', 'getAnalytics', 'update', 'delete'],
 					},
 				},
 				default: '',
@@ -468,7 +535,19 @@ export class Posty5QrCode implements INodeType {
 					},
 				],
 			},
+
+			// Get Analytics operation fields (shared with the other link-tool node)
+			...LINK_ANALYTICS_PROPERTIES,
+
+			// Get Statistics operation fields (shared with the other link-tool node)
+			...LINK_STATISTICS_PROPERTIES,
 		],
+	};
+
+	methods = {
+		loadOptions: {
+			getQrTemplates,
+		},
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
@@ -485,68 +564,20 @@ export class Posty5QrCode implements INodeType {
 
 				if (operation === 'create') {
 					const qrType = this.getNodeParameter('qrType', i) as string;
-					const name = this.getNodeParameter('name', i, '') as string;
-					const additionalFields = this.getNodeParameter('additionalFields', i, {}) as any;
+					const additionalFields = this.getNodeParameter('additionalFields', i, {}) as ILinkToolAdditionalFields;
+					const name = firstText(this.getNodeParameter('name', i, ''));
 
-					const body: any = {};
+					const body: IQRCodeWriteRequest = {
+						...buildCommonCreateFields(additionalFields),
+						templateId: requireTemplateId(this.getNodeParameter('templateId', i, ''), additionalFields),
+						qrCodeTarget: buildQrCodeTarget(qrType, (parameter, fallback) =>
+							this.getNodeParameter(parameter, i, fallback),
+						),
+						// Required by the API; the template supplies the design and the
+						// server builds `options.text` from `qrCodeTarget`.
+						options: {},
+					};
 					if (name) body.name = name;
-					if (additionalFields.tag) body.tag = additionalFields.tag;
-					if (additionalFields.refId) body.refId = additionalFields.refId;
-					if (additionalFields.templateId) body.templateId = additionalFields.templateId;
-					if (additionalFields.isEnableMonetization !== undefined) {
-						body.isEnableMonetization = additionalFields.isEnableMonetization;
-					}
-					if (additionalFields.pageTitle || additionalFields.pageDescription) {
-						body.pageInfo = {
-							title: additionalFields.pageTitle || '',
-							description: additionalFields.pageDescription || '',
-						};
-					}
-
-					// Add type-specific fields
-					switch (qrType) {
-						case 'url': {
-							const url = this.getNodeParameter('url', i) as string;
-							body.url = { url };
-							break;
-						}
-						case 'freeText': {
-							const text = this.getNodeParameter('text', i) as string;
-							body.text = text;
-							break;
-						}
-						case 'email': {
-							const email = this.getNodeParameter('email', i) as string;
-							const subject = this.getNodeParameter('emailSubject', i, '') as string;
-							const emailBody = this.getNodeParameter('emailBody', i, '') as string;
-							body.email = { email, subject, body: emailBody };
-							break;
-						}
-						case 'wifi': {
-							const wifiName = this.getNodeParameter('wifiName', i) as string;
-							const authenticationType = this.getNodeParameter('wifiAuthType', i) as string;
-							const password = this.getNodeParameter('wifiPassword', i, '') as string;
-							body.wifi = { name: wifiName, authenticationType, password };
-							break;
-						}
-						case 'call': {
-							const phoneNumber = this.getNodeParameter('phoneNumber', i) as string;
-							body.call = { phoneNumber };
-							break;
-						}
-						case 'sms': {
-							const phoneNumber = this.getNodeParameter('smsPhoneNumber', i) as string;
-							const message = this.getNodeParameter('smsMessage', i, '') as string;
-							body.sms = { phoneNumber, message };
-							break;
-						}
-						case 'geolocation': {
-							const latitude = this.getNodeParameter('latitude', i) as number;
-							const longitude = this.getNodeParameter('longitude', i) as number;
-							body.geolocation = { latitude, longitude };
-							break;
-						}
-					}
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'POST',
@@ -559,71 +590,44 @@ export class Posty5QrCode implements INodeType {
 						method: 'GET',
 						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`,
 					});
+				} else if (operation === 'getAnalytics') {
+					responseData = await executeGetAnalytics(
+						this,
+						apiKey,
+						API_ENDPOINTS.QR_CODE,
+						this.getNodeParameter('qrCodeId', i),
+						i,
+					);
+				} else if (operation === 'getStatistics') {
+					responseData = await executeGetStatistics(this, apiKey, API_ENDPOINTS.QR_CODE, i);
 				} else if (operation === 'update') {
 					const qrCodeId = this.getNodeParameter('qrCodeId', i) as string;
 					const qrType = this.getNodeParameter('qrType', i) as string;
-					const name = this.getNodeParameter('name', i, '') as string;
-					const additionalFields = this.getNodeParameter('additionalFields', i, {}) as any;
+					const additionalFields = this.getNodeParameter('additionalFields', i, {}) as ILinkToolAdditionalFields;
+					// Built first, so an unknown type fails before any request.
+					const qrCodeTarget = buildQrCodeTarget(qrType, (parameter, fallback) =>
+						this.getNodeParameter(parameter, i, fallback),
+					);
 
-					const body: any = {};
+					// Fetch-then-put: the API names an untitled update after its text and
+					// drops an omitted template type, so the stored record is the base.
+					const stored = (await makeApiRequest.call(this, apiKey, {
+						method: 'GET',
+						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`,
+					})) as IQRCodeFullDetailsResponse;
+
+					const body: IQRCodeWriteRequest = {
+						...buildCommonUpdateFields(additionalFields, stored),
+						templateId: requireTemplateId(
+							this.getNodeParameter('templateId', i, ''),
+							additionalFields,
+							stored,
+						),
+						qrCodeTarget,
+						options: {},
+					};
+					const name = firstText(this.getNodeParameter('name', i, ''), stored.name);
 					if (name) body.name = name;
-					if (additionalFields.tag) body.tag = additionalFields.tag;
-					if (additionalFields.refId) body.refId = additionalFields.refId;
-					if (additionalFields.templateId) body.templateId = additionalFields.templateId;
-					if (additionalFields.isEnableMonetization !== undefined) {
-						body.isEnableMonetization = additionalFields.isEnableMonetization;
-					}
-					if (additionalFields.pageTitle || additionalFields.pageDescription) {
-						body.pageInfo = {
-							title: additionalFields.pageTitle || '',
-							description: additionalFields.pageDescription || '',
-						};
-					}
-
-					// Add type-specific fields
-					switch (qrType) {
-						case 'url': {
-							const url = this.getNodeParameter('url', i) as string;
-							body.url = { url };
-							break;
-						}
-						case 'freeText': {
-							const text = this.getNodeParameter('text', i) as string;
-							body.qrCodeTarget = { text };
-							break;
-						}
-						case 'email': {
-							const email = this.getNodeParameter('email', i) as string;
-							const subject = this.getNodeParameter('emailSubject', i, '') as string;
-							const emailBody = this.getNodeParameter('emailBody', i, '') as string;
-							body.email = { email, subject, body: emailBody };
-							break;
-						}
-						case 'wifi': {
-							const wifiName = this.getNodeParameter('wifiName', i) as string;
-							const authenticationType = this.getNodeParameter('wifiAuthType', i) as string;
-							const password = this.getNodeParameter('wifiPassword', i, '') as string;
-							body.wifi = { name: wifiName, authenticationType, password };
-							break;
-						}
-						case 'call': {
-							const phoneNumber = this.getNodeParameter('phoneNumber', i) as string;
-							body.call = { phoneNumber };
-							break;
-						}
-						case 'sms': {
-							const phoneNumber = this.getNodeParameter('smsPhoneNumber', i) as string;
-							const message = this.getNodeParameter('smsMessage', i, '') as string;
-							body.sms = { phoneNumber, message };
-							break;
-						}
-						case 'geolocation': {
-							const latitude = this.getNodeParameter('latitude', i) as number;
-							const longitude = this.getNodeParameter('longitude', i) as number;
-							body.geolocation = { latitude, longitude };
-							break;
-						}
-					}
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'PUT',

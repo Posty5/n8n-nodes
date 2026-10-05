@@ -53,21 +53,29 @@ credential and needs no setup.
 
 ### 1. Posty5 Short Link
 
-Create and manage shortened URLs with analytics.
+Create and manage shortened URLs. Each link counts its visits.
 
 **Operations:**
 
-- Create - Generate short links with custom slugs
-- Get - Retrieve link details
-- List - List all links with filters
-- Update - Modify existing links
-- Delete - Remove links
+| Operation | What it sends |
+| --- | --- |
+| Create | Destination URL and **Template** (required), plus Name, Custom Slug and Additional Fields: Tag, Reference ID, Landing Page with its Page Title and Page Description, Android URL, iOS URL. |
+| Get | Retrieve link details, including its visit count and Android/iOS URLs. |
+| Get Analytics | Visits, unique visitors and bot visits over a range, a series by day/week/month, and breakdowns (country, device, OS, browser, referrer, channel = click or scan, language). See [Get Analytics](#get-analytics-short-link-and-qr-code). |
+| Get Statistics | Counts over all your short links: totals, visits per day, links created per day, top 10 links by visits. See [Get Statistics](#get-statistics-short-link-and-qr-code). |
+| List | Filters: Search (name), Destination URL Contains, Tag, Reference ID, Landing Page Enabled. |
+| Update | Reads the link, then saves it with your changes on top: anything you leave alone keeps its stored value. Template may stay empty to keep the current one. Destination URL is under Additional Fields. The Custom Slug cannot be changed. |
+| Delete | Remove links. |
+
+**Template** is a dropdown of your QR code templates and the public ones; the
+Posty5 API requires one on every API-key create and update. On Update, a Tag,
+Reference ID, Android URL or iOS URL you add but leave empty clears it.
 
 **Use Cases:**
 
 - Generate tracking links for marketing campaigns
 - Create QR-friendly short URLs
-- Monitor click analytics
+- Send app users to the app (Android/iOS URLs) and everyone else to the web page
 
 ### 2. Posty5 QR Code
 
@@ -85,11 +93,57 @@ Generate QR codes for 7 different types.
 
 **Operations:**
 
-- Create - Generate new QR codes
-- Get - Retrieve QR code details
-- List - List all QR codes
-- Update - Modify QR code content
-- Delete - Remove QR codes
+| Operation | What it sends |
+| --- | --- |
+| Create | QR Type, its content fields and **Template** (required), plus Name and Additional Fields: Tag, Reference ID, Landing Page with its Page Title and Page Description. |
+| Get | Retrieve QR code details. |
+| Get Analytics | Scans, unique visitors and bot visits over a range, a series and breakdowns, as on the Short Link node. See [Get Analytics](#get-analytics-short-link-and-qr-code). |
+| Get Statistics | Counts over all your QR codes, as on the Short Link node (top list `topQRCodes`). See [Get Statistics](#get-statistics-short-link-and-qr-code). |
+| List | Filters: Search (name), Tag, Reference ID. |
+| Update | Reads the QR code, then saves the content you enter with everything else kept. Template may stay empty to keep the current one. |
+| Delete | Remove QR codes. |
+
+The design comes from the template, and Posty5 builds the encoded text from the
+content fields: the node sends the content as `qrCodeTarget` and nothing else.
+
+### Get Analytics (Short Link and QR Code)
+
+`GET /api/short-link/:id/analytics` or `GET /api/qr-code/:id/analytics`, the
+same numbers the dashboard's Analytics tab and the Posty5 SDKs read. Reading
+analytics costs no credits.
+
+| Parameter | What it sends |
+| --- | --- |
+| Short Link ID / QR Code ID | The record to read. |
+| Range | *Last 7 / 30 / 90 Days* (today included, "today" counted in the Time Zone option, else the workflow's time zone) or *Custom* with **From** and **To** dates (both days included). Sent as `from` / `to`, `YYYY-MM-DD`. Default: last 30 days. |
+| Interval | `day` (default), `week` (points start on Monday) or `month` (points start on the 1st). |
+| All Breakdowns My Plan Allows | On (default): `breakdown=all`. Breakdowns your plan does not include are listed in `meta.locked` with the plan that adds them, instead of failing. |
+| Breakdowns | Off the toggle: the ones you pick, comma-joined. None picked: `breakdown` is left out and the API returns every breakdown your plan allows. |
+| Output | *Full Response* (one item, the API answer unchanged) or *Series as Items* (one item per series point, each with `meta`, handy for Google Sheets). |
+| Options → Breakdown Rows | Rows per breakdown, 1–50 (API default 10); the rest is summed into an `other` row. |
+| Options → Time Zone | IANA name, e.g. `Africa/Cairo`. Empty: the workflow's time zone (Workflow Settings → Timezone, default the instance's `GENERIC_TIMEZONE`). Always sent as `tz`, so the API counts days in the same zone the presets use. |
+
+The answer is `{ totals: { visits, uniqueVisitors, botVisits }, series: [{ date,
+visits, uniqueVisitors }], breakdowns: { <name>: [{ key, visits, uniqueVisitors }] },
+meta: { from, to, interval, timezone, source, analyticsStartedAt, locked,
+maxHistoryDays } }`. Bots and link-preview fetchers count only in `botVisits`;
+`uniqueVisitors` over several days is the sum of each day's unique visitors.
+Naming a breakdown your plan does not include, or a range further back than it
+allows, fails with the API's own plan message (HTTP 403). An unknown ID fails
+with the API's 400 "The Short Link Is Not Found" / "The QR Code Is Not Found".
+
+### Get Statistics (Short Link and QR Code)
+
+`GET /api/short-link/statistics` or `GET /api/qr-code/statistics`: counts over
+all your links (or QR codes), with no ID. **Period** is *Today*, *Last 7 Days*,
+*Last 30 Days* (default), *This Month* or *Custom* with **From** / **To**
+(`YYYY-MM-DD`); sent as the API's `period` (`today`, `7d`, `30d`, `month`,
+`custom`). Days are UTC days. The answer is one item, unchanged: `{ range: {
+from, to, period }, data: { totals, daily: [{ _id, createdCount, visitorsSum }],
+topLinks | topQRCodes } }`. `totals` holds the lifetime `totalVisitors` counter
+(it includes visits from before visit analytics launched) and the in-range
+`visitsInRange`, `uniqueVisitorsInRange` and `botVisitsInRange`; `visitorsSum`
+is visits by people that day. Reading statistics costs no credits.
 
 ### 3. Posty5 HTML Hosting
 
@@ -411,7 +465,17 @@ IF (jobId is set) → Wait → Posty5 Store (Supplier Product → Get Import Sta
 Email (rows with state = failed)
 ```
 
-### Example 7: Tracking Updates Per Part
+### Example 7: Weekly Top Countries to Slack
+
+```
+Schedule Trigger (every Monday)
+  ↓
+Posty5 Short Link (Get Analytics: Last 7 Days, Breakdowns = Country, Breakdown Rows = 5)
+  ↓
+Slack (post totals.visits and breakdowns.country)
+```
+
+### Example 8: Tracking Updates Per Part
 
 ```
 Schedule Trigger (hourly)
@@ -498,7 +562,8 @@ All nodes support N8N's "Continue on Fail" option:
 Common errors:
 
 - **401 Unauthorized** - Invalid API key
-- **404 Not Found** - Resource doesn't exist
+- **403 Forbidden** - On Get Analytics: a breakdown or range your plan does not include (the API's message is shown as is)
+- **404 Not Found** - Resource doesn't exist (Get Analytics answers an unknown ID with a 400 and the API's not-found message)
 - **429 Too Many Requests** - Rate limit exceeded
 - **422 Validation Error** - Invalid parameters
 
