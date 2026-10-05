@@ -3,9 +3,35 @@
  * Central location for all API-related constants
  */
 
+import { version as packageVersion } from '../package.json';
+
 export const POSTY5_API_BASE_URL = 'https://api.posty5.com';
 
+/**
+ * `X-Posty5-Client`, sent on every request this package makes to the API (the
+ * mcp-server headers contract: `posty5-n8n/<version>`; the API logs it and never
+ * trusts it). The version is package.json's, compiled in by tsc through
+ * `resolveJsonModule`, so a release bump cannot leave a stale copy here.
+ */
+export const Posty5ClientConst = {
+	HEADER: 'X-Posty5-Client',
+	VALUE: `posty5-n8n/${packageVersion}`,
+} as const;
+
+/**
+ * The credential's Test button (`GET /api/api-key/current`). A wrong or revoked
+ * key answers 401; a 200 has to name the key at `KEY_ID_PATH`, so a 200 from
+ * anything else is not a pass.
+ */
+export const CredentialTestConst = {
+	INVALID_KEY_STATUS: 401,
+	INVALID_KEY_MESSAGE: 'Invalid or revoked API key',
+	KEY_ID_PATH: 'result.apiKey._id',
+	NO_KEY_ID_MESSAGE: 'The Posty5 API did not identify this API key',
+} as const;
+
 export const API_ENDPOINTS = {
+	API_KEY_CURRENT: '/api/api-key/current',
 	SHORT_LINK: '/api/short-link',
 	QR_CODE: '/api/qr-code',
 	HTML_HOSTING: '/api/html-hosting',

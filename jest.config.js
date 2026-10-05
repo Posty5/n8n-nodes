@@ -3,6 +3,9 @@ module.exports = {
 	testEnvironment: 'node',
 	roots: ['<rootDir>'],
 	testMatch: ['**/__tests__/**/*.test.ts'],
+	// `utils/constants.ts` imports package.json, so tsc copies it to dist/; keep the
+	// compiled copy out of jest's module map (it would collide with the root one).
+	modulePathIgnorePatterns: ['<rootDir>/dist/'],
 	collectCoverageFrom: [
 		'nodes/**/*.ts',
 		'utils/**/*.ts',

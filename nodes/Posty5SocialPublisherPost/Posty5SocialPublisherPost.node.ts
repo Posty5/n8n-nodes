@@ -1278,17 +1278,17 @@ export class Posty5SocialPublisherPost implements INodeType {
 					const rescheduleWhen = this.getNodeParameter('rescheduleWhen', i, 'later') as string;
 					const rescheduleCaption = this.getNodeParameter('rescheduleCaption', i, '') as string;
 
-					const rescheduleBody: any = {
-						schedule:
-							rescheduleWhen === 'later'
-								? {
-										type: 'schedule',
-										scheduledAt: new Date(
-											this.getNodeParameter('rescheduleDate', i) as string,
-										).toISOString(),
-									}
-								: { type: 'now' },
-					};
+					// The edit route takes the schedule flat (scheduleType + scheduledAt), not the
+					// create routes' `schedule` object, and refuses scheduledAt with "now".
+					const rescheduleBody: any =
+						rescheduleWhen === 'later'
+							? {
+									scheduleType: 'schedule',
+									scheduledAt: new Date(
+										this.getNodeParameter('rescheduleDate', i) as string,
+									).toISOString(),
+								}
+							: { scheduleType: 'now' };
 
 					if (rescheduleCaption.trim().length > 0) {
 						rescheduleBody.caption = rescheduleCaption;

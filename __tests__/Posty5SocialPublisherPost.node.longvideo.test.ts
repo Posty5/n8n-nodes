@@ -284,9 +284,8 @@ describe('Posty5SocialPublisherPost — long video', () => {
 			const [req] = requests(mock);
 			expect(req.method).toBe('PUT');
 			expect(req.url).toContain('/api/social-publisher-post/post_1');
-			expect(req.body).toEqual({
-				schedule: { type: 'schedule', scheduledAt: '2026-09-20T08:00:00.000Z' },
-			});
+			// The edit route's schema takes scheduleType + scheduledAt flat and refuses unknown keys.
+			expect(req.body).toEqual({ scheduleType: 'schedule', scheduledAt: '2026-09-20T08:00:00.000Z' });
 		});
 
 		it('can flip a scheduled post to publish now', async () => {
@@ -304,7 +303,7 @@ describe('Posty5SocialPublisherPost — long video', () => {
 
 			await node.execute.call(mock);
 
-			expect(requests(mock)[0].body.schedule).toEqual({ type: 'now' });
+			expect(requests(mock)[0].body).toEqual({ scheduleType: 'now' });
 		});
 
 		it('sends a replacement caption only when one was typed', async () => {

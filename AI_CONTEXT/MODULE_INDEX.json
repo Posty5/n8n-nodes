@@ -4,7 +4,7 @@
   "modules": [
     {
       "name": "credential",
-      "purpose": "posty5Api credential injects X-API-Key and tests connectivity.",
+      "purpose": "posty5Api credential injects X-API-Key; Test calls GET /api/api-key/current (401 = invalid or revoked key, 200 must carry result.apiKey._id).",
       "primary_path": "credentials/Posty5Api.credentials.ts"
     },
     {
@@ -44,7 +44,7 @@
     },
     {
       "name": "api-utils",
-      "purpose": "HTTP envelope handling, pagination, createdFrom tagging, and signed uploads.",
+      "purpose": "HTTP envelope handling, pagination, createdFrom tagging, the X-Posty5-Client header, and signed uploads.",
       "primary_path": "utils/api.helpers.ts"
     }
   ]
