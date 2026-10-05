@@ -138,7 +138,8 @@ export interface IQRCodeGeolocationTarget {
 }
 
 /**
- * QR Code target configuration
+ * QR Code target configuration (`qrCodeTarget`). `type` names the one block the
+ * API reads; the node sends that block and no other.
  */
 export interface IQRCodeTarget {
 	type: QrCodeTargetType;
@@ -147,6 +148,7 @@ export interface IQRCodeTarget {
 	wifi?: IQRCodeWifiTarget;
 	call?: IQRCodeCallTarget;
 	sms?: IQRCodeSmsTarget;
+	url?: IQRCodeUrlTarget;
 	geolocation?: IQRCodeGeolocationTarget;
 }
 
@@ -163,7 +165,6 @@ export interface IQRCode {
 	lastVisitorDate?: string;
 	refId?: string;
 	tag?: string;
-	isEnableMonetization?: boolean;
 	pageInfo?: IQRCodePageInfo;
 	qrCodeTarget?: IQRCodeTarget;
 	status: QrCodeStatusType;
@@ -182,85 +183,36 @@ export interface IQRCodeFullDetailsResponse extends IQRCode {
 	template?: IQRCodeTemplate;
 	templateType?: string;
 	options?: IQRCodeOptions;
+	createdFrom?: string;
 }
 
 /**
- * Base request interface for creating/updating QR codes
+ * Body of `POST /api/qr-code/:type` and `PUT /api/qr-code/:type/:id`.
+ *
+ * `options` is required by the API but the node sends it empty: the template
+ * supplies the design, and the server builds `options.text` from
+ * `qrCodeTarget`, so nothing a client puts there changes what the image encodes.
  */
-export interface IQRCodeRequest {
+export interface IQRCodeWriteRequest {
 	name?: string;
+	/** Required for every API-key call. */
 	templateId: string;
+	templateType?: string;
 	refId?: string;
 	tag?: string;
-	customLandingId?: string;
-	isEnableMonetization?: boolean;
+	isEnableLandingPage?: boolean;
 	pageInfo?: IQRCodePageInfo;
-}
-
-export interface ICreateFreeTextQRCodeRequest extends IQRCodeRequest {
-	text: string;
-}
-
-export interface ICreateEmailQRCodeRequest extends IQRCodeRequest {
-	email: IQRCodeEmailTarget;
-}
-
-export interface ICreateWifiQRCodeRequest extends IQRCodeRequest {
-	wifi: IQRCodeWifiTarget;
-}
-
-export interface ICreateCallQRCodeRequest extends IQRCodeRequest {
-	call: IQRCodeCallTarget;
-}
-
-export interface ICreateSMSQRCodeRequest extends IQRCodeRequest {
-	sms: IQRCodeSmsTarget;
-}
-
-export interface ICreateURLQRCodeRequest extends IQRCodeRequest {
-	url: IQRCodeUrlTarget;
-}
-
-export interface ICreateGeolocationQRCodeRequest extends IQRCodeRequest {
-	geolocation: IQRCodeGeolocationTarget;
+	createdFrom?: string;
+	qrCodeTarget: IQRCodeTarget;
+	options: IQRCodeOptions;
 }
 
 /**
- * Request interface for updating a QR code
+ * Reads one node parameter for the QR target builder. The node passes
+ * `(name, fallback) => this.getNodeParameter(name, itemIndex, fallback)`;
+ * tests pass a plain lookup.
  */
-export interface IUpdateQRCodeRequest extends IQRCodeRequest {
-	name: string;
-}
-
-export interface IUpdateFreeTextQRCodeRequest extends IUpdateQRCodeRequest {
-	qrCodeTarget: {
-		text: string;
-	};
-}
-
-export interface IUpdateEmailQRCodeRequest extends IUpdateQRCodeRequest {
-	email: IQRCodeEmailTarget;
-}
-
-export interface IUpdateWifiQRCodeRequest extends IUpdateQRCodeRequest {
-	wifi: IQRCodeWifiTarget;
-}
-
-export interface IUpdateCallQRCodeRequest extends IUpdateQRCodeRequest {
-	call: IQRCodeCallTarget;
-}
-
-export interface IUpdateSMSQRCodeRequest extends IUpdateQRCodeRequest {
-	sms: IQRCodeSmsTarget;
-}
-
-export interface IUpdateURLQRCodeRequest extends IUpdateQRCodeRequest {
-	url: IQRCodeUrlTarget;
-}
-
-export interface IUpdateGeolocationQRCodeRequest extends IUpdateQRCodeRequest {
-	geolocation: IQRCodeGeolocationTarget;
-}
+export type QrParameterReader = (name: string, fallback?: unknown) => unknown;
 
 /**
  * List parameters for searching QR codes
@@ -271,7 +223,7 @@ export interface IListParams {
 	templateId?: string;
 	tag?: string;
 	refId?: string;
-	isEnableMonetization?: boolean;
+	isEnableLandingPage?: boolean;
 	status?: QrCodeStatusType;
 	createdFrom?: string;
 }
@@ -282,6 +234,24 @@ export interface IListParams {
 export interface IQRCodeLookupItem {
 	_id: string;
 	name: string;
+}
+
+/**
+ * One row of `GET /api/qr-code-template/user-lookup` or `/public-lookup`
+ * (both select only `name`).
+ */
+export interface IQRCodeTemplateLookupItem {
+	_id: string;
+	name?: string;
+}
+
+/** The cursor-paged envelope both template lookups answer with. */
+export interface IQRCodeTemplateLookupPage {
+	items?: IQRCodeTemplateLookupItem[];
+	pagination?: {
+		nextCursor?: string | null;
+		hasMore?: boolean;
+	};
 }
 
 // Response type aliases

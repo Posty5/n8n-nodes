@@ -47,21 +47,27 @@ npm install n8n-nodes-posty5
 
 ### 1. Posty5 Short Link
 
-Create and manage shortened URLs with analytics.
+Create and manage shortened URLs. Each link counts its visits.
 
 **Operations:**
 
-- Create - Generate short links with custom slugs
-- Get - Retrieve link details
-- List - List all links with filters
-- Update - Modify existing links
-- Delete - Remove links
+| Operation | What it sends |
+| --- | --- |
+| Create | Destination URL and **Template** (required), plus Name, Custom Slug and Additional Fields: Tag, Reference ID, Landing Page with its Page Title and Page Description, Android URL, iOS URL. |
+| Get | Retrieve link details, including its visit count and Android/iOS URLs. |
+| List | Filters: Search (name), Destination URL Contains, Tag, Reference ID, Landing Page Enabled. |
+| Update | Reads the link, then saves it with your changes on top: anything you leave alone keeps its stored value. Template may stay empty to keep the current one. Destination URL is under Additional Fields. The Custom Slug cannot be changed. |
+| Delete | Remove links. |
+
+**Template** is a dropdown of your QR code templates and the public ones; the
+Posty5 API requires one on every API-key create and update. On Update, a Tag,
+Reference ID, Android URL or iOS URL you add but leave empty clears it.
 
 **Use Cases:**
 
 - Generate tracking links for marketing campaigns
 - Create QR-friendly short URLs
-- Monitor click analytics
+- Send app users to the app (Android/iOS URLs) and everyone else to the web page
 
 ### 2. Posty5 QR Code
 
@@ -79,11 +85,16 @@ Generate QR codes for 7 different types.
 
 **Operations:**
 
-- Create - Generate new QR codes
-- Get - Retrieve QR code details
-- List - List all QR codes
-- Update - Modify QR code content
-- Delete - Remove QR codes
+| Operation | What it sends |
+| --- | --- |
+| Create | QR Type, its content fields and **Template** (required), plus Name and Additional Fields: Tag, Reference ID, Landing Page with its Page Title and Page Description. |
+| Get | Retrieve QR code details. |
+| List | Filters: Search (name), Tag, Reference ID. |
+| Update | Reads the QR code, then saves the content you enter with everything else kept. Template may stay empty to keep the current one. |
+| Delete | Remove QR codes. |
+
+The design comes from the template, and Posty5 builds the encoded text from the
+content fields: the node sends the content as `qrCodeTarget` and nothing else.
 
 ### 3. Posty5 HTML Hosting
 

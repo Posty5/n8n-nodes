@@ -10,6 +10,7 @@
 | `social-workspace` | Get/list/get-for-new-post workspace operations. | `nodes/Posty5SocialPublisherWorkspace/Posty5SocialPublisherWorkspace.node.ts` |
 | `social-post` | Publish video/image, inspect status/list/default settings. | `nodes/Posty5SocialPublisherPost/Posty5SocialPublisherPost.node.ts` |
 | `api-utils` | HTTP envelope handling, pagination, createdFrom tagging, and signed uploads. | `utils/api.helpers.ts` |
+| `link-tool-utils` | Shared by Short Link and QR Code: template dropdown and resolution (`qr-templates.helpers.ts`), `qrCodeTarget` builder (`qr-target.helpers.ts`), create/update body pieces (`link-tool.helpers.ts`). | `utils/link-tool.helpers.ts` |
 
 ## Editing rule
 

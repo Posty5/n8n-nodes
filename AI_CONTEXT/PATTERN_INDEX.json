@@ -21,6 +21,16 @@
       "name": "Colocated node test",
       "rule": "Each registered node has a Jest test.",
       "example": "__tests__/Posty5ShortLink.node.test.ts"
+    },
+    {
+      "name": "Dynamic options",
+      "rule": "A dropdown filled from the API uses typeOptions.loadOptionsMethod; the method lives in a utils helper and is registered in the node's methods.loadOptions. makeApiRequest accepts the loadOptions context.",
+      "example": "utils/qr-templates.helpers.ts"
+    },
+    {
+      "name": "Fetch-then-put update",
+      "rule": "An update whose PUT replaces the record GETs it first and sends the stored values back with the user's fields on top; a collection key the user added is the value to store.",
+      "example": "nodes/Posty5ShortLink/Posty5ShortLink.node.ts"
     }
   ]
 }

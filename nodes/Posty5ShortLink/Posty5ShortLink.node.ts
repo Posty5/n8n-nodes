@@ -6,9 +6,21 @@ import {
 } from 'n8n-workflow';
 import { makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
 import { API_ENDPOINTS } from '../../utils/constants';
+import {
+	buildCommonCreateFields,
+	buildCommonUpdateFields,
+	buildDeepLinkFields,
+	firstText,
+	toText,
+} from '../../utils/link-tool.helpers';
+import { getQrTemplates, requireTemplateId } from '../../utils/qr-templates.helpers';
 import type {
 	ICreateShortLinkRequest,
 	IListParams,
+	IShortLinkAdditionalFields,
+	IShortLinkFullDetailsResponse,
+	IShortLinkListFilters,
+	IUpdateShortLinkRequest,
 } from '../../types/short-link.types';
 
 export class Posty5ShortLink implements INodeType {
@@ -84,7 +96,41 @@ export class Posty5ShortLink implements INodeType {
 					},
 				},
 				default: '',
-				description: 'The destination URL to shorten',
+				placeholder: 'https://example.com',
+				description: 'The destination URL to shorten. It must start with http:// or https://.',
+			},
+			{
+				displayName: 'Template Name or ID',
+				name: 'templateId',
+				type: 'options',
+				required: true,
+				typeOptions: {
+					loadOptionsMethod: 'getQrTemplates',
+				},
+				displayOptions: {
+					show: {
+						operation: ['create'],
+					},
+				},
+				default: '',
+				description:
+					'The QR code design of the link. Required by the Posty5 API for API-key calls. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+			},
+			{
+				displayName: 'Template Name or ID',
+				name: 'templateId',
+				type: 'options',
+				typeOptions: {
+					loadOptionsMethod: 'getQrTemplates',
+				},
+				displayOptions: {
+					show: {
+						operation: ['update'],
+					},
+				},
+				default: '',
+				description:
+					'The QR code design of the link. Leave empty to keep the current one. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
 			},
 			{
 				displayName: 'Name',
@@ -96,7 +142,7 @@ export class Posty5ShortLink implements INodeType {
 					},
 				},
 				default: '',
-				description: 'A friendly name for the short link',
+				description: 'A friendly name for the short link. On Update, leave it empty to keep the current name.',
 			},
 			{
 				displayName: 'Custom Slug',
@@ -104,11 +150,12 @@ export class Posty5ShortLink implements INodeType {
 				type: 'string',
 				displayOptions: {
 					show: {
-						operation: ['create', 'update'],
+						operation: ['create'],
 					},
 				},
 				default: '',
-				description: 'Custom slug for branded short links (e.g., "my-link")',
+				description:
+					'Custom slug for branded short links (e.g., "my-link"). Lowercase letters, digits and hyphens. It cannot be changed after the link is created.',
 			},
 			{
 				displayName: 'Additional Fields',
@@ -123,46 +170,89 @@ export class Posty5ShortLink implements INodeType {
 				},
 				options: [
 					{
-						displayName: 'Tag',
-						name: 'tag',
+						displayName: 'Android URL',
+						name: 'androidUrl',
 						type: 'string',
 						default: '',
-						description: 'Organization tag for filtering',
+						placeholder: 'myapp://item/1',
+						description:
+							'Where Android visitors go: an https:// link or an app link. Left out, the link uses the deep link the destination page declares. On Update, an empty value clears it.',
+					},
+					{
+						displayName: 'Destination URL',
+						name: 'baseUrl',
+						type: 'string',
+						displayOptions: {
+							show: {
+								'/operation': ['update'],
+							},
+						},
+						default: '',
+						placeholder: 'https://example.com',
+						description: 'A new destination URL. Left out, the current one is kept.',
+					},
+					{
+						displayName: 'iOS URL',
+						name: 'iosUrl',
+						type: 'string',
+						default: '',
+						placeholder: 'myapp://item/1',
+						description:
+							'Where iPhone and iPad visitors go: an https:// link or an app link. Left out, the link uses the deep link the destination page declares. On Update, an empty value clears it.',
+					},
+					{
+						displayName: 'Landing Page',
+						name: 'isEnableLandingPage',
+						type: 'boolean',
+						default: false,
+						description:
+							'Whether visitors see a Posty5 page with the title and description below before they continue, instead of a direct redirect',
+					},
+					{
+						displayName: 'Page Description',
+						name: 'pageDescription',
+						type: 'string',
+						displayOptions: {
+							show: {
+								isEnableLandingPage: [true],
+							},
+						},
+						default: '',
+						description: 'Landing page description. Required when Landing Page is on.',
+					},
+					{
+						displayName: 'Page Title',
+						name: 'pageTitle',
+						type: 'string',
+						displayOptions: {
+							show: {
+								isEnableLandingPage: [true],
+							},
+						},
+						default: '',
+						description: 'Landing page title. Required when Landing Page is on.',
 					},
 					{
 						displayName: 'Reference ID',
 						name: 'refId',
 						type: 'string',
 						default: '',
-						description: 'External reference ID',
+						description: 'External reference ID. On Update, an empty value clears it.',
 					},
 					{
-						displayName: 'Template ID',
+						displayName: 'Tag',
+						name: 'tag',
+						type: 'string',
+						default: '',
+						description: 'Organization tag for filtering. On Update, an empty value clears it.',
+					},
+					{
+						displayName: 'Template ID (Deprecated)',
 						name: 'templateId',
 						type: 'string',
 						default: '',
-						description: 'QR code template ID',
-					},
-					{
-						displayName: 'Enable Monetization',
-						name: 'isEnableMonetization',
-						type: 'boolean',
-						default: false,
-						description: 'Whether to enable monetization for this link',
-					},
-					{
-						displayName: 'Page Title',
-						name: 'pageTitle',
-						type: 'string',
-						default: '',
-						description: 'Landing page title',
-					},
-					{
-						displayName: 'Page Description',
-						name: 'pageDescription',
-						type: 'string',
-						default: '',
-						description: 'Landing page description',
+						description:
+							'Use the Template field instead. Read only when Template is empty, so workflows saved before version 4.5.0 keep their template.',
 					},
 				],
 			},
@@ -225,11 +315,18 @@ export class Posty5ShortLink implements INodeType {
 				},
 				options: [
 					{
-						displayName: 'Tag',
-						name: 'tag',
+						displayName: 'Destination URL Contains',
+						name: 'baseUrl',
 						type: 'string',
 						default: '',
-						description: 'Filter by tag',
+						description: 'Only links whose destination URL contains this text',
+					},
+					{
+						displayName: 'Landing Page Enabled',
+						name: 'isEnableLandingPage',
+						type: 'boolean',
+						default: true,
+						description: 'Whether to return only links with the landing page on (true) or only links without it (false)',
 					},
 					{
 						displayName: 'Reference ID',
@@ -243,11 +340,24 @@ export class Posty5ShortLink implements INodeType {
 						name: 'search',
 						type: 'string',
 						default: '',
-						description: 'Search term',
+						description: 'Only links whose name contains this text',
+					},
+					{
+						displayName: 'Tag',
+						name: 'tag',
+						type: 'string',
+						default: '',
+						description: 'Filter by tag',
 					},
 				],
 			},
 		],
+	};
+
+	methods = {
+		loadOptions: {
+			getQrTemplates,
+		},
 	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
@@ -263,28 +373,22 @@ export class Posty5ShortLink implements INodeType {
 				let responseData: any = {};
 
 				if (operation === 'create') {
-					const url = this.getNodeParameter('url', i) as string;
-					const name = this.getNodeParameter('name', i, '') as string;
-					const customLandingId = this.getNodeParameter('customLandingId', i, '') as string;
-					const additionalFields = this.getNodeParameter('additionalFields', i, {}) as any;
+					const additionalFields = this.getNodeParameter(
+						'additionalFields',
+						i,
+						{},
+					) as IShortLinkAdditionalFields;
+					const name = firstText(this.getNodeParameter('name', i, ''));
+					const customLandingId = firstText(this.getNodeParameter('customLandingId', i, ''));
 
 					const body: ICreateShortLinkRequest = {
-						baseUrl: url,
+						baseUrl: toText(this.getNodeParameter('url', i, '')).trim(),
+						templateId: requireTemplateId(this.getNodeParameter('templateId', i, ''), additionalFields),
+						...buildCommonCreateFields(additionalFields),
+						...buildDeepLinkFields(additionalFields, 'create'),
 					};
 					if (name) body.name = name;
 					if (customLandingId) body.customLandingId = customLandingId;
-					if (additionalFields.tag) body.tag = additionalFields.tag;
-					if (additionalFields.refId) body.refId = additionalFields.refId;
-					if (additionalFields.templateId) body.templateId = additionalFields.templateId;
-					if (additionalFields.isEnableMonetization !== undefined) {
-						body.isEnableMonetization = additionalFields.isEnableMonetization;
-					}
-					if (additionalFields.pageTitle || additionalFields.pageDescription) {
-						body.pageInfo = {
-							title: additionalFields.pageTitle || '',
-							description: additionalFields.pageDescription || '',
-						};
-					}
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'POST',
@@ -299,29 +403,37 @@ export class Posty5ShortLink implements INodeType {
 					});
 				} else if (operation === 'update') {
 					const shortLinkId = this.getNodeParameter('shortLinkId', i) as string;
-					const name = this.getNodeParameter('name', i, '') as string;
-					const customLandingId = this.getNodeParameter('customLandingId', i, '') as string;
-					const additionalFields = this.getNodeParameter('additionalFields', i, {}) as any;
+					const additionalFields = this.getNodeParameter(
+						'additionalFields',
+						i,
+						{},
+					) as IShortLinkAdditionalFields;
+					const endpoint = `${API_ENDPOINTS.SHORT_LINK}/${shortLinkId}`;
 
-					const body: any = {};
+					// Fetch-then-put: the PUT replaces the record and requires `baseUrl`,
+					// so the stored link is the base and the user's fields go on top.
+					const stored = (await makeApiRequest.call(this, apiKey, {
+						method: 'GET',
+						endpoint,
+					})) as IShortLinkFullDetailsResponse;
+
+					const body: IUpdateShortLinkRequest = {
+						...buildCommonUpdateFields(additionalFields, stored),
+						...buildDeepLinkFields(additionalFields, 'update'),
+						baseUrl: firstText(additionalFields.baseUrl, stored.baseUrl) || '',
+						templateId: requireTemplateId(
+							this.getNodeParameter('templateId', i, ''),
+							additionalFields,
+							stored,
+						),
+					};
+					const name = firstText(this.getNodeParameter('name', i, ''), stored.name);
 					if (name) body.name = name;
-					if (customLandingId) body.customLandingId = customLandingId;
-					if (additionalFields.tag) body.tag = additionalFields.tag;
-					if (additionalFields.refId) body.refId = additionalFields.refId;
-					if (additionalFields.templateId) body.templateId = additionalFields.templateId;
-					if (additionalFields.isEnableMonetization !== undefined) {
-						body.isEnableMonetization = additionalFields.isEnableMonetization;
-					}
-					if (additionalFields.pageTitle || additionalFields.pageDescription) {
-						body.pageInfo = {
-							title: additionalFields.pageTitle || '',
-							description: additionalFields.pageDescription || '',
-						};
-					}
+					if (typeof stored.subCategory === 'number') body.subCategory = stored.subCategory;
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'PUT',
-						endpoint: `${API_ENDPOINTS.SHORT_LINK}/${shortLinkId}`,
+						endpoint,
 						body,
 					});
 				} else if (operation === 'delete') {
@@ -332,14 +444,21 @@ export class Posty5ShortLink implements INodeType {
 					});
 				} else if (operation === 'list') {
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
-					const filters = this.getNodeParameter('filters', i, {}) as any;
+					const filters = this.getNodeParameter('filters', i, {}) as IShortLinkListFilters;
 
+					// Each filter narrows the list (the API ANDs them), so Search matches
+					// the name only and the destination URL has a filter of its own.
 					const qs: IListParams = {};
-					if (filters.tag) qs.tag = filters.tag;
-					if (filters.refId) qs.refId = filters.refId;
-					if (filters.search) {
-						qs.name = filters.search;
-						qs.baseUrl = filters.search;
+					const tag = firstText(filters.tag);
+					const refId = firstText(filters.refId);
+					const name = firstText(filters.search);
+					const baseUrl = firstText(filters.baseUrl);
+					if (tag) qs.tag = tag;
+					if (refId) qs.refId = refId;
+					if (name) qs.name = name;
+					if (baseUrl) qs.baseUrl = baseUrl;
+					if (typeof filters.isEnableLandingPage === 'boolean') {
+						qs.isEnableLandingPage = filters.isEnableLandingPage;
 					}
 
 					if (returnAll) {

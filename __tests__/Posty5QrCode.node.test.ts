@@ -1,6 +1,11 @@
-import type { INodeExecutionData } from 'n8n-workflow';
+import type { IExecuteFunctions, INodeExecutionData } from 'n8n-workflow';
 import { Posty5QrCode } from '../nodes/Posty5QrCode/Posty5QrCode.node';
 import { createMockExecuteFunctions, TEST_CONFIG } from './setup';
+
+/** The body of the n-th request the node made. */
+function requestBody(mockExecuteFunctions: IExecuteFunctions, callIndex = 0): any {
+	return (mockExecuteFunctions.helpers.httpRequest as jest.Mock).mock.calls[callIndex][0].body;
+}
 
 describe('Posty5QrCode', () => {
 	let qrCodeNode: Posty5QrCode;
@@ -53,26 +58,90 @@ describe('Posty5QrCode', () => {
 			expect(qrTypeValues).toContain('sms');
 			expect(qrTypeValues).toContain('geolocation');
 		});
+
+		it('should make Template a required dropdown on Create and an optional one on Update', () => {
+			const templates = qrCodeNode.description.properties.filter((prop) => prop.name === 'templateId') as any[];
+			const onCreate = templates.find((prop) => prop.displayOptions.show.operation.includes('create'));
+			const onUpdate = templates.find((prop) => prop.displayOptions.show.operation.includes('update'));
+
+			expect(onCreate).toEqual(
+				expect.objectContaining({
+					type: 'options',
+					required: true,
+					typeOptions: { loadOptionsMethod: 'getQrTemplates' },
+				}),
+			);
+			expect(onUpdate.typeOptions).toEqual({ loadOptionsMethod: 'getQrTemplates' });
+			expect(onUpdate.required).toBeFalsy();
+			expect(typeof qrCodeNode.methods.loadOptions.getQrTemplates).toBe('function');
+		});
+
+		it('should not offer monetization anywhere', () => {
+			expect(JSON.stringify(qrCodeNode.description.properties)).not.toMatch(/onetiz/i);
+		});
 	});
 
 	describe('Create Operation', () => {
-		describe('URL QR Type', () => {
-			it('should create URL QR code successfully', async () => {
-				const mockResponse = {
-					id: 'qr123',
-					name: 'Test URL QR',
-					qrType: 'url',
-					url: { url: 'https://example.com' },
-					qrCodeUrl: expect.stringContaining('/api/qr-code'),
-				};
+		/** The node fields for one QR of each type, and the `qrCodeTarget` they must produce. */
+		const sevenTypes: Array<{ qrType: string; fields: Record<string, any>; qrCodeTarget: any }> = [
+			{
+				qrType: 'url',
+				fields: { url: 'https://example.com' },
+				qrCodeTarget: { type: 'url', url: { url: 'https://example.com' } },
+			},
+			{
+				qrType: 'freeText',
+				fields: { text: 'Hello World!' },
+				qrCodeTarget: { type: 'freeText', freeText: { text: 'Hello World!' } },
+			},
+			{
+				qrType: 'email',
+				fields: { email: 'test@example.com', emailSubject: 'Hi & welcome', emailBody: 'Body' },
+				qrCodeTarget: {
+					type: 'email',
+					email: { email: 'test@example.com', subject: 'Hi & welcome', body: 'Body' },
+				},
+			},
+			{
+				qrType: 'wifi',
+				fields: { wifiName: 'MyNetwork', wifiAuthType: 'WPA', wifiPassword: 'pa;ss' },
+				qrCodeTarget: {
+					type: 'wifi',
+					wifi: { name: 'MyNetwork', authenticationType: 'WPA', password: 'pa;ss' },
+				},
+			},
+			{
+				qrType: 'call',
+				fields: { phoneNumber: '+1234567890' },
+				qrCodeTarget: { type: 'call', call: { phoneNumber: '+1234567890' } },
+			},
+			{
+				qrType: 'sms',
+				fields: { smsPhoneNumber: '+1234567890', smsMessage: 'Hello' },
+				qrCodeTarget: { type: 'sms', sms: { phoneNumber: '+1234567890', message: 'Hello' } },
+			},
+			{
+				qrType: 'geolocation',
+				fields: { latitude: 40.7128, longitude: -74.006 },
+				qrCodeTarget: {
+					type: 'geolocation',
+					geolocation: { latitude: 40.7128, longitude: -74.006 },
+				},
+			},
+		];
 
+		it.each(sevenTypes)(
+			'should POST a $qrType QR code with qrCodeTarget and no options.text',
+			async ({ qrType, fields, qrCodeTarget }) => {
+				const mockResponse = { _id: `qr-${qrType}`, name: 'Created' };
 				const mockExecuteFunctions = createMockExecuteFunctions(
 					{
 						operation: 'create',
-						qrType: 'url',
-						name: 'Test URL QR',
-						url: 'https://example.com',
+						qrType,
+						templateId: 'tpl-123',
+						name: `My ${qrType}`,
 						additionalFields: {},
+						...fields,
 					},
 					[{ json: {} }],
 					{ apiKey: TEST_CONFIG.apiKey },
@@ -81,466 +150,147 @@ describe('Posty5QrCode', () => {
 
 				const result = await qrCodeNode.execute.call(mockExecuteFunctions);
 
+				expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledTimes(1);
 				expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
 					expect.objectContaining({
 						method: 'POST',
-						url: expect.stringMatching(/\/api\/qr-code\/url$/),
-						body: expect.objectContaining({
-							url: { url: 'https://example.com' },
-							createdFrom: 'n8n',
-						}),
+						url: expect.stringMatching(new RegExp(`/api/qr-code/${qrType}$`)),
 					}),
 				);
-
-				expect(result[0]).toHaveLength(1);
+				expect(requestBody(mockExecuteFunctions)).toEqual({
+					name: `My ${qrType}`,
+					templateId: 'tpl-123',
+					qrCodeTarget,
+					options: {},
+					createdFrom: 'n8n',
+				});
 				expect(result[0][0].json).toEqual(mockResponse);
-			});
+			},
+		);
 
-			it('should create URL QR code with additional fields', async () => {
-				const mockResponse = {
-					id: 'qr124',
-					name: 'Tagged QR',
+		it('should never put the type payload at the top level of the body', async () => {
+			for (const { qrType, fields } of sevenTypes) {
+				const mockExecuteFunctions = createMockExecuteFunctions(
+					{ operation: 'create', qrType, templateId: 'tpl-123', additionalFields: {}, ...fields },
+					[{ json: {} }],
+					{ apiKey: TEST_CONFIG.apiKey },
+					{ _id: 'qr1' },
+				);
+
+				await qrCodeNode.execute.call(mockExecuteFunctions);
+
+				const body = requestBody(mockExecuteFunctions);
+				for (const key of ['url', 'text', 'email', 'wifi', 'call', 'sms', 'geolocation', 'freeText']) {
+					expect(body).not.toHaveProperty(key);
+				}
+				expect(Object.keys(body.qrCodeTarget).sort()).toEqual(['type', qrType].sort());
+				expect(body.options).toEqual({});
+			}
+		});
+
+		it('should send tag, refId, landing page and page info, never isEnableMonetization', async () => {
+			const mockExecuteFunctions = createMockExecuteFunctions(
+				{
+					operation: 'create',
 					qrType: 'url',
+					templateId: 'tpl-123',
+					name: 'Tagged QR',
+					url: 'https://example.com/promo',
+					additionalFields: {
+						tag: 'campaign-2024',
+						refId: 'ref-001',
+						isEnableLandingPage: true,
+						pageTitle: 'Title',
+						// A workflow saved by 4.4.0 may still carry it; it is never sent.
+						isEnableMonetization: true,
+					},
+				},
+				[{ json: {} }],
+				{ apiKey: TEST_CONFIG.apiKey },
+				{ _id: 'qr124' },
+			);
+
+			await qrCodeNode.execute.call(mockExecuteFunctions);
+
+			const body = requestBody(mockExecuteFunctions);
+			expect(body).toEqual(
+				expect.objectContaining({
 					tag: 'campaign-2024',
 					refId: 'ref-001',
-					url: { url: 'https://example.com/promo' },
-					qrCodeUrl: expect.stringContaining('/api/qr-code'),
-				};
-
-				const mockExecuteFunctions = createMockExecuteFunctions(
-					{
-						operation: 'create',
-						qrType: 'url',
-						name: 'Tagged QR',
-						url: 'https://example.com/promo',
-						additionalFields: {
-							tag: 'campaign-2024',
-							refId: 'ref-001',
-						},
-					},
-					[{ json: {} }],
-					{ apiKey: TEST_CONFIG.apiKey },
-					mockResponse,
-				);
-
-				const result = await qrCodeNode.execute.call(mockExecuteFunctions);
-
-				expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
-					expect.objectContaining({
-						method: 'POST',
-						url: expect.stringMatching(/\/api\/qr-code\/url$/),
-						body: expect.objectContaining({
-							tag: 'campaign-2024',
-							refId: 'ref-001',
-							createdFrom: 'n8n',
-						}),
-					}),
-				);
-
-				expect(result[0][0].json).toEqual(mockResponse);
-			});
+					isEnableLandingPage: true,
+					pageInfo: { title: 'Title' },
+				}),
+			);
+			expect(body).not.toHaveProperty('isEnableMonetization');
 		});
 
-		describe('Free Text QR Type', () => {
-			it('should create free text QR code', async () => {
-				const mockResponse = {
-					id: 'qr125',
-					name: 'Text QR',
-					qrType: 'freeText',
-					text: 'Hello World!',
-					qrCodeUrl: expect.stringContaining('/api/qr-code'),
-				};
+		it('should leave empty optional values out of the target', async () => {
+			const cases = [
+				{
+					fields: { qrType: 'email', email: 'test@example.com', emailSubject: '', emailBody: '' },
+					qrCodeTarget: { type: 'email', email: { email: 'test@example.com' } },
+				},
+				{
+					fields: { qrType: 'sms', smsPhoneNumber: '+1234567890', smsMessage: '' },
+					qrCodeTarget: { type: 'sms', sms: { phoneNumber: '+1234567890' } },
+				},
+				{
+					// The password field is hidden for an open network; a stale value is not sent.
+					fields: { qrType: 'wifi', wifiName: 'OpenNetwork', wifiAuthType: 'nopass', wifiPassword: 'stale' },
+					qrCodeTarget: { type: 'wifi', wifi: { name: 'OpenNetwork', authenticationType: 'nopass' } },
+				},
+			];
 
+			for (const { fields, qrCodeTarget } of cases) {
 				const mockExecuteFunctions = createMockExecuteFunctions(
-					{
-						operation: 'create',
-						qrType: 'freeText',
-						name: 'Text QR',
-						text: 'Hello World!',
-						additionalFields: {},
-					},
+					{ operation: 'create', templateId: 'tpl-123', additionalFields: {}, ...fields },
 					[{ json: {} }],
 					{ apiKey: TEST_CONFIG.apiKey },
-					mockResponse,
+					{ _id: 'qr1' },
 				);
 
-				const result = await qrCodeNode.execute.call(mockExecuteFunctions);
+				await qrCodeNode.execute.call(mockExecuteFunctions);
 
-				expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
-					expect.objectContaining({
-						method: 'POST',
-						url: expect.stringMatching(/\/api\/qr-code\/freeText$/),
-						body: expect.objectContaining({
-							text: 'Hello World!',
-							createdFrom: 'n8n',
-						}),
-					}),
-				);
-
-				expect(result[0][0].json).toEqual(mockResponse);
-			});
+				expect(requestBody(mockExecuteFunctions).qrCodeTarget).toEqual(qrCodeTarget);
+			}
 		});
 
-		describe('Email QR Type', () => {
-			it('should create email QR code with subject and body', async () => {
-				const mockResponse = {
-					id: 'qr126',
-					name: 'Email QR',
-					qrType: 'email',
-					email: {
-						email: 'test@example.com',
-						subject: 'Test Subject',
-						body: 'Test Body',
-					},
-					qrCodeUrl: expect.stringContaining('/api/qr-code'),
-				};
+		it('should honour a legacy templateId saved under Additional Fields', async () => {
+			const mockExecuteFunctions = createMockExecuteFunctions(
+				{
+					operation: 'create',
+					qrType: 'url',
+					templateId: '',
+					url: 'https://example.com',
+					additionalFields: { templateId: 'tpl-legacy' },
+				},
+				[{ json: {} }],
+				{ apiKey: TEST_CONFIG.apiKey },
+				{ _id: 'qr1' },
+			);
 
-				const mockExecuteFunctions = createMockExecuteFunctions(
-					{
-						operation: 'create',
-						qrType: 'email',
-						name: 'Email QR',
-						email: 'test@example.com',
-						emailSubject: 'Test Subject',
-						emailBody: 'Test Body',
-						additionalFields: {},
-					},
-					[{ json: {} }],
-					{ apiKey: TEST_CONFIG.apiKey },
-					mockResponse,
-				);
+			await qrCodeNode.execute.call(mockExecuteFunctions);
 
-				const result = await qrCodeNode.execute.call(mockExecuteFunctions);
-
-				expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
-					expect.objectContaining({
-						method: 'POST',
-						url: expect.stringMatching(/\/api\/qr-code\/email$/),
-						body: expect.objectContaining({
-							email: {
-								email: 'test@example.com',
-								subject: 'Test Subject',
-								body: 'Test Body',
-							},
-							createdFrom: 'n8n',
-						}),
-					}),
-				);
-
-				expect(result[0][0].json).toEqual(mockResponse);
-			});
-
-			it('should create email QR code without optional fields', async () => {
-				const mockResponse = {
-					id: 'qr127',
-					name: 'Simple Email QR',
-					qrType: 'email',
-					email: {
-						email: 'contact@example.com',
-						subject: '',
-						body: '',
-					},
-					qrCodeUrl: expect.stringContaining('/api/qr-code'),
-				};
-
-				const mockExecuteFunctions = createMockExecuteFunctions(
-					{
-						operation: 'create',
-						qrType: 'email',
-						name: 'Simple Email QR',
-						email: 'contact@example.com',
-						emailSubject: '',
-						emailBody: '',
-						additionalFields: {},
-					},
-					[{ json: {} }],
-					{ apiKey: TEST_CONFIG.apiKey },
-					mockResponse,
-				);
-
-				const result = await qrCodeNode.execute.call(mockExecuteFunctions);
-
-				expect(result[0][0].json).toEqual(mockResponse);
-			});
+			expect(requestBody(mockExecuteFunctions).templateId).toBe('tpl-legacy');
 		});
 
-		describe('WiFi QR Type', () => {
-			it('should create WiFi QR code with WPA authentication', async () => {
-				const mockResponse = {
-					id: 'qr128',
-					name: 'WiFi QR',
-					qrType: 'wifi',
-					wifi: {
-						name: 'MyNetwork',
-						authenticationType: 'WPA',
-						password: 'secret123',
-					},
-					qrCodeUrl: expect.stringContaining('/api/qr-code'),
-				};
+		it('should refuse a create without a template before calling the API', async () => {
+			const mockExecuteFunctions = createMockExecuteFunctions(
+				{
+					operation: 'create',
+					qrType: 'url',
+					url: 'https://example.com',
+					additionalFields: {},
+				},
+				[{ json: {} }],
+				{ apiKey: TEST_CONFIG.apiKey },
+				{ _id: 'qr1' },
+			);
 
-				const mockExecuteFunctions = createMockExecuteFunctions(
-					{
-						operation: 'create',
-						qrType: 'wifi',
-						name: 'WiFi QR',
-						wifiName: 'MyNetwork',
-						wifiAuthType: 'WPA',
-						wifiPassword: 'secret123',
-						additionalFields: {},
-					},
-					[{ json: {} }],
-					{ apiKey: TEST_CONFIG.apiKey },
-					mockResponse,
-				);
-
-				const result = await qrCodeNode.execute.call(mockExecuteFunctions);
-
-				expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
-					expect.objectContaining({
-						method: 'POST',
-						url: expect.stringMatching(/\/api\/qr-code\/wifi$/),
-						body: expect.objectContaining({
-							wifi: {
-								name: 'MyNetwork',
-								authenticationType: 'WPA',
-								password: 'secret123',
-							},
-							createdFrom: 'n8n',
-						}),
-					}),
-				);
-
-				expect(result[0][0].json).toEqual(mockResponse);
-			});
-
-			it('should create WiFi QR code without password', async () => {
-				const mockResponse = {
-					id: 'qr129',
-					name: 'Open WiFi QR',
-					qrType: 'wifi',
-					wifi: {
-						name: 'GuestNetwork',
-						authenticationType: 'nopass',
-						password: '',
-					},
-					qrCodeUrl: expect.stringContaining('/api/qr-code'),
-				};
-
-				const mockExecuteFunctions = createMockExecuteFunctions(
-					{
-						operation: 'create',
-						qrType: 'wifi',
-						name: 'Open WiFi QR',
-						wifiName: 'GuestNetwork',
-						wifiAuthType: 'nopass',
-						wifiPassword: '',
-						additionalFields: {},
-					},
-					[{ json: {} }],
-					{ apiKey: TEST_CONFIG.apiKey },
-					mockResponse,
-				);
-
-				const result = await qrCodeNode.execute.call(mockExecuteFunctions);
-
-				expect(result[0][0].json).toEqual(mockResponse);
-			});
-		});
-
-		describe('Phone Call QR Type', () => {
-			it('should create phone call QR code', async () => {
-				const mockResponse = {
-					id: 'qr130',
-					name: 'Call QR',
-					qrType: 'call',
-					call: { phoneNumber: '+1234567890' },
-					qrCodeUrl: expect.stringContaining('/api/qr-code'),
-				};
-
-				const mockExecuteFunctions = createMockExecuteFunctions(
-					{
-						operation: 'create',
-						qrType: 'call',
-						name: 'Call QR',
-						phoneNumber: '+1234567890',
-						additionalFields: {},
-					},
-					[{ json: {} }],
-					{ apiKey: TEST_CONFIG.apiKey },
-					mockResponse,
-				);
-
-				const result = await qrCodeNode.execute.call(mockExecuteFunctions);
-
-				expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
-					expect.objectContaining({
-						method: 'POST',
-						url: expect.stringMatching(/\/api\/qr-code\/call$/),
-						body: expect.objectContaining({
-							call: { phoneNumber: '+1234567890' },
-							createdFrom: 'n8n',
-						}),
-					}),
-				);
-
-				expect(result[0][0].json).toEqual(mockResponse);
-			});
-		});
-
-		describe('SMS QR Type', () => {
-			it('should create SMS QR code with message', async () => {
-				const mockResponse = {
-					id: 'qr131',
-					name: 'SMS QR',
-					qrType: 'sms',
-					sms: {
-						phoneNumber: '+1234567890',
-						message: 'Hello from QR!',
-					},
-					qrCodeUrl: expect.stringContaining('/api/qr-code'),
-				};
-
-				const mockExecuteFunctions = createMockExecuteFunctions(
-					{
-						operation: 'create',
-						qrType: 'sms',
-						name: 'SMS QR',
-						smsPhoneNumber: '+1234567890',
-						smsMessage: 'Hello from QR!',
-						additionalFields: {},
-					},
-					[{ json: {} }],
-					{ apiKey: TEST_CONFIG.apiKey },
-					mockResponse,
-				);
-
-				const result = await qrCodeNode.execute.call(mockExecuteFunctions);
-
-				expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
-					expect.objectContaining({
-						method: 'POST',
-						url: expect.stringMatching(/\/api\/qr-code\/sms$/),
-						body: expect.objectContaining({
-							sms: {
-								phoneNumber: '+1234567890',
-								message: 'Hello from QR!',
-							},
-							createdFrom: 'n8n',
-						}),
-					}),
-				);
-
-				expect(result[0][0].json).toEqual(mockResponse);
-			});
-
-			it('should create SMS QR code without message', async () => {
-				const mockResponse = {
-					id: 'qr132',
-					name: 'SMS QR No Message',
-					qrType: 'sms',
-					sms: {
-						phoneNumber: '+9876543210',
-						message: '',
-					},
-					qrCodeUrl: expect.stringContaining('/api/qr-code'),
-				};
-
-				const mockExecuteFunctions = createMockExecuteFunctions(
-					{
-						operation: 'create',
-						qrType: 'sms',
-						name: 'SMS QR No Message',
-						smsPhoneNumber: '+9876543210',
-						smsMessage: '',
-						additionalFields: {},
-					},
-					[{ json: {} }],
-					{ apiKey: TEST_CONFIG.apiKey },
-					mockResponse,
-				);
-
-				const result = await qrCodeNode.execute.call(mockExecuteFunctions);
-
-				expect(result[0][0].json).toEqual(mockResponse);
-			});
-		});
-
-		describe('Geolocation QR Type', () => {
-			it('should create geolocation QR code', async () => {
-				const mockResponse = {
-					id: 'qr133',
-					name: 'Location QR',
-					qrType: 'geolocation',
-					geolocation: {
-						latitude: 37.7749,
-						longitude: -122.4194,
-					},
-					qrCodeUrl: expect.stringContaining('/api/qr-code'),
-				};
-
-				const mockExecuteFunctions = createMockExecuteFunctions(
-					{
-						operation: 'create',
-						qrType: 'geolocation',
-						name: 'Location QR',
-						latitude: 37.7749,
-						longitude: -122.4194,
-						additionalFields: {},
-					},
-					[{ json: {} }],
-					{ apiKey: TEST_CONFIG.apiKey },
-					mockResponse,
-				);
-
-				const result = await qrCodeNode.execute.call(mockExecuteFunctions);
-
-				expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
-					expect.objectContaining({
-						method: 'POST',
-						url: expect.stringMatching(/\/api\/qr-code\/geolocation$/),
-						body: expect.objectContaining({
-							geolocation: {
-								latitude: 37.7749,
-								longitude: -122.4194,
-							},
-							createdFrom: 'n8n',
-						}),
-					}),
-				);
-
-				expect(result[0][0].json).toEqual(mockResponse);
-			});
-
-			it('should create geolocation QR code with negative coordinates', async () => {
-				const mockResponse = {
-					id: 'qr134',
-					name: 'South Location QR',
-					qrType: 'geolocation',
-					geolocation: {
-						latitude: -33.8688,
-						longitude: 151.2093,
-					},
-					qrCodeUrl: expect.stringContaining('/api/qr-code'),
-				};
-
-				const mockExecuteFunctions = createMockExecuteFunctions(
-					{
-						operation: 'create',
-						qrType: 'geolocation',
-						name: 'South Location QR',
-						latitude: -33.8688,
-						longitude: 151.2093,
-						additionalFields: {},
-					},
-					[{ json: {} }],
-					{ apiKey: TEST_CONFIG.apiKey },
-					mockResponse,
-				);
-
-				const result = await qrCodeNode.execute.call(mockExecuteFunctions);
-
-				expect(result[0][0].json).toEqual(mockResponse);
-			});
+			await expect(qrCodeNode.execute.call(mockExecuteFunctions)).rejects.toThrow(
+				'Template is required',
+			);
+			expect(mockExecuteFunctions.helpers.httpRequest).not.toHaveBeenCalled();
 		});
 	});
 
@@ -606,177 +356,142 @@ describe('Posty5QrCode', () => {
 		});
 	});
 
-	describe('Update Operation', () => {
-		it('should update URL QR code', async () => {
-			const mockResponse = {
-				id: 'qr123',
+	describe('Update Operation (fetch-then-put)', () => {
+		const storedQrCode = {
+			_id: 'qr123',
+			qrCodeId: 'abc123',
+			name: 'Stored name',
+			templateId: 'tpl-stored',
+			templateType: 'public',
+			tag: 'stored-tag',
+			refId: 'stored-ref',
+			createdFrom: 'n8n',
+			isEnableLandingPage: true,
+			pageInfo: { title: 'Stored title', description: 'Stored description' },
+			qrCodeTarget: { type: 'url', url: { url: 'https://old.example.com' } },
+			options: { text: 'https://old.example.com', colorDark: '#000000' },
+		};
+
+		/** An update whose GET answers `storedQrCode` and whose PUT answers `updated`. */
+		function mockUpdate(parameters: Record<string, any>, updated: any = { _id: 'qr123' }) {
+			const mockExecuteFunctions = createMockExecuteFunctions(
+				{ operation: 'update', qrCodeId: 'qr123', additionalFields: {}, ...parameters },
+				[{ json: {} }],
+				{ apiKey: TEST_CONFIG.apiKey },
+			);
+			(mockExecuteFunctions.helpers.httpRequest as jest.Mock)
+				.mockResolvedValueOnce({ result: storedQrCode })
+				.mockResolvedValueOnce({ result: updated });
+			return mockExecuteFunctions;
+		}
+
+		it('should GET the QR code, then PUT the new target over the stored record', async () => {
+			const updated = { _id: 'qr123', name: 'Updated QR' };
+			const mockExecuteFunctions = mockUpdate(
+				{ qrType: 'url', name: 'Updated QR', url: 'https://updated.com' },
+				updated,
+			);
+
+			const result = await qrCodeNode.execute.call(mockExecuteFunctions);
+
+			const calls = (mockExecuteFunctions.helpers.httpRequest as jest.Mock).mock.calls;
+			expect(calls).toHaveLength(2);
+			expect(calls[0][0]).toEqual(
+				expect.objectContaining({ method: 'GET', url: expect.stringMatching(/\/api\/qr-code\/qr123$/) }),
+			);
+			expect(calls[1][0]).toEqual(
+				expect.objectContaining({ method: 'PUT', url: expect.stringMatching(/\/api\/qr-code\/url\/qr123$/) }),
+			);
+			expect(calls[1][0].body).toEqual({
 				name: 'Updated QR',
-				qrType: 'url',
-				url: { url: 'https://updated.com' },
-				qrCodeUrl: expect.stringContaining('/api/qr-code'),
-			};
-
-			const mockExecuteFunctions = createMockExecuteFunctions(
-				{
-					operation: 'update',
-					qrCodeId: 'qr123',
-					qrType: 'url',
-					name: 'Updated QR',
-					url: 'https://updated.com',
-					additionalFields: {},
-				},
-				[{ json: {} }],
-				{ apiKey: TEST_CONFIG.apiKey },
-				mockResponse,
-			);
-
-			const result = await qrCodeNode.execute.call(mockExecuteFunctions);
-
-			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
-				expect.objectContaining({
-					method: 'PUT',
-					url: expect.stringMatching(/\/api\/qr-code\/url\/qr123$/),
-					body: expect.objectContaining({
-						name: 'Updated QR',
-						url: { url: 'https://updated.com' },
-					}),
-				}),
-			);
-
-			expect(result[0][0].json).toEqual(mockResponse);
+				templateId: 'tpl-stored',
+				templateType: 'public',
+				tag: 'stored-tag',
+				refId: 'stored-ref',
+				createdFrom: 'n8n',
+				isEnableLandingPage: true,
+				pageInfo: { title: 'Stored title', description: 'Stored description' },
+				qrCodeTarget: { type: 'url', url: { url: 'https://updated.com' } },
+				options: {},
+			});
+			expect(result[0][0].json).toEqual(updated);
 		});
 
-		it('should update email QR code', async () => {
-			const mockResponse = {
-				id: 'qr456',
-				name: 'Updated Email QR',
+		it('should keep the stored name when Name is empty (the API would rename it after its text)', async () => {
+			const mockExecuteFunctions = mockUpdate({ qrType: 'freeText', name: '', text: 'New text' });
+
+			await qrCodeNode.execute.call(mockExecuteFunctions);
+
+			const body = requestBody(mockExecuteFunctions, 1);
+			expect(body.name).toBe('Stored name');
+			expect(body.qrCodeTarget).toEqual({ type: 'freeText', freeText: { text: 'New text' } });
+		});
+
+		it('should change the type through the URL and send only the new type block', async () => {
+			const mockExecuteFunctions = mockUpdate({
 				qrType: 'email',
-				email: {
-					email: 'newemail@example.com',
-					subject: 'New Subject',
-					body: 'New Body',
-				},
-				qrCodeUrl: expect.stringContaining('/api/qr-code'),
-			};
+				name: 'Updated Email QR',
+				email: 'newemail@example.com',
+				emailSubject: 'New Subject',
+				emailBody: 'New Body',
+			});
 
-			const mockExecuteFunctions = createMockExecuteFunctions(
-				{
-					operation: 'update',
-					qrCodeId: 'qr456',
-					qrType: 'email',
-					name: 'Updated Email QR',
-					email: 'newemail@example.com',
-					emailSubject: 'New Subject',
-					emailBody: 'New Body',
-					additionalFields: {},
-				},
-				[{ json: {} }],
-				{ apiKey: TEST_CONFIG.apiKey },
-				mockResponse,
-			);
+			await qrCodeNode.execute.call(mockExecuteFunctions);
 
-			const result = await qrCodeNode.execute.call(mockExecuteFunctions);
-
-			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
-				expect.objectContaining({
-					method: 'PUT',
-					url: expect.stringMatching(/\/api\/qr-code\/email\/qr456$/),
-					body: expect.objectContaining({
-						email: {
-							email: 'newemail@example.com',
-							subject: 'New Subject',
-							body: 'New Body',
-						},
-					}),
-				}),
-			);
-
-			expect(result[0][0].json).toEqual(mockResponse);
+			const put = (mockExecuteFunctions.helpers.httpRequest as jest.Mock).mock.calls[1][0];
+			expect(put.url).toMatch(/\/api\/qr-code\/email\/qr123$/);
+			expect(put.body.qrCodeTarget).toEqual({
+				type: 'email',
+				email: { email: 'newemail@example.com', subject: 'New Subject', body: 'New Body' },
+			});
+			expect(put.body).not.toHaveProperty('email');
+			expect(put.body.options).toEqual({});
 		});
 
-		it('should update WiFi QR code', async () => {
-			const mockResponse = {
-				id: 'qr789',
-				name: 'Updated WiFi',
+		it('should put the user fields over the stored ones and never send isEnableMonetization', async () => {
+			const mockExecuteFunctions = mockUpdate({
 				qrType: 'wifi',
-				wifi: {
-					name: 'UpdatedNetwork',
-					authenticationType: 'WPA',
-					password: 'newpassword',
+				name: 'Updated WiFi',
+				templateId: 'tpl-456',
+				wifiName: 'UpdatedNetwork',
+				wifiAuthType: 'WPA',
+				wifiPassword: 'newpassword',
+				additionalFields: {
+					tag: 'new-tag',
+					refId: '',
+					isEnableLandingPage: false,
+					isEnableMonetization: true,
 				},
-				qrCodeUrl: expect.stringContaining('/api/qr-code'),
-			};
+			});
 
-			const mockExecuteFunctions = createMockExecuteFunctions(
-				{
-					operation: 'update',
-					qrCodeId: 'qr789',
-					qrType: 'wifi',
-					name: 'Updated WiFi',
-					wifiName: 'UpdatedNetwork',
-					wifiAuthType: 'WPA',
-					wifiPassword: 'newpassword',
-					additionalFields: {},
+			await qrCodeNode.execute.call(mockExecuteFunctions);
+
+			const body = requestBody(mockExecuteFunctions, 1);
+			expect(body).toEqual({
+				name: 'Updated WiFi',
+				templateId: 'tpl-456',
+				templateType: 'public',
+				tag: 'new-tag',
+				refId: '',
+				createdFrom: 'n8n',
+				isEnableLandingPage: false,
+				pageInfo: { title: 'Stored title', description: 'Stored description' },
+				qrCodeTarget: {
+					type: 'wifi',
+					wifi: { name: 'UpdatedNetwork', authenticationType: 'WPA', password: 'newpassword' },
 				},
-				[{ json: {} }],
-				{ apiKey: TEST_CONFIG.apiKey },
-				mockResponse,
-			);
-
-			const result = await qrCodeNode.execute.call(mockExecuteFunctions);
-
-			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
-				expect.objectContaining({
-					method: 'PUT',
-					url: expect.stringMatching(/\/api\/qr-code\/wifi\/qr789$/),
-				}),
-			);
-
-			expect(result[0][0].json).toEqual(mockResponse);
+				options: {},
+			});
+			expect(body).not.toHaveProperty('isEnableMonetization');
 		});
 
-		it('should update QR code with additional fields', async () => {
-			const mockResponse = {
-				id: 'qr999',
-				name: 'Updated with Tags',
-				qrType: 'url',
-				tag: 'new-tag',
-				refId: 'new-ref',
-				url: { url: 'https://example.com' },
-				qrCodeUrl: expect.stringContaining('/api/qr-code'),
-			};
+		it('should reject an unknown QR type before any request', async () => {
+			const mockExecuteFunctions = mockUpdate({ qrType: 'contact' });
 
-			const mockExecuteFunctions = createMockExecuteFunctions(
-				{
-					operation: 'update',
-					qrCodeId: 'qr999',
-					qrType: 'url',
-					name: 'Updated with Tags',
-					url: 'https://example.com',
-					additionalFields: {
-						tag: 'new-tag',
-						refId: 'new-ref',
-					},
-				},
-				[{ json: {} }],
-				{ apiKey: TEST_CONFIG.apiKey },
-				mockResponse,
+			await expect(qrCodeNode.execute.call(mockExecuteFunctions)).rejects.toThrow(
+				'Unsupported QR type "contact"',
 			);
-
-			const result = await qrCodeNode.execute.call(mockExecuteFunctions);
-
-			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledWith(
-				expect.objectContaining({
-					method: 'PUT',
-					url: expect.stringMatching(/\/api\/qr-code\/url\/qr999$/),
-					body: expect.objectContaining({
-						tag: 'new-tag',
-						refId: 'new-ref',
-					}),
-				}),
-			);
-
-			expect(result[0][0].json).toEqual(mockResponse);
+			expect(mockExecuteFunctions.helpers.httpRequest).not.toHaveBeenCalled();
 		});
 	});
 
@@ -1131,6 +846,7 @@ describe('Posty5QrCode', () => {
 				{
 					operation: 'create',
 					qrType: 'url',
+					templateId: 'tpl-123',
 					name: 'Test QR',
 					url: 'invalid-url',
 					additionalFields: {},
@@ -1201,6 +917,7 @@ describe('Posty5QrCode', () => {
 				{
 					operation: 'create',
 					qrType: 'url',
+					templateId: 'tpl-123',
 					name: 'QR 1',
 					url: 'https://example1.com',
 					additionalFields: {},
@@ -1218,6 +935,7 @@ describe('Posty5QrCode', () => {
 				(paramName: string, itemIndex: number, fallbackValue?: any) => {
 					if (paramName === 'operation') return 'create';
 					if (paramName === 'qrType') return 'url';
+					if (paramName === 'templateId') return 'tpl-123';
 					if (paramName === 'name') return `QR ${itemIndex + 1}`;
 					if (paramName === 'url') {
 						return itemIndex === 0 ? 'https://example1.com' : 'https://example2.com';
@@ -1319,6 +1037,7 @@ describe('Posty5QrCode', () => {
 					method: 'POST',
 					additionalParams: {
 						qrType: 'url',
+						templateId: 'tpl-123',
 						url: 'https://example.com',
 						name: '',
 						additionalFields: {},
@@ -1331,6 +1050,7 @@ describe('Posty5QrCode', () => {
 					additionalParams: {
 						qrCodeId: 'qr123',
 						qrType: 'url',
+						templateId: 'tpl-123',
 						url: 'https://example.com',
 						name: '',
 						additionalFields: {},

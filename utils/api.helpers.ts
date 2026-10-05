@@ -3,7 +3,7 @@
  * Utility functions for making API requests using n8n's native HTTP helpers
  */
 
-import { IExecuteFunctions, IHttpRequestOptions } from 'n8n-workflow';
+import { IExecuteFunctions, IHttpRequestOptions, ILoadOptionsFunctions } from 'n8n-workflow';
 import { POSTY5_API_BASE_URL } from './constants';
 
 export interface IApiRequestOptions {
@@ -21,13 +21,13 @@ export interface IApiRequestOptions {
 
 /**
  * Make an API request to Posty5 API using n8n's HTTP request helper
- * @param context - N8n execution context
+ * @param context - N8n execution context, or a `loadOptions` context (both carry `helpers.httpRequest`)
  * @param apiKey - Posty5 API key
  * @param options - Request options
  * @returns API response
  */
 export async function makeApiRequest(
-	this: IExecuteFunctions,
+	this: IExecuteFunctions | ILoadOptionsFunctions,
 	apiKey: string,
 	options: IApiRequestOptions,
 ): Promise<any> {

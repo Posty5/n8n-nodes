@@ -48,6 +48,18 @@
       "role": "Store node order/part types and the cursor list envelope"
     },
     {
+      "path": "utils/qr-templates.helpers.ts",
+      "role": "Template field of the Short Link and QR Code nodes: getQrTemplates loadOptions (user-lookup then public-lookup), requireTemplateId (field, legacy collection value, stored)"
+    },
+    {
+      "path": "utils/qr-target.helpers.ts",
+      "role": "buildQrCodeTarget: qrCodeTarget { type, <type>: {...} } for the seven QR types; no options.text"
+    },
+    {
+      "path": "utils/link-tool.helpers.ts",
+      "role": "Short Link + QR Code body pieces: create fields, fetch-then-put update merge, page info, Android/iOS URL fields"
+    },
+    {
       "path": "nodes",
       "role": "Nodes"
     },
