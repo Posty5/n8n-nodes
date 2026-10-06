@@ -49,6 +49,28 @@ describe('qr-target.helpers', () => {
 			});
 		});
 
+		it.each([
+			['url', { url: ' https://example.com ' }, { type: 'url', url: { url: 'https://example.com' } }],
+			['freeText', { text: 'Hello' }, { type: 'freeText', freeText: { text: 'Hello' } }],
+			['email', { email: 'a@example.com' }, { type: 'email', email: { email: 'a@example.com' } }],
+			[
+				'wifi',
+				{ wifiName: 'Cafe', wifiAuthType: 'nopass', wifiPassword: 'ignored' },
+				{ type: 'wifi', wifi: { name: 'Cafe', authenticationType: 'nopass' } },
+			],
+			['call', { phoneNumber: '+1234567890' }, { type: 'call', call: { phoneNumber: '+1234567890' } }],
+			['sms', { smsPhoneNumber: '+1234567890' }, { type: 'sms', sms: { phoneNumber: '+1234567890' } }],
+			[
+				'geolocation',
+				{ latitude: 40.7128, longitude: -74.006 },
+				{ type: 'geolocation', geolocation: { latitude: 40.7128, longitude: -74.006 } },
+			],
+		])('should build the API-shaped target for %s (all seven types)', (qrType, fields, expected) => {
+			const target = buildQrCodeTarget(qrType, reader(fields));
+			expect(target).toEqual(expected);
+			expect(Object.keys(target)).toEqual(['type', qrType]);
+		});
+
 		it('should refuse a type the API does not validate', () => {
 			expect(() => buildQrCodeTarget('contact', reader({}))).toThrow(
 				'Unsupported QR type "contact"',

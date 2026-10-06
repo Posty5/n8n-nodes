@@ -1,11 +1,16 @@
 # Changelog
 
-## Unreleased - bulk create and Posty5 Trigger
+## 4.7.0 - Unreleased
+
+Not yet published. Node versions stay 1: optimistic-concurrency's node v2
+(`versioned-writes-node-v2`) has not started.
+
+### Bulk create and Posty5 Trigger
 
 Needs the Posty5 API's sync bulk routes and `/api/webhook-endpoints`
 (feature `link-qr-bulk-and-webhooks`). Additive; node versions stay 1.
 
-### Added
+#### Added
 
 - **Create Many** on **Posty5 Short Link** and **Posty5 QR Code**: one record per
   input item via `POST /api/short-link/bulk` / `POST /api/qr-code/bulk` in
@@ -17,11 +22,11 @@ Needs the Posty5 API's sync bulk routes and `/api/webhook-endpoints`
   request (Standard Webhooks), splits batched deliveries into items.
 - `makeApiRequest` takes optional extra `headers`.
 
-## Unreleased - dynamic QR codes
+### Dynamic QR codes
 
 Needs the Posty5 API's dynamic QR release. No node version bump.
 
-### Added
+#### Added
 
 - Posty5 QR Code: a **Mode** option (Static / Dynamic) on Create (default
   Static) and Update (default Keep Current), hidden for WiFi. Create sends

@@ -80,7 +80,7 @@ describe('Posty5ShortLink', () => {
 
 		it('should show Custom Slug on Create only', () => {
 			const [customSlug] = propertiesNamed(shortLinkNode, 'customLandingId');
-			expect(customSlug.displayOptions.show.operation).toEqual(['create']);
+			expect(customSlug.displayOptions.show.operation).toEqual(['create', 'createMany']);
 		});
 
 		it('should not offer monetization anywhere', () => {

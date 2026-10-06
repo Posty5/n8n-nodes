@@ -518,7 +518,7 @@ describe('Posty5QrCode', () => {
 		it('should offer Mode on Create (default static) and Update (default keep), hidden for Wi-Fi', () => {
 			const modes = qrCodeNode.description.properties.filter((p) => p.name === 'mode');
 			expect(modes.map((p) => [p.displayOptions?.show?.operation, p.default])).toEqual([
-				[['create'], 'static'],
+				[['create', 'createMany'], 'static'],
 				[['update'], ''],
 			]);
 			for (const mode of modes) expect(mode.displayOptions?.hide?.qrType).toEqual(['wifi']);
