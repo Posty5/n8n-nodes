@@ -82,7 +82,6 @@ describe('Posty5ShortLink Create Many', () => {
 		expect(requests[0].body).toMatchObject({
 			defaults: { tag: 'promo' },
 			fetchMetadata: true,
-			templateType: 'user',
 			createdFrom: 'n8n',
 		});
 		expect(requests[0].body.links[0]).toEqual({ url: 'https://example.com/0', templateId: 'tpl' });
@@ -178,7 +177,7 @@ describe('Posty5QrCode Create Many', () => {
 
 		const [request] = calls(mock);
 		expect(request.url).toBe('https://api.posty5.com/api/qr-code/bulk');
-		expect(request.body.templateType).toBe('user');
+		expect(request.body).not.toHaveProperty('templateType');
 		expect(request.body.items.map((row: any) => row.type)).toEqual(typeNames);
 		expect(request.body.items[0].target).toEqual({ url: 'https://a.com' });
 		expect(request.body.items[3].target).toEqual({ name: 'net', authenticationType: 'WPA', password: 'pw' });

@@ -46,7 +46,8 @@ export interface IWebhookEndpoint {
 }
 
 /** The create answer: the endpoint plus its signing secret, returned this once. */
-export interface ICreateWebhookEndpointResponse extends IWebhookEndpoint {
+export interface ICreateWebhookEndpointResponse {
+	endpoint: IWebhookEndpoint;
 	secret: string;
 }
 

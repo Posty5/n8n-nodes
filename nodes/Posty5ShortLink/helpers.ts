@@ -32,7 +32,7 @@ export function buildShortLinkBulkRow(
 	return row;
 }
 
-/** `POST /api/short-link/bulk`: `{ links, defaults, fetchMetadata, templateType }` (as `@posty5/short-link` sends). */
+/** `POST /api/short-link/bulk`: `{ links, defaults, fetchMetadata }` (as `@posty5/short-link` sends; the bulk schema refuses `templateType`). */
 export function shortLinkBulkRoute(fetchMetadata: boolean): IBulkRoute<IShortLinkBulkRow> {
 	return {
 		endpoint: `${API_ENDPOINTS.SHORT_LINK}/${LINK_BULK.PATH_SEGMENT}`,
@@ -40,7 +40,6 @@ export function shortLinkBulkRoute(fetchMetadata: boolean): IBulkRoute<IShortLin
 			links,
 			defaults,
 			fetchMetadata,
-			templateType: LINK_BULK.TEMPLATE_TYPE,
 		}),
 	};
 }

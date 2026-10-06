@@ -41,12 +41,11 @@ export function buildQrCodeBulkRow(
 	return row;
 }
 
-/** `POST /api/qr-code/bulk`: `{ items, defaults, templateType }` (as `@posty5/qr-code` sends). */
+/** `POST /api/qr-code/bulk`: `{ items, defaults }` (as `@posty5/qr-code` sends; the bulk schema refuses `templateType`). */
 export const QR_CODE_BULK_ROUTE: IBulkRoute<IQrCodeBulkRow> = {
 	endpoint: `${API_ENDPOINTS.QR_CODE}/${LINK_BULK.PATH_SEGMENT}`,
 	toBody: (items, defaults) => ({
 		items,
 		defaults,
-		templateType: LINK_BULK.TEMPLATE_TYPE,
 	}),
 };

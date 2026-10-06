@@ -23,6 +23,8 @@ export const TRIGGER_CONFIG = {
 	TEST_EVENT: 'webhook.test',
 	BATCH_EVENT: 'batch',
 	MAX_MILESTONES: 10,
+	/** API limit on an endpoint's `description`. */
+	MAX_DESCRIPTION_LENGTH: 500,
 	MILESTONE_SEPARATOR: ',',
 	ID_SEPARATOR: ',',
 	NOT_FOUND_HTTP_CODE: '404',

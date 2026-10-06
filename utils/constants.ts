@@ -171,8 +171,6 @@ export const LINK_BULK = {
 	DEFAULT_BATCH_SIZE: 100,
 	IDEMPOTENCY_HEADER: 'Idempotency-Key',
 	IDEMPOTENCY_PREFIX: 'n8n',
-	/** `templateType` both bulk bodies send (the SDKs send the same). */
-	TEMPLATE_TYPE: 'user',
 	ROW_STATUS_CREATED: 'created',
 	ROW_STATUS_FAILED: 'failed',
 } as const;

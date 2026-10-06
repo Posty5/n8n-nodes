@@ -75,7 +75,7 @@ describe('Posty5Trigger', () => {
 	describe('create', () => {
 		it('posts the endpoint and stores id and secret', async () => {
 			const staticData: Record<string, any> = {};
-			const http = jest.fn().mockResolvedValue({ result: { _id: 'e9', secret: 'whsec_x' } });
+			const http = jest.fn().mockResolvedValue({ result: { endpoint: { _id: 'e9' }, secret: 'whsec_x' } });
 			const ctx = hookContext(
 				{
 					events: ['short_link.visited', 'short_link.visits_milestone'],

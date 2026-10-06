@@ -125,7 +125,10 @@ export class Posty5Trigger implements INodeType {
 						events,
 						targets,
 						options,
-						`${TRIGGER_CONFIG.DESCRIPTION_PREFIX} ${this.getWorkflow().name ?? ''} / ${this.getNode().name}`,
+						`${TRIGGER_CONFIG.DESCRIPTION_PREFIX} ${this.getWorkflow().name ?? ''} / ${this.getNode().name}`.slice(
+							0,
+							TRIGGER_CONFIG.MAX_DESCRIPTION_LENGTH,
+						),
 					);
 				} catch (error) {
 					throw new NodeOperationError(this.getNode(), error as Error);
@@ -151,7 +154,7 @@ export class Posty5Trigger implements INodeType {
 					throw error;
 				}
 
-				staticData.endpointId = created._id;
+				staticData.endpointId = created.endpoint._id;
 				staticData.secret = created.secret;
 				return true;
 			},
