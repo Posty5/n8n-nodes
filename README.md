@@ -67,6 +67,21 @@ Create and manage shortened URLs. Each link counts its visits.
 | Update | Reads the link, then saves it with your changes on top: anything you leave alone keeps its stored value. Template may stay empty to keep the current one. Destination URL is under Additional Fields. The Custom Slug cannot be changed. |
 | Create Many | One short link per input item in batched calls (up to 100 rows per request): Destination URL, Name, Custom Slug, Template, Row Fields (Tag, Reference ID), **Defaults** (Template ID, Tag, Reference ID) and Options (Batch Size, Fetch Page Metadata, Fail on Any Row Error). See [Create Many](#create-many-short-link-and-qr-code). |
 | Delete | Remove links. |
+| Set Rules | Changes only the rule sections you add: access (Active From, Expires At, Max Visits, Fallback URL, Password / Remove Password), Routing Rules, Variants, UTM, Pixels. Empty clears a section. |
+| List Tags | Your links' distinct tags (optional Starts With), one item per tag. |
+| Check Health | Queues one destination check of a link (once per 10 minutes; plan-gated). |
+| Create / Get / List / Update / Delete Campaign | Link campaigns (`/api/link-campaign`): name, description, color, UTM, archived. Delete Campaign with *Detach Links* detaches the campaign's links first. |
+
+Create and Update also take, under Additional Fields: **Tags** (comma-separated;
+*Tag* is deprecated but still works), **Campaign**, the access fields above,
+**UTM**, **Routing Rules (JSON)**, **Variants (JSON)**, **Pixels** with **Pixels
+Consent Acknowledged** (required the first time), and **Health Monitor**. List
+filters gain Tags and Campaign.
+
+> **Secrets:** the Password field is masked in the editor, but n8n stores node
+> parameters inside the workflow. Put the password in an expression that reads
+> a secret (environment variable or a credential-backed node) rather than
+> typing it in, and never share the workflow JSON with a literal password.
 
 **Template** is a dropdown of your QR code templates and the public ones; the
 Posty5 API requires one on every API-key create and update. On Update, a Tag,

@@ -2,6 +2,7 @@ import {
 	IExecuteFunctions,
 	INodeExecutionData,
 	INodeType,
+	NodeOperationError,
 	INodeTypeDescription,
 } from 'n8n-workflow';
 import { makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
@@ -20,6 +21,21 @@ import {
 	toText,
 } from '../../utils/link-tool.helpers';
 import { getQrTemplates, requireTemplateId } from '../../utils/qr-templates.helpers';
+import { SHORT_LINK_CONTROLS, SHORT_LINK_CONTROLS_MESSAGES } from '../../utils/constants';
+import {
+	buildCampaignBody,
+	buildControlFields,
+	getCampaigns,
+	splitList,
+} from '../../utils/short-link-controls.helpers';
+import {
+	LINK_CAMPAIGN_PROPERTIES,
+	SHORT_LINK_CONTROL_ADDITIONAL_FIELDS,
+	SHORT_LINK_CONTROL_LIST_FILTERS,
+	SHORT_LINK_LIST_TAGS_PROPERTIES,
+	SHORT_LINK_SET_RULES_PROPERTIES,
+} from '../../utils/short-link-controls.properties';
+import type { ILinkCampaignFields, IShortLinkControlFields } from '../../types/short-link-controls.types';
 import type {
 	ICreateShortLinkRequest,
 	IListParams,
@@ -57,10 +73,22 @@ export class Posty5ShortLink implements INodeType {
 				noDataExpression: true,
 				options: [
 					{
+						name: 'Check Health',
+						value: 'checkHealth',
+						description: 'Queue one destination health check of a short link (once per 10 minutes)',
+						action: 'Check the health of a short link',
+					},
+					{
 						name: 'Create',
 						value: 'create',
 						description: 'Create a new short link',
 						action: 'Create a short link',
+					},
+					{
+						name: 'Create Campaign',
+						value: 'createCampaign',
+						description: 'Create a link campaign',
+						action: 'Create a campaign',
 					},
 					{
 						name: 'Create Many',
@@ -75,6 +103,12 @@ export class Posty5ShortLink implements INodeType {
 						action: 'Delete a short link',
 					},
 					{
+						name: 'Delete Campaign',
+						value: 'deleteCampaign',
+						description: 'Delete a link campaign',
+						action: 'Delete a campaign',
+					},
+					{
 						name: 'Get',
 						value: 'get',
 						description: 'Get a short link by ID',
@@ -85,6 +119,12 @@ export class Posty5ShortLink implements INodeType {
 						value: 'getAnalytics',
 						description: 'Get visits, unique visitors, a series and breakdowns of a short link',
 						action: 'Get analytics for a short link',
+					},
+					{
+						name: 'Get Campaign',
+						value: 'getCampaign',
+						description: 'Get a link campaign with its link count and total visits',
+						action: 'Get a campaign',
 					},
 					{
 						name: 'Get Statistics',
@@ -99,10 +139,34 @@ export class Posty5ShortLink implements INodeType {
 						action: 'List short links',
 					},
 					{
+						name: 'List Campaigns',
+						value: 'listCampaigns',
+						description: 'List your link campaigns',
+						action: 'List campaigns',
+					},
+					{
+						name: 'List Tags',
+						value: 'listTags',
+						description: 'List the distinct tags of your short links',
+						action: 'List tags',
+					},
+					{
+						name: 'Set Rules',
+						value: 'setRules',
+						description: 'Change the access, routing, variants, UTM or pixels of a short link',
+						action: 'Set the rules of a short link',
+					},
+					{
 						name: 'Update',
 						value: 'update',
 						description: 'Update a short link',
 						action: 'Update a short link',
+					},
+					{
+						name: 'Update Campaign',
+						value: 'updateCampaign',
+						description: 'Update a link campaign',
+						action: 'Update a campaign',
 					},
 				],
 				default: 'create',
@@ -264,11 +328,11 @@ export class Posty5ShortLink implements INodeType {
 						description: 'External reference ID. On Update, an empty value clears it.',
 					},
 					{
-						displayName: 'Tag',
+						displayName: 'Tag (Deprecated — Use Tags)',
 						name: 'tag',
 						type: 'string',
 						default: '',
-						description: 'Organization tag for filtering. On Update, an empty value clears it.',
+						description: 'The primary tag. Kept for saved workflows: use Tags. On Update, an empty value clears it.',
 					},
 					{
 						displayName: 'Template ID (Deprecated)',
@@ -278,6 +342,7 @@ export class Posty5ShortLink implements INodeType {
 						description:
 							'Use the Template field instead. Read only when Template is empty, so workflows saved before version 4.6.0 keep their template.',
 					},
+					...SHORT_LINK_CONTROL_ADDITIONAL_FIELDS,
 				],
 			},
 
@@ -289,7 +354,7 @@ export class Posty5ShortLink implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['get', 'getAnalytics', 'update', 'delete'],
+						operation: ['get', 'getAnalytics', 'update', 'delete', 'setRules', 'checkHealth'],
 					},
 				},
 				default: '',
@@ -303,7 +368,7 @@ export class Posty5ShortLink implements INodeType {
 				type: 'boolean',
 				displayOptions: {
 					show: {
-						operation: ['list'],
+						operation: ['list', 'listCampaigns'],
 					},
 				},
 				default: false,
@@ -315,7 +380,7 @@ export class Posty5ShortLink implements INodeType {
 				type: 'number',
 				displayOptions: {
 					show: {
-						operation: ['list'],
+						operation: ['list', 'listCampaigns'],
 						returnAll: [false],
 					},
 				},
@@ -367,12 +432,13 @@ export class Posty5ShortLink implements INodeType {
 						description: 'Only links whose name contains this text',
 					},
 					{
-						displayName: 'Tag',
+						displayName: 'Tag (Deprecated — Use Tags)',
 						name: 'tag',
 						type: 'string',
 						default: '',
-						description: 'Filter by tag',
+						description: 'Filter by one tag. Kept for saved workflows: use Tags.',
 					},
+					...SHORT_LINK_CONTROL_LIST_FILTERS,
 				],
 			},
 
@@ -384,12 +450,18 @@ export class Posty5ShortLink implements INodeType {
 
 			// Create Many operation fields (shared with the other link-tool node)
 			...buildLinkBulkProperties(true),
+
+			// Short link controls: Set Rules, List Tags, campaigns
+			...SHORT_LINK_SET_RULES_PROPERTIES,
+			...SHORT_LINK_LIST_TAGS_PROPERTIES,
+			...LINK_CAMPAIGN_PROPERTIES,
 		],
 	};
 
 	methods = {
 		loadOptions: {
 			getQrTemplates,
+			getCampaigns,
 		},
 	};
 
@@ -428,6 +500,7 @@ export class Posty5ShortLink implements INodeType {
 						templateId: requireTemplateId(this.getNodeParameter('templateId', i, ''), additionalFields),
 						...buildCommonCreateFields(additionalFields),
 						...buildDeepLinkFields(additionalFields, 'create'),
+						...buildControlFields(this.getNode(), additionalFields as IShortLinkControlFields, 'create', i),
 					};
 					if (name) body.name = name;
 					if (customLandingId) body.customLandingId = customLandingId;
@@ -472,6 +545,7 @@ export class Posty5ShortLink implements INodeType {
 					const body: IUpdateShortLinkRequest = {
 						...buildCommonUpdateFields(additionalFields, stored),
 						...buildDeepLinkFields(additionalFields, 'update'),
+						...buildControlFields(this.getNode(), additionalFields as IShortLinkControlFields, 'update', i),
 						baseUrl: firstText(additionalFields.baseUrl, stored.baseUrl) || '',
 						templateId: requireTemplateId(
 							this.getNodeParameter('templateId', i, ''),
@@ -494,6 +568,99 @@ export class Posty5ShortLink implements INodeType {
 						method: 'DELETE',
 						endpoint: `${API_ENDPOINTS.SHORT_LINK}/${shortLinkId}`,
 					});
+				} else if (operation === 'setRules') {
+					// The update requires baseUrl and templateId, so the link is read first;
+					// only the rule sections the user added are sent (absent ones are kept).
+					const endpoint = `${API_ENDPOINTS.SHORT_LINK}/${this.getNodeParameter('shortLinkId', i) as string}`;
+					const stored = (await makeApiRequest.call(this, apiKey, {
+						method: 'GET',
+						endpoint,
+					})) as IShortLinkFullDetailsResponse;
+					const rules = this.getNodeParameter('rules', i, {}) as IShortLinkControlFields;
+					const body = {
+						...buildControlFields(this.getNode(), rules, 'update', i),
+						baseUrl: stored.baseUrl || '',
+						templateId: stored.templateId || stored.template?._id || '',
+					};
+					responseData = await makeApiRequest.call(this, apiKey, { method: 'PUT', endpoint, body });
+				} else if (operation === 'listTags') {
+					const term = firstText(this.getNodeParameter('term', i, ''));
+					const tags = (await makeApiRequest.call(this, apiKey, {
+						method: 'GET',
+						endpoint: `${API_ENDPOINTS.SHORT_LINK}${SHORT_LINK_CONTROLS.TAGS_PATH}`,
+						qs: term ? { term } : undefined,
+					})) as string[] | undefined;
+					responseData = (tags || []).map((value) => ({ tag: value }));
+				} else if (operation === 'checkHealth') {
+					const shortLinkId = this.getNodeParameter('shortLinkId', i) as string;
+					await makeApiRequest.call(this, apiKey, {
+						method: 'POST',
+						endpoint: `${API_ENDPOINTS.SHORT_LINK}/${shortLinkId}${SHORT_LINK_CONTROLS.HEALTH_CHECK_PATH}`,
+						body: {},
+						stampCreatedFrom: false,
+					});
+					responseData = { shortLinkId, ...SHORT_LINK_CONTROLS.HEALTH_CHECK_QUEUED };
+				} else if (operation === 'createCampaign') {
+					const name = firstText(this.getNodeParameter('campaignName', i, ''));
+					if (!name) {
+						throw new NodeOperationError(this.getNode(), SHORT_LINK_CONTROLS_MESSAGES.CAMPAIGN_NAME_REQUIRED, {
+							itemIndex: i,
+						});
+					}
+					const fields = this.getNodeParameter('campaignFields', i, {}) as ILinkCampaignFields;
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'POST',
+						endpoint: API_ENDPOINTS.LINK_CAMPAIGN,
+						body: buildCampaignBody(name, fields, 'create'),
+					});
+				} else if (
+					operation === 'getCampaign' ||
+					operation === 'updateCampaign' ||
+					operation === 'deleteCampaign'
+				) {
+					const campaignId = firstText(this.getNodeParameter('campaignId', i, ''));
+					if (!campaignId) {
+						throw new NodeOperationError(this.getNode(), SHORT_LINK_CONTROLS_MESSAGES.ID_REQUIRED('Campaign ID'), {
+							itemIndex: i,
+						});
+					}
+					const endpoint = `${API_ENDPOINTS.LINK_CAMPAIGN}/${campaignId}`;
+					if (operation === 'getCampaign') {
+						responseData = await makeApiRequest.call(this, apiKey, { method: 'GET', endpoint });
+					} else if (operation === 'updateCampaign') {
+						const fields = this.getNodeParameter('campaignFields', i, {}) as ILinkCampaignFields & { name?: string };
+						responseData = await makeApiRequest.call(this, apiKey, {
+							method: 'PUT',
+							endpoint,
+							body: buildCampaignBody(firstText(fields.name) || '', fields, 'update'),
+						});
+					} else {
+						const detach = this.getNodeParameter('detach', i, false) as boolean;
+						const deleted = await makeApiRequest.call(this, apiKey, {
+							method: 'DELETE',
+							endpoint,
+							qs: detach ? { detach: true } : undefined,
+						});
+						responseData = deleted || { campaignId, deleted: true };
+					}
+				} else if (operation === 'listCampaigns') {
+					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
+					const filters = this.getNodeParameter('campaignFilters', i, {}) as { archived?: boolean; term?: string };
+					const qs: Record<string, string | number | boolean> = {};
+					const term = firstText(filters.term);
+					if (term) qs.term = term;
+					if (typeof filters.archived === 'boolean') qs.archived = filters.archived;
+					if (returnAll) {
+						responseData = await makePaginatedRequest.call(this, apiKey, API_ENDPOINTS.LINK_CAMPAIGN, qs);
+					} else {
+						const limit = this.getNodeParameter('limit', i, 50) as number;
+						const result = await makeApiRequest.call(this, apiKey, {
+							method: 'GET',
+							endpoint: API_ENDPOINTS.LINK_CAMPAIGN,
+							qs: { ...qs, page: 1, pageSize: limit },
+						});
+						responseData = result?.items || [];
+					}
 				} else if (operation === 'list') {
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
 					const filters = this.getNodeParameter('filters', i, {}) as IShortLinkListFilters;
@@ -505,7 +672,11 @@ export class Posty5ShortLink implements INodeType {
 					const refId = firstText(filters.refId);
 					const name = firstText(filters.search);
 					const baseUrl = firstText(filters.baseUrl);
+					const tags = splitList(filters.tags);
+					const campaignId = firstText(filters.campaignId);
 					if (tag) qs.tag = tag;
+					if (tags.length) qs.tags = tags.join(SHORT_LINK_CONTROLS.TAGS_SEPARATOR);
+					if (campaignId) qs.campaignId = campaignId;
 					if (refId) qs.refId = refId;
 					if (name) qs.name = name;
 					if (baseUrl) qs.baseUrl = baseUrl;

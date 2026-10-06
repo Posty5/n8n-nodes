@@ -5,6 +5,24 @@
 Not yet published. Node versions stay 1: optimistic-concurrency's node v2
 (`versioned-writes-node-v2`) has not started.
 
+### Short link controls
+
+- **Posty5 Short Link → Create / Update → Additional Fields:** Tags
+  (comma-separated), Campaign (dropdown, `GET /api/link-campaign`), Active From,
+  Expires At, Max Visits, Fallback URL, Password (masked) and Remove Password,
+  UTM, Routing Rules (JSON), Variants (JSON), Pixels with Pixels Consent
+  Acknowledged, Health Monitor. On Update an added but empty field clears it.
+  Routing Rules / Variants that are not a JSON array fail with a
+  `NodeOperationError` naming the field.
+- New operations on the same node: **Set Rules** (reads the link for
+  `baseUrl` / `templateId`, sends only the rule sections you add), **List Tags**,
+  **Check Health**, and **Create / Get / List / Update / Delete Campaign**
+  (Delete has *Detach Links*).
+- **List** filters: Tags, Campaign.
+- **Tag** is kept and labelled *deprecated — use Tags*: saved workflows send the
+  same body as before. No `resource` switch was added (operations only), so
+  parameter paths are unchanged and the node stays version 1.
+
 ### QR content types (passes 1 and 2)
 
 Needs the Posty5 API's QR content types (feature `qr-content-types`). Additive.

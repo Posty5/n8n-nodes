@@ -4,12 +4,13 @@
  */
 
 import { ILinkToolAdditionalFields, IPaginationResponse } from './common';
+import type { IShortLinkControlBody, IShortLinkControlFields } from './short-link-controls.types';
 
 /**
  * The Short Link node's Additional Fields: the shared ones plus the device
  * destinations and, on Update, a new destination URL.
  */
-export interface IShortLinkAdditionalFields extends ILinkToolAdditionalFields {
+export interface IShortLinkAdditionalFields extends ILinkToolAdditionalFields, IShortLinkControlFields {
 	/** Update only: a new destination. Left out, the stored one is sent. */
 	baseUrl?: string;
 	androidUrl?: string;
@@ -19,6 +20,9 @@ export interface IShortLinkAdditionalFields extends ILinkToolAdditionalFields {
 /** The Short Link node's List filters. */
 export interface IShortLinkListFilters {
 	tag?: string;
+	/** Comma-separated. */
+	tags?: string;
+	campaignId?: string;
 	refId?: string;
 	/** Matched against the name only. */
 	search?: string;
@@ -144,7 +148,7 @@ export interface IPageInfo {
 /**
  * Create short link request (`POST /api/short-link`)
  */
-export interface ICreateShortLinkRequest {
+export interface ICreateShortLinkRequest extends IShortLinkControlBody {
 	name?: string | null;
 	baseUrl: string;
 	refId?: string | null;
@@ -165,7 +169,7 @@ export interface ICreateShortLinkRequest {
  * user did not change. It never carries `customLandingId`: the API refuses it on
  * update.
  */
-export interface IUpdateShortLinkRequest {
+export interface IUpdateShortLinkRequest extends IShortLinkControlBody {
 	name?: string | null;
 	baseUrl: string;
 	refId?: string | null;
@@ -197,6 +201,9 @@ export interface IListParams {
 	shortLinkId?: string;
 	refId?: string;
 	tag?: string;
+	/** Comma-joined tags. */
+	tags?: string;
+	campaignId?: string;
 	templateId?: string;
 	status?: string;
 	isForDeepLink?: boolean;

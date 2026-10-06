@@ -873,4 +873,177 @@ describe('Posty5ShortLink', () => {
 			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledTimes(2);
 		});
 	});
+
+	describe('Short Link Controls', () => {
+		const storedLink = { _id: 'sl1', baseUrl: 'https://example.com', templateId: 'tpl-1', tag: 'old' };
+
+		function mockCall(parameters: Record<string, any>, responses: any[] = [{ result: { _id: 'sl1' } }]) {
+			const fn = createMockExecuteFunctions(parameters, [{ json: {} }], { apiKey: TEST_CONFIG.apiKey });
+			const http = fn.helpers.httpRequest as jest.Mock;
+			for (const response of responses) http.mockResolvedValueOnce(response);
+			return fn;
+		}
+
+		it('maps every control field on Create', async () => {
+			const fn = mockCall({
+				operation: 'create',
+				url: 'https://example.com',
+				templateId: 'tpl-1',
+				additionalFields: {
+					tag: 'legacy',
+					tags: ' a, b ,a,, ',
+					campaignId: 'cmp1',
+					activeFrom: '2026-10-01T00:00:00.000Z',
+					expiresAt: '2026-11-01T00:00:00.000Z',
+					maxVisits: 100,
+					fallbackUrl: 'https://example.com/end',
+					password: 'secret1',
+					utm: { values: { source: 'news', medium: '' } },
+					routingRules: '[{"conditions":{"countries":["DE"]},"targetUrl":"https://example.de"}]',
+					variants: [
+						{ url: 'https://a.example', weight: 50 },
+						{ url: 'https://b.example', weight: 50 },
+					],
+					pixels: { pixel: [{ provider: 'meta', id: '123' }, { provider: 'tiktok', id: ' ' }] },
+					pixelsConsentAcknowledged: true,
+					healthMonitor: true,
+				},
+			});
+
+			await shortLinkNode.execute.call(fn);
+
+			expect(requestBody(fn)).toEqual(
+				expect.objectContaining({
+					tag: 'legacy',
+					tags: ['a', 'b'],
+					campaignId: 'cmp1',
+					access: {
+						activeFrom: '2026-10-01T00:00:00.000Z',
+						expiresAt: '2026-11-01T00:00:00.000Z',
+						maxVisits: 100,
+						fallbackUrl: 'https://example.com/end',
+						password: 'secret1',
+					},
+					utm: { source: 'news' },
+					routing: [{ conditions: { countries: ['DE'] }, targetUrl: 'https://example.de' }],
+					variants: [
+						{ url: 'https://a.example', weight: 50 },
+						{ url: 'https://b.example', weight: 50 },
+					],
+					pixels: [{ provider: 'meta', id: '123' }],
+					pixelsConsentAcknowledged: true,
+					health: { enabled: true },
+				}),
+			);
+		});
+
+		it('keeps the legacy tag-only Create body unchanged', async () => {
+			const fn = mockCall({
+				operation: 'create',
+				url: 'https://example.com',
+				templateId: 'tpl-1',
+				additionalFields: { tag: 'legacy' },
+			});
+			await shortLinkNode.execute.call(fn);
+			expect(requestBody(fn)).toEqual({
+				baseUrl: 'https://example.com',
+				templateId: 'tpl-1',
+				tag: 'legacy',
+				createdFrom: 'n8n',
+			});
+		});
+
+		it('sends removePassword as access.password null and clears added empty fields on Update', async () => {
+			const fn = mockCall(
+				{
+					operation: 'update',
+					shortLinkId: 'sl1',
+					additionalFields: { removePassword: true, password: 'x', maxVisits: 0, tags: '', campaignId: '' },
+				},
+				[{ result: storedLink }, { result: { _id: 'sl1' } }],
+			);
+			await shortLinkNode.execute.call(fn);
+			const body = requestBody(fn, 1);
+			expect(body.access).toEqual({ maxVisits: null, password: null });
+			expect(body.tags).toEqual([]);
+			expect(body.campaignId).toBeNull();
+		});
+
+		it('throws a NodeOperationError naming the field for invalid JSON', async () => {
+			const fn = mockCall({
+				operation: 'create',
+				url: 'https://example.com',
+				templateId: 'tpl-1',
+				additionalFields: { routingRules: '{not json' },
+			});
+			await expect(shortLinkNode.execute.call(fn)).rejects.toThrow('Routing Rules must be a JSON array');
+		});
+
+		it('Set Rules reads the link for baseUrl and templateId and sends only the added sections', async () => {
+			const fn = mockCall(
+				{ operation: 'setRules', shortLinkId: 'sl1', rules: { variants: '[]', utm: { values: { source: 's' } } } },
+				[{ result: storedLink }, { result: { _id: 'sl1' } }],
+			);
+			await shortLinkNode.execute.call(fn);
+			const calls = (fn.helpers.httpRequest as jest.Mock).mock.calls;
+			expect(calls[0][0].method).toBe('GET');
+			expect(calls[1][0].method).toBe('PUT');
+			expect(requestBody(fn, 1)).toEqual({
+				baseUrl: 'https://example.com',
+				templateId: 'tpl-1',
+				variants: [],
+				utm: { source: 's' },
+			});
+		});
+
+		it('List sends tags and campaignId filters', async () => {
+			const fn = mockCall(
+				{ operation: 'list', returnAll: false, limit: 10, filters: { tags: 'a, b', campaignId: 'cmp1', tag: 'x' } },
+				[{ result: { items: [] } }],
+			);
+			await shortLinkNode.execute.call(fn);
+			const qs = (fn.helpers.httpRequest as jest.Mock).mock.calls[0][0].qs;
+			expect(qs).toEqual(expect.objectContaining({ tags: 'a,b', campaignId: 'cmp1', tag: 'x' }));
+		});
+
+		it('List Tags and Check Health hit their routes', async () => {
+			const tagsFn = mockCall({ operation: 'listTags', term: 'su' }, [{ result: ['summer'] }]);
+			const tagsResult = await shortLinkNode.execute.call(tagsFn);
+			const tagsCall = (tagsFn.helpers.httpRequest as jest.Mock).mock.calls[0][0];
+			expect(tagsCall.url).toMatch(/\/api\/short-link\/tags$/);
+			expect(tagsCall.qs).toEqual({ term: 'su' });
+			expect(tagsResult[0][0].json).toEqual({ tag: 'summer' });
+
+			const healthFn = mockCall({ operation: 'checkHealth', shortLinkId: 'sl1' }, [undefined]);
+			await shortLinkNode.execute.call(healthFn);
+			const healthCall = (healthFn.helpers.httpRequest as jest.Mock).mock.calls[0][0];
+			expect(healthCall.method).toBe('POST');
+			expect(healthCall.url).toMatch(/\/api\/short-link\/sl1\/health-check$/);
+			expect(healthCall.body).toEqual({});
+		});
+
+		it('campaign operations hit /api/link-campaign', async () => {
+			const createFn = mockCall({
+				operation: 'createCampaign',
+				campaignName: 'Fall',
+				campaignFields: { color: 'red', utm: { values: { campaign: 'fall' } } },
+			});
+			await shortLinkNode.execute.call(createFn);
+			expect((createFn.helpers.httpRequest as jest.Mock).mock.calls[0][0].url).toMatch(/\/api\/link-campaign$/);
+			expect(requestBody(createFn)).toEqual({ name: 'Fall', color: 'red', utm: { campaign: 'fall' }, createdFrom: 'n8n' });
+
+			const updateFn = mockCall({ operation: 'updateCampaign', campaignId: 'cmp1', campaignFields: { archived: true } });
+			await shortLinkNode.execute.call(updateFn);
+			const updateCall = (updateFn.helpers.httpRequest as jest.Mock).mock.calls[0][0];
+			expect(updateCall.method).toBe('PUT');
+			expect(updateCall.url).toMatch(/\/api\/link-campaign\/cmp1$/);
+			expect(updateCall.body).toEqual({ archived: true });
+
+			const deleteFn = mockCall({ operation: 'deleteCampaign', campaignId: 'cmp1', detach: true }, [undefined]);
+			await shortLinkNode.execute.call(deleteFn);
+			const deleteCall = (deleteFn.helpers.httpRequest as jest.Mock).mock.calls[0][0];
+			expect(deleteCall.method).toBe('DELETE');
+			expect(deleteCall.qs).toEqual({ detach: true });
+		});
+	});
 });

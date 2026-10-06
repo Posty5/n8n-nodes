@@ -33,6 +33,7 @@ export const CredentialTestConst = {
 export const API_ENDPOINTS = {
 	API_KEY_CURRENT: '/api/api-key/current',
 	SHORT_LINK: '/api/short-link',
+	LINK_CAMPAIGN: '/api/link-campaign',
 	QR_CODE: '/api/qr-code',
 	QR_CODE_TEMPLATE: '/api/qr-code-template',
 	HTML_HOSTING: '/api/html-hosting',
@@ -201,4 +202,43 @@ export const LINK_BULK_MESSAGES = {
 export const API_TIMEOUTS = {
 	DEFAULT: 30000, // 30 seconds
 	UPLOAD: 120000, // 2 minutes for uploads
+} as const;
+
+/**
+ * Short link controls (short-link-controls): sub-paths under `/api/short-link`,
+ * the enums the API's Joi schemas accept, and the node's own messages.
+ */
+export const SHORT_LINK_CONTROLS = {
+	TAGS_PATH: '/tags',
+	HEALTH_CHECK_PATH: '/health-check',
+	/** `?tags=a,b` and the Tags field are split on this. */
+	TAGS_SEPARATOR: ',',
+	/** `GET /api/link-campaign` page size for the Campaign dropdown. */
+	CAMPAIGN_LOOKUP_PAGE_SIZE: 100,
+	/** Answer of Check Health (the API answers 202 with no body). */
+	HEALTH_CHECK_QUEUED: { queued: true },
+} as const;
+
+/** Retargeting pixel providers (`pixelsJoi`). */
+export const LINK_PIXEL_PROVIDERS = ['meta', 'googleAds', 'tiktok', 'linkedin', 'x', 'pinterest'] as const;
+
+/** Campaign colours (`LINK_CAMPAIGN_COLORS`). */
+export const LINK_CAMPAIGN_COLORS = [
+	'slate', 'red', 'orange', 'amber', 'green', 'teal', 'blue', 'indigo', 'purple', 'pink',
+] as const;
+
+/** Routing rule condition values (documented in the Routing Rules field). */
+export const LINK_ROUTING_DEVICES = ['tablet', 'mobile', 'desktop', 'other'] as const;
+export const LINK_ROUTING_OS = ['android', 'ios', 'windows', 'macos', 'linux'] as const;
+
+/** The UTM keys a link or a campaign carries. */
+export const LINK_UTM_KEYS = ['source', 'medium', 'campaign', 'term', 'content'] as const;
+
+/** The access keys of a link (`password` and `removePassword` handled apart). */
+export const LINK_ACCESS_KEYS = ['activeFrom', 'expiresAt', 'maxVisits', 'fallbackUrl'] as const;
+
+export const SHORT_LINK_CONTROLS_MESSAGES = {
+	INVALID_JSON: (field: string) => `${field} must be a JSON array, e.g. [] or [{ ... }]`,
+	CAMPAIGN_NAME_REQUIRED: 'Campaign Name is required',
+	ID_REQUIRED: (field: string) => `${field} is required`,
 } as const;
