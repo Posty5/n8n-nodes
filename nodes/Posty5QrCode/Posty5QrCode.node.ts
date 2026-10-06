@@ -1,6 +1,7 @@
 import {
 	IExecuteFunctions,
 	INodeExecutionData,
+	INodePropertyOptions,
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
@@ -12,9 +13,11 @@ import { executeBulkCreate, prepareBulkRows, readBulkDefaults } from '../../util
 import { buildLinkBulkProperties } from '../../utils/link-bulk.properties';
 import { buildQrCodeBulkRow, QR_CODE_BULK_ROUTE } from './helpers';
 import type { IBulkNodeOptions } from '../../types/link-bulk.types';
-import { buildCommonCreateFields, buildCommonUpdateFields, firstText } from '../../utils/link-tool.helpers';
-import { buildQrAccess, buildQrCodeTarget, readQrMode } from '../../utils/qr-target.helpers';
+import { buildCommonCreateFields, buildCommonUpdateFields, firstText, toText } from '../../utils/link-tool.helpers';
+import { buildQrAccess, buildQrCodeTarget, readQrMode, requiredQrMode } from '../../utils/qr-target.helpers';
+import { uploadQrFile } from '../../utils/qr-file.helpers';
 import { getQrTemplates, requireTemplateId } from '../../utils/qr-templates.helpers';
+import { QR_CONTENT_CONFIG, QR_EVENT_TIMEZONES, toNodeOptions } from '../../utils/qr-content.config';
 import type { ILinkToolAdditionalFields } from '../../types/common';
 import type {
 	IListParams,
@@ -22,6 +25,80 @@ import type {
 	IQRCodeScanRulesParameter,
 	IQRCodeWriteRequest,
 } from '../../types/qr-code.types';
+
+/** QR Type options. *Create Many* offers all but the bulk-excluded ones (`file`). */
+const QR_TYPE_OPTIONS: INodePropertyOptions[] = [
+	{
+		name: 'URL',
+		value: 'url',
+		description: 'Link to a website',
+	},
+	{
+		name: 'Free Text',
+		value: 'freeText',
+		description: 'Plain text content',
+	},
+	{
+		name: 'Email',
+		value: 'email',
+		description: 'Email address with optional subject and body',
+	},
+	{
+		name: 'WiFi',
+		value: 'wifi',
+		description: 'WiFi network credentials',
+	},
+	{
+		name: 'Phone Call',
+		value: 'call',
+		description: 'Phone number to call',
+	},
+	{
+		name: 'SMS',
+		value: 'sms',
+		description: 'SMS message',
+	},
+	{
+		name: 'Geolocation',
+		value: 'geolocation',
+		description: 'Geographic coordinates',
+	},
+	{
+		name: 'Business Card (vCard)',
+		value: 'vcard',
+		description: 'Contact card a phone saves to its contacts',
+	},
+	{
+		name: 'Calendar Event',
+		value: 'event',
+		description: 'Event a phone adds to its calendar',
+	},
+	{
+		name: 'WhatsApp',
+		value: 'whatsapp',
+		description: 'Opens a WhatsApp chat with an optional pre-filled message',
+	},
+	{
+		name: 'Review Link',
+		value: 'review',
+		description: 'Opens the page to leave a review (Google, Tripadvisor, …)',
+	},
+	{
+		name: 'Social Profile',
+		value: 'social',
+		description: 'Opens a social media profile, or a page listing up to 12 (dynamic)',
+	},
+	{
+		name: 'App Store Links',
+		value: 'appStore',
+		description: 'Sends Android to Google Play, iOS to the App Store, others to a fallback (dynamic only)',
+	},
+	{
+		name: 'File (PDF or Image)',
+		value: 'file',
+		description: 'A hosted PDF, JPEG, PNG or WebP from a binary property (dynamic only)',
+	},
+];
 
 export class Posty5QrCode implements INodeType {
 	description: INodeTypeDescription = {
@@ -102,53 +179,31 @@ export class Posty5QrCode implements INodeType {
 				default: 'create',
 			},
 
-			// QR Type selection for Create/Update
+			// QR Type selection for Create/Update (Create Many: no file, the bulk route refuses it)
 			{
 				displayName: 'QR Type',
 				name: 'qrType',
 				type: 'options',
 				displayOptions: {
 					show: {
-						operation: ['create', 'createMany', 'update'],
+						operation: ['create', 'update'],
 					},
 				},
-				options: [
-					{
-						name: 'URL',
-						value: 'url',
-						description: 'Link to a website',
+				options: QR_TYPE_OPTIONS,
+				default: 'url',
+			},
+			{
+				displayName: 'QR Type',
+				name: 'qrType',
+				type: 'options',
+				displayOptions: {
+					show: {
+						operation: ['createMany'],
 					},
-					{
-						name: 'Free Text',
-						value: 'freeText',
-						description: 'Plain text content',
-					},
-					{
-						name: 'Email',
-						value: 'email',
-						description: 'Email address with optional subject and body',
-					},
-					{
-						name: 'WiFi',
-						value: 'wifi',
-						description: 'WiFi network credentials',
-					},
-					{
-						name: 'Phone Call',
-						value: 'call',
-						description: 'Phone number to call',
-					},
-					{
-						name: 'SMS',
-						value: 'sms',
-						description: 'SMS message',
-					},
-					{
-						name: 'Geolocation',
-						value: 'geolocation',
-						description: 'Geographic coordinates',
-					},
-				],
+				},
+				options: QR_TYPE_OPTIONS.filter(
+					(option) => !(QR_CONTENT_CONFIG.bulkExcludedTypes as readonly unknown[]).includes(option.value),
+				),
 				default: 'url',
 			},
 
@@ -210,7 +265,7 @@ export class Posty5QrCode implements INodeType {
 						operation: ['create', 'createMany'],
 					},
 					hide: {
-						qrType: ['wifi'],
+						qrType: ['wifi', 'appStore', 'file'],
 					},
 				},
 				options: [
@@ -227,7 +282,7 @@ export class Posty5QrCode implements INodeType {
 				],
 				default: 'static',
 				description:
-					'Dynamic: the image points to a Posty5 link, so you can change where it goes later without reprinting',
+					'Dynamic: the image points to a Posty5 link, so you can change where it goes later without reprinting. Social Profile with 2 or more profiles is always dynamic.',
 			},
 			{
 				displayName: 'Mode',
@@ -238,7 +293,7 @@ export class Posty5QrCode implements INodeType {
 						operation: ['update'],
 					},
 					hide: {
-						qrType: ['wifi'],
+						qrType: ['wifi', 'appStore', 'file'],
 					},
 				},
 				options: [
@@ -260,7 +315,7 @@ export class Posty5QrCode implements INodeType {
 				],
 				default: '',
 				description:
-					'Dynamic: the image points to a Posty5 link, so you can change where it goes later without reprinting',
+					'Dynamic: the image points to a Posty5 link, so you can change where it goes later without reprinting. Social Profile with 2 or more profiles is always dynamic.',
 			},
 
 			// URL Type fields
@@ -460,6 +515,343 @@ export class Posty5QrCode implements INodeType {
 				description: 'Longitude coordinate',
 			},
 
+			// vCard fields (first name or organization is required by the API)
+			{
+				displayName: 'First Name',
+				name: 'vcardFirstName',
+				type: 'string',
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['vcard'] } },
+				default: '',
+				description: 'First name. First Name or Organization is required.',
+			},
+			{
+				displayName: 'Last Name',
+				name: 'vcardLastName',
+				type: 'string',
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['vcard'] } },
+				default: '',
+			},
+			{
+				displayName: 'Organization',
+				name: 'vcardOrganization',
+				type: 'string',
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['vcard'] } },
+				default: '',
+				description: 'Company or organization. First Name or Organization is required.',
+			},
+			{
+				displayName: 'Job Title',
+				name: 'vcardJobTitle',
+				type: 'string',
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['vcard'] } },
+				default: '',
+			},
+			{
+				displayName: 'Phones',
+				name: 'vcardPhones',
+				type: 'fixedCollection',
+				placeholder: 'Add Phone',
+				typeOptions: { multipleValues: true, maxAllowedFields: QR_CONTENT_CONFIG.vcard.phonesMax },
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['vcard'] } },
+				default: {},
+				description: `Up to ${QR_CONTENT_CONFIG.vcard.phonesMax} phone numbers`,
+				options: [
+					{
+						displayName: 'Phone',
+						name: 'phone',
+						values: [
+							{
+								displayName: 'Kind',
+								name: 'kind',
+								type: 'options',
+								options: toNodeOptions(QR_CONTENT_CONFIG.vcard.phoneKinds),
+								default: 'mobile',
+								description: 'Kind of phone number',
+							},
+							{
+								displayName: 'Number',
+								name: 'number',
+								type: 'string',
+								default: '',
+								description: 'Phone number, international format recommended',
+							},
+						],
+					},
+				],
+			},
+			{
+				displayName: 'Emails',
+				name: 'vcardEmails',
+				type: 'string',
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['vcard'] } },
+				default: '',
+				placeholder: 'name@example.com, other@example.com',
+				description: `Comma-separated email addresses, at most ${QR_CONTENT_CONFIG.vcard.emailsMax}`,
+			},
+			{
+				displayName: 'Website',
+				name: 'vcardWebsite',
+				type: 'string',
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['vcard'] } },
+				default: '',
+				description: 'Website (http or https URL)',
+			},
+			{
+				displayName: 'Address',
+				name: 'vcardAddress',
+				type: 'collection',
+				placeholder: 'Add Address Field',
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['vcard'] } },
+				default: {},
+				description: 'Work address',
+				options: [
+					{ displayName: 'City', name: 'city', type: 'string', default: '' },
+					{ displayName: 'Country', name: 'country', type: 'string', default: '' },
+					{ displayName: 'Postal Code', name: 'postalCode', type: 'string', default: '' },
+					{ displayName: 'Region', name: 'region', type: 'string', default: '', description: 'State or region' },
+					{ displayName: 'Street', name: 'street', type: 'string', default: '' },
+				],
+			},
+			{
+				displayName: 'Note',
+				name: 'vcardNote',
+				type: 'string',
+				typeOptions: { rows: 2 },
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['vcard'] } },
+				default: '',
+				description: 'Free note on the contact card',
+			},
+
+			// Calendar event fields
+			{
+				displayName: 'Event Title',
+				name: 'eventTitle',
+				type: 'string',
+				required: true,
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['event'] } },
+				default: '',
+				description: 'Title of the event',
+			},
+			{
+				displayName: 'Starts At',
+				name: 'eventStartsAt',
+				type: 'dateTime',
+				required: true,
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['event'] } },
+				default: '',
+				description: 'Start of the event. A value without an offset is read in the event timezone.',
+			},
+			{
+				displayName: 'Ends At',
+				name: 'eventEndsAt',
+				type: 'dateTime',
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['event'] } },
+				default: '',
+				description: 'End of the event; must be after the start',
+			},
+			{
+				displayName: 'All Day',
+				name: 'eventAllDay',
+				type: 'boolean',
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['event'] } },
+				default: false,
+				description: 'Whether the event lasts the whole day (times are ignored)',
+			},
+			{
+				displayName: 'Timezone',
+				name: 'eventTimezone',
+				type: 'options',
+				options: QR_EVENT_TIMEZONES.map((zone) => ({ name: zone, value: zone })),
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['event'] } },
+				default: 'UTC',
+				description: 'IANA time zone the start and end are read in. Use an expression for a zone not listed.',
+			},
+			{
+				displayName: 'Location',
+				name: 'eventLocation',
+				type: 'string',
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['event'] } },
+				default: '',
+				description: 'Where the event takes place',
+			},
+			{
+				displayName: 'Description',
+				name: 'eventDescription',
+				type: 'string',
+				typeOptions: { rows: 2 },
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['event'] } },
+				default: '',
+				description: 'Event description',
+			},
+			{
+				displayName: 'Event URL',
+				name: 'eventUrl',
+				type: 'string',
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['event'] } },
+				default: '',
+				description: 'Link for the event (http or https URL)',
+			},
+
+			// WhatsApp fields
+			{
+				displayName: 'Phone Number',
+				name: 'whatsappPhoneNumber',
+				type: 'string',
+				required: true,
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['whatsapp'] } },
+				default: '',
+				placeholder: '+201001234567',
+				description: 'WhatsApp number in international format',
+			},
+			{
+				displayName: 'Message',
+				name: 'whatsappMessage',
+				type: 'string',
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['whatsapp'] } },
+				default: '',
+				description: 'Pre-filled chat message',
+			},
+
+			// Review fields
+			{
+				displayName: 'Platform',
+				name: 'reviewPlatform',
+				type: 'options',
+				options: toNodeOptions(QR_CONTENT_CONFIG.review.platforms),
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['review'] } },
+				default: 'google',
+				description: 'Where the review is left',
+			},
+			{
+				displayName: 'Place ID',
+				name: 'reviewPlaceId',
+				type: 'string',
+				displayOptions: {
+					show: { operation: ['create', 'createMany', 'update'], qrType: ['review'], reviewPlatform: ['google'] },
+				},
+				default: '',
+				description: 'Google place ID. Google takes a Place ID or a Review URL.',
+			},
+			{
+				displayName: 'Review URL',
+				name: 'reviewUrl',
+				type: 'string',
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['review'] } },
+				default: '',
+				description: "Review page URL on the platform's own site",
+			},
+
+			// Social profile fields: 1 profile (static or dynamic) or 2-12 (dynamic only)
+			{
+				displayName: 'Profiles',
+				name: 'socialProfiles',
+				type: 'fixedCollection',
+				placeholder: 'Add Profile',
+				required: true,
+				typeOptions: { multipleValues: true, maxAllowedFields: QR_CONTENT_CONFIG.social.maxProfilesDynamic },
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['social'] } },
+				default: {},
+				description: `Up to ${QR_CONTENT_CONFIG.social.maxProfilesDynamic} profiles. With 2 or more the code is always dynamic (its scan page lists them).`,
+				options: [
+					{
+						displayName: 'Profile',
+						name: 'profile',
+						values: [
+							{
+								displayName: 'Platform',
+								name: 'platform',
+								type: 'options',
+								options: toNodeOptions(QR_CONTENT_CONFIG.social.platforms),
+								default: 'instagram',
+								description: 'Social network of the profile',
+							},
+							{
+								displayName: 'Handle',
+								name: 'handle',
+								type: 'string',
+								default: '',
+								placeholder: 'posty5',
+								description: 'Profile handle. Set a Handle or a Profile URL (Other needs a URL).',
+							},
+							{
+								displayName: 'Profile URL',
+								name: 'url',
+								type: 'string',
+								default: '',
+								description: 'Profile URL. Set a Handle or a Profile URL.',
+							},
+						],
+					},
+				],
+			},
+			{
+				displayName: 'Page Title',
+				name: 'socialTitle',
+				type: 'string',
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['social'] } },
+				default: '',
+				description: 'Title of the profile list page (2 or more profiles)',
+			},
+
+			// App store fields (dynamic only)
+			{
+				displayName: 'Android URL',
+				name: 'appStoreAndroidUrl',
+				type: 'string',
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['appStore'] } },
+				default: '',
+				placeholder: 'https://play.google.com/store/apps/…',
+				description: 'Google Play link. Set an Android URL, an iOS URL, or both.',
+			},
+			{
+				displayName: 'iOS URL',
+				name: 'appStoreIosUrl',
+				type: 'string',
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['appStore'] } },
+				default: '',
+				placeholder: 'https://apps.apple.com/app/id123456789',
+				description: 'App Store link. Set an Android URL, an iOS URL, or both.',
+			},
+			{
+				displayName: 'Fallback URL',
+				name: 'appStoreFallbackUrl',
+				type: 'string',
+				required: true,
+				displayOptions: { show: { operation: ['create', 'createMany', 'update'], qrType: ['appStore'] } },
+				default: '',
+				placeholder: 'https://example.com/app',
+				description: 'Where desktops and other devices (or a missing store link) go',
+			},
+
+			// File fields (dynamic only; not offered on Create Many)
+			{
+				displayName: 'Binary Property',
+				name: 'binaryPropertyName',
+				type: 'string',
+				required: true,
+				displayOptions: { show: { operation: ['create'], qrType: ['file'] } },
+				default: 'data',
+				description: `Input binary property holding the file: a PDF, JPEG, PNG or WebP of up to ${QR_CONTENT_CONFIG.file.maxUploadBytes / (1024 * 1024)} MB`,
+			},
+			{
+				displayName: 'Binary Property',
+				name: 'binaryPropertyName',
+				type: 'string',
+				displayOptions: { show: { operation: ['update'], qrType: ['file'] } },
+				default: '',
+				placeholder: QR_CONTENT_CONFIG.file.defaultBinaryProperty,
+				description: 'Input binary property holding a new file. Leave empty to keep the stored file.',
+			},
+			{
+				displayName: 'File Name',
+				name: 'fileName',
+				type: 'string',
+				displayOptions: { show: { operation: ['create', 'update'], qrType: ['file'] } },
+				default: '',
+				description:
+					"Name shown for the file. Empty: the binary's own file name (on Update without a new file, the stored name is kept).",
+			},
+
 			// Scan rules (dynamic codes only, Starter plan and above). Create: shown
 			// only for Dynamic. Update: always (the API answers 400 on a static code).
 			{
@@ -474,7 +866,60 @@ export class Posty5QrCode implements INodeType {
 						mode: ['dynamic'],
 					},
 					hide: {
-						qrType: ['wifi'],
+						qrType: ['wifi', 'appStore', 'file'],
+					},
+				},
+				description: 'Limit when and how often a dynamic QR code works. Leave empty for no rules.',
+				options: [
+					{
+						displayName: 'Active From',
+						name: 'activeFrom',
+						type: 'dateTime',
+						default: '',
+						description: 'Scans before this moment go to the Fallback URL',
+					},
+					{
+						displayName: 'Expires At',
+						name: 'expiresAt',
+						type: 'dateTime',
+						default: '',
+						description: 'Scans from this moment go to the Fallback URL. Must be after Active From.',
+					},
+					{
+						displayName: 'Max Scans',
+						name: 'maxVisits',
+						type: 'number',
+						typeOptions: { minValue: 1, numberPrecision: 0 },
+						default: 1,
+						description: 'Scans allowed; later scans go to the Fallback URL',
+					},
+					{
+						displayName: 'Fallback URL',
+						name: 'fallbackUrl',
+						type: 'string',
+						default: '',
+						placeholder: 'https://example.com/offer-ended',
+						description: 'Where gated scans go (http or https)',
+					},
+					{
+						displayName: 'Clear Scan Rules',
+						name: 'clearScanRules',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to remove every scan rule from the code (overrides the other fields)',
+					},
+				],
+			},
+			{
+				displayName: 'Scan Rules',
+				name: 'scanRules',
+				type: 'collection',
+				placeholder: 'Add Rule',
+				default: {},
+				displayOptions: {
+					show: {
+						operation: ['create'],
+						qrType: ['appStore', 'file'],
 					},
 				},
 				description: 'Limit when and how often a dynamic QR code works. Leave empty for no rules.',
@@ -792,9 +1237,23 @@ export class Posty5QrCode implements INodeType {
 					};
 					if (name) body.name = name;
 					// Static is the API default: send `mode` only for dynamic, so saved
-					// workflows (no value) keep sending the same body.
-					const mode = readQrMode(this.getNodeParameter('mode', i, 'static'));
+					// workflows (no value) keep sending the same body. A target with no
+					// static form (app store, file, 2+ social profiles) is always dynamic.
+					const mode =
+						requiredQrMode(body.qrCodeTarget) ?? readQrMode(this.getNodeParameter('mode', i, 'static'));
 					if (mode === 'dynamic') body.mode = mode;
+					if (qrType === 'file') {
+						// Upload last, after every local check: the signed URL is short-lived.
+						const upload = await uploadQrFile(
+							this,
+							apiKey,
+							i,
+							toText(this.getNodeParameter('binaryPropertyName', i, QR_CONTENT_CONFIG.file.defaultBinaryProperty)).trim() ||
+								QR_CONTENT_CONFIG.file.defaultBinaryProperty,
+							body.qrCodeTarget.file?.fileName,
+						);
+						body.qrCodeTarget.file = { ...body.qrCodeTarget.file, ...upload };
+					}
 					if (mode === 'dynamic') {
 						const access = buildQrAccess(this.getNodeParameter('scanRules', i, {}) as IQRCodeScanRulesParameter);
 						if (access !== undefined) body.access = access;
@@ -850,8 +1309,20 @@ export class Posty5QrCode implements INodeType {
 					const name = firstText(this.getNodeParameter('name', i, ''), stored.name);
 					if (name) body.name = name;
 					// Empty ("Keep Current") sends nothing; the API keeps the stored mode.
-					const mode = readQrMode(this.getNodeParameter('mode', i, ''));
+					// A target with no static form always sends dynamic.
+					const mode = requiredQrMode(qrCodeTarget) ?? readQrMode(this.getNodeParameter('mode', i, ''));
 					if (mode) body.mode = mode;
+					if (qrType === 'file') {
+						// No binary property: no upload, no bucketFilePath, the stored file stays.
+						const binaryProperty = toText(this.getNodeParameter('binaryPropertyName', i, '')).trim();
+						const storedFileName = stored.qrCodeTarget?.file?.fileName;
+						if (binaryProperty) {
+							const upload = await uploadQrFile(this, apiKey, i, binaryProperty, qrCodeTarget.file?.fileName);
+							qrCodeTarget.file = { ...qrCodeTarget.file, ...upload };
+						} else if (!qrCodeTarget.file?.fileName && storedFileName) {
+							qrCodeTarget.file = { ...qrCodeTarget.file, fileName: storedFileName };
+						}
+					}
 					// Empty Scan Rules keeps the stored rules; Clear sends access: null.
 					const access = buildQrAccess(this.getNodeParameter('scanRules', i, {}) as IQRCodeScanRulesParameter);
 					if (access !== undefined) body.access = access;

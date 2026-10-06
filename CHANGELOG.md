@@ -5,6 +5,28 @@
 Not yet published. Node versions stay 1: optimistic-concurrency's node v2
 (`versioned-writes-node-v2`) has not started.
 
+### QR content types (passes 1 and 2)
+
+Needs the Posty5 API's QR content types (feature `qr-content-types`). Additive.
+
+#### Added
+
+- **Posty5 QR Code** *QR Type*: **Business Card (vCard)**, **Calendar Event**,
+  **WhatsApp**, **Review Link** and **Social Profile** (one profile), each with
+  its own fields, sent as `qrCodeTarget.<type>` (no `options.text`). Also
+  available on *Create Many*.
+- **App Store Links** (`appStore`: Android URL, iOS URL, required Fallback URL)
+  and **File (PDF or Image)** (`file`), both dynamic-only: Mode is hidden and
+  `mode: dynamic` is always sent; Scan Rules show on Create.
+- File QR codes upload from an input binary property: type (PDF, JPEG, PNG,
+  WebP) and size (10 MB) checked first, then `POST /api/qr-code/file/upload-url`,
+  a PUT of the bytes to the signed URL (no API key), then create/update with
+  `qrCodeTarget.file.bucketFilePath`. Update without a binary keeps the stored
+  file. Not offered on *Create Many* (the bulk route cannot take a file).
+- **Social Profile** takes up to 12 profiles (*Profiles* fixedCollection) and a
+  *Page Title*; 2 or more profiles are always sent as dynamic. Replaces the
+  pass-1 single Platform / Handle / Profile URL fields (never released).
+
 ### Bulk create and Posty5 Trigger
 
 Needs the Posty5 API's sync bulk routes and `/api/webhook-endpoints`

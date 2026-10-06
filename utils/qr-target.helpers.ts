@@ -8,8 +8,24 @@
 
 import { QR_CODE_TYPES, QR_WIFI_AUTH } from './constants';
 import { toText } from './link-tool.helpers';
+import { QR_CONTENT_CONFIG } from './qr-content.config';
 import type {
+	IQRCodeAppStoreTarget,
 	IQRCodeEmailTarget,
+	IQRCodeFileTarget,
+	IQRCodeSocialProfilesParameter,
+	IQRCodeSocialTarget,
+	IQRCodeEventTarget,
+	IQRCodeReviewTarget,
+	IQRCodeSocialProfile,
+	IQRCodeVCardAddress,
+	IQRCodeVCardPhone,
+	IQRCodeVCardPhonesParameter,
+	IQRCodeVCardTarget,
+	IQRCodeWhatsappTarget,
+	QrCodeReviewPlatform,
+	QrCodeSocialPlatform,
+	QrCodeVCardPhoneKind,
 	IQRCodeAccess,
 	IQRCodeScanRulesParameter,
 	IQRCodeSmsTarget,
@@ -22,6 +38,100 @@ import type {
 /** A coordinate as the API takes it: a number, or the text an expression produced. */
 function toCoordinate(value: unknown): number | string {
 	return typeof value === 'number' ? value : toText(value).trim();
+}
+
+/** Sets `target[key]` to the trimmed text of `value`, or leaves it unset when empty. */
+function setText<T extends object>(target: T, key: keyof T & string, value: unknown): void {
+	const text = toText(value).trim();
+	if (text) (target as Record<string, unknown>)[key] = text;
+}
+
+/** A boolean parameter, also accepting the text `"true"` an expression may produce. */
+function readBoolean(value: unknown): boolean {
+	return value === true || toText(value).trim().toLowerCase() === 'true';
+}
+
+/**
+ * An event date-time as the API takes it: an ISO string kept as typed (a
+ * wall-clock value is read in the event's timezone), a `Date` as ISO, or
+ * `undefined` when empty.
+ */
+function readEventDateTime(value: unknown): string | undefined {
+	if (value instanceof Date) return value.toISOString();
+	const text = toText(value).trim();
+	return text || undefined;
+}
+
+/** The vCard target: empty fields are not sent; emails split on commas, at most the API's cap. */
+function buildVCardTarget(read: QrParameterReader): IQRCodeVCardTarget {
+	const config = QR_CONTENT_CONFIG.vcard;
+	const vcard: IQRCodeVCardTarget = {};
+	setText(vcard, 'firstName', read('vcardFirstName', ''));
+	setText(vcard, 'lastName', read('vcardLastName', ''));
+	setText(vcard, 'organization', read('vcardOrganization', ''));
+	setText(vcard, 'jobTitle', read('vcardJobTitle', ''));
+
+	const phonesParameter = (read('vcardPhones', {}) ?? {}) as IQRCodeVCardPhonesParameter;
+	const phones: IQRCodeVCardPhone[] = (phonesParameter.phone ?? [])
+		.map((row) => ({
+			kind: (toText(row.kind).trim() || config.defaultPhoneKind) as QrCodeVCardPhoneKind,
+			number: toText(row.number).trim(),
+		}))
+		.filter((phone) => phone.number);
+	// Over the cap is sent as is: the API's 400 names the limit.
+	if (phones.length) vcard.phones = phones;
+
+	const emailsValue = read('vcardEmails', '');
+	const emails = (Array.isArray(emailsValue) ? emailsValue : toText(emailsValue).split(config.emailSeparator))
+		.map((email) => toText(email).trim())
+		.filter(Boolean);
+	if (emails.length) vcard.emails = emails;
+
+	setText(vcard, 'website', read('vcardWebsite', ''));
+
+	const addressParameter = (read('vcardAddress', {}) ?? {}) as Record<string, unknown>;
+	const address: IQRCodeVCardAddress = {};
+	for (const key of ['street', 'city', 'region', 'postalCode', 'country'] as const) {
+		setText(address, key, addressParameter[key]);
+	}
+	if (Object.keys(address).length) vcard.address = address;
+
+	setText(vcard, 'note', read('vcardNote', ''));
+	return vcard;
+}
+
+/**
+ * The social target from the Profiles fixedCollection (up to 12 rows). Rows
+ * with neither a handle nor a URL are dropped; over the cap is sent as is (the
+ * API's 400 names the limit). `title` only when set.
+ */
+function buildSocialTarget(read: QrParameterReader): IQRCodeSocialTarget {
+	const parameter = (read('socialProfiles', {}) ?? {}) as IQRCodeSocialProfilesParameter;
+	const profiles: IQRCodeSocialProfile[] = [];
+	for (const row of parameter.profile ?? []) {
+		const profile: IQRCodeSocialProfile = {
+			platform: (toText(row.platform).trim() || QR_CONTENT_CONFIG.social.defaultPlatform) as QrCodeSocialPlatform,
+		};
+		setText(profile, 'handle', row.handle);
+		setText(profile, 'url', row.url);
+		if (profile.handle || profile.url) profiles.push(profile);
+	}
+	const social: IQRCodeSocialTarget = { profiles };
+	setText(social, 'title', read('socialTitle', ''));
+	return social;
+}
+
+/**
+ * `dynamic` when the target has no static form — an `appStore` or `file` code,
+ * or `social` with more than one profile — so the node sends `mode: dynamic`
+ * whatever Mode says (the API answers 400 to a static one); else `undefined`.
+ */
+export function requiredQrMode(target: IQRCodeTarget): QrCodeMode | undefined {
+	if ((QR_CONTENT_CONFIG.dynamicOnlyTypes as readonly string[]).includes(target.type)) return 'dynamic';
+	if (target.type === 'social' && (target.social?.profiles.length ?? 0) > QR_CONTENT_CONFIG.social.maxProfilesStatic) {
+		return 'dynamic';
+	}
+	return undefined;
 }
 
 /**
@@ -74,6 +184,62 @@ export function buildQrCodeTarget(qrType: string, read: QrParameterReader): IQRC
 					longitude: toCoordinate(read('longitude', 0)),
 				},
 			};
+
+		case 'vcard':
+			return { type: 'vcard', vcard: buildVCardTarget(read) };
+
+		case 'event': {
+			const event: IQRCodeEventTarget = {
+				title: toText(read('eventTitle', '')).trim(),
+				startsAt: readEventDateTime(read('eventStartsAt', '')) ?? '',
+			};
+			setText(event, 'location', read('eventLocation', ''));
+			setText(event, 'description', read('eventDescription', ''));
+			const endsAt = readEventDateTime(read('eventEndsAt', ''));
+			if (endsAt) event.endsAt = endsAt;
+			if (readBoolean(read('eventAllDay', false))) event.allDay = true;
+			setText(event, 'timezone', read('eventTimezone', QR_CONTENT_CONFIG.event.defaultTimezone));
+			setText(event, 'url', read('eventUrl', ''));
+			return { type: 'event', event };
+		}
+
+		case 'whatsapp': {
+			const whatsapp: IQRCodeWhatsappTarget = {
+				phoneNumber: toText(read('whatsappPhoneNumber', '')).trim(),
+			};
+			const message = toText(read('whatsappMessage', ''));
+			if (message) whatsapp.message = message;
+			return { type: 'whatsapp', whatsapp };
+		}
+
+		case 'review': {
+			const platform = toText(read('reviewPlatform', 'google')).trim() as QrCodeReviewPlatform;
+			const review: IQRCodeReviewTarget = { platform };
+			// Place ID is a Google-only field; another platform never sends it.
+			if (platform === QR_CONTENT_CONFIG.review.placeIdPlatform) {
+				setText(review, 'placeId', read('reviewPlaceId', ''));
+			}
+			setText(review, 'url', read('reviewUrl', ''));
+			return { type: 'review', review };
+		}
+
+		case 'social':
+			return { type: 'social', social: buildSocialTarget(read) };
+
+		case 'appStore': {
+			const appStore: IQRCodeAppStoreTarget = { fallbackUrl: toText(read('appStoreFallbackUrl', '')).trim() };
+			setText(appStore, 'androidUrl', read('appStoreAndroidUrl', ''));
+			setText(appStore, 'iosUrl', read('appStoreIosUrl', ''));
+			return { type: 'appStore', appStore };
+		}
+
+		case 'file': {
+			// `bucketFilePath` is added by the node after the upload (see `uploadQrFile`);
+			// without it an update keeps the stored file.
+			const file: IQRCodeFileTarget = {};
+			setText(file, 'fileName', read('fileName', ''));
+			return { type: 'file', file };
+		}
 
 		default:
 			throw new Error(`Unsupported QR type "${qrType}". Use one of: ${QR_CODE_TYPES.join(', ')}.`);

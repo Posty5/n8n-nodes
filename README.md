@@ -80,7 +80,7 @@ Reference ID, Android URL or iOS URL you add but leave empty clears it.
 
 ### 2. Posty5 QR Code
 
-Generate QR codes for 7 different types.
+Generate QR codes for 14 different types.
 
 **QR Types:**
 
@@ -91,6 +91,13 @@ Generate QR codes for 7 different types.
 - Phone Call - tel: links
 - SMS - Pre-filled text messages
 - Geolocation - GPS coordinates
+- Business Card (vCard) - Name, organization, up to 3 phones, 2 emails, website, address, note
+- Calendar Event - Title, start/end, all day, timezone, location, description, URL
+- WhatsApp - Chat with a pre-filled message
+- Review Link - Google (Place ID or URL), Tripadvisor, Trustpilot, Yelp, Facebook, other
+- Social Profile - 1 profile, or 2-12 profiles on a list page (always dynamic)
+- App Store Links - Android URL and/or iOS URL plus a required Fallback URL (dynamic only)
+- File (PDF or Image) - A PDF, JPEG, PNG or WebP of up to 10 MB from an input binary property (dynamic only, not in Create Many)
 
 **Operations:**
 
@@ -119,6 +126,19 @@ static codes; Update sends it only when you pick one. Outputs carry `mode` and
 Max Scans and Fallback URL (where gated scans go). Shown on Create for Dynamic
 and on Update. On Update, leave it empty to keep the current rules; any rule set
 replaces all of them, and Clear Scan Rules removes them. Outputs carry `access`.
+
+**Dynamic-only types.** App Store Links and File have no static form: Mode is
+hidden and the node always sends `mode: dynamic` (Scan Rules are shown on
+Create). A Social Profile code with 2 or more profiles is sent as dynamic too.
+
+**File QR codes.** Set *Binary Property* (default `data`) to the input binary
+holding the file, e.g. from an HTTP Request or Read Binary File node. The node
+checks the type and size, asks Posty5 for a signed upload URL
+(`POST /api/qr-code/file/upload-url`), uploads the bytes there (no API key is
+sent to the storage URL), then creates the code with the returned
+`bucketFilePath`. *File Name* overrides the binary's name. On Update, leave
+Binary Property empty to keep the stored file. Create Many does not offer File:
+the bulk route cannot upload.
 
 ### Create Many (Short Link and QR Code)
 

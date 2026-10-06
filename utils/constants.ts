@@ -81,7 +81,22 @@ export const QR_TEMPLATE_LOOKUP = {
  * The QR types the API validates (`/api/qr-code/:type`). The node's QR Type
  * values are these, and `qrCodeTarget.type` is always one of them.
  */
-export const QR_CODE_TYPES = ['url', 'freeText', 'email', 'wifi', 'call', 'sms', 'geolocation'] as const;
+export const QR_CODE_TYPES = [
+	'url',
+	'freeText',
+	'email',
+	'wifi',
+	'call',
+	'sms',
+	'geolocation',
+	'vcard',
+	'event',
+	'whatsapp',
+	'review',
+	'social',
+	'appStore',
+	'file',
+] as const;
 
 /** WiFi authentication values: the node's default, and the one that means "open network" (no password is sent). */
 export const QR_WIFI_AUTH = {

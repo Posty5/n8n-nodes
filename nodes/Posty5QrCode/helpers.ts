@@ -7,7 +7,8 @@
 import type { IExecuteFunctions } from 'n8n-workflow';
 import { API_ENDPOINTS, LINK_BULK, LINK_BULK_MESSAGES } from '../../utils/constants';
 import { firstText } from '../../utils/link-tool.helpers';
-import { buildQrCodeTarget, readQrMode } from '../../utils/qr-target.helpers';
+import { buildQrCodeTarget, readQrMode, requiredQrMode } from '../../utils/qr-target.helpers';
+import { QR_CONTENT_CONFIG, QR_FILE_MESSAGES } from '../../utils/qr-content.config';
 import type { IBulkDefaults, IBulkRoute, IQrCodeBulkRow } from '../../types/link-bulk.types';
 
 /** One item's row. Throws (the item becomes a local failed row) on an unknown type or no template. */
@@ -17,6 +18,10 @@ export function buildQrCodeBulkRow(
 	defaults: IBulkDefaults,
 ): IQrCodeBulkRow {
 	const qrType = ctx.getNodeParameter('qrType', itemIndex) as string;
+	// The bulk route refuses a `file` row (an expression can still pick it).
+	if ((QR_CONTENT_CONFIG.bulkExcludedTypes as readonly string[]).includes(qrType)) {
+		throw new Error(QR_FILE_MESSAGES.notInBulk);
+	}
 	const qrCodeTarget = buildQrCodeTarget(qrType, (parameter, fallback) =>
 		ctx.getNodeParameter(parameter, itemIndex, fallback),
 	);
@@ -33,7 +38,9 @@ export function buildQrCodeBulkRow(
 		target: qrCodeTarget[qrCodeTarget.type]!,
 	};
 	// Static is the API default: send `mode` only for dynamic, as *Create* does.
-	if (readQrMode(ctx.getNodeParameter('mode', itemIndex, 'static')) === 'dynamic') row.mode = 'dynamic';
+	// App store and 2+ social profiles have no static form: always dynamic.
+	const mode = requiredQrMode(qrCodeTarget) ?? readQrMode(ctx.getNodeParameter('mode', itemIndex, 'static'));
+	if (mode === 'dynamic') row.mode = 'dynamic';
 	if (name) row.name = name;
 	if (templateId) row.templateId = templateId;
 	if (tag) row.tag = tag;

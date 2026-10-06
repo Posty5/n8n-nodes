@@ -53,7 +53,15 @@
     },
     {
       "path": "utils/qr-target.helpers.ts",
-      "role": "buildQrCodeTarget: qrCodeTarget { type, <type>: {...} } for the seven QR types; no options.text"
+      "role": "buildQrCodeTarget: qrCodeTarget { type, <type>: {...} } for all 14 QR types (incl. vcard, event, whatsapp, review, social 1-12 profiles, appStore, file without bucketFilePath); requiredQrMode (dynamic for appStore/file/2+ social); no options.text"
+    },
+    {
+      "path": "utils/qr-content.config.ts",
+      "role": "QR content option lists and limits (vCard, review, social up to 12, dynamic-only + bulk-excluded types, file MIME types and 10 MB cap), event time zones, QR_FILE_MESSAGES"
+    },
+    {
+      "path": "utils/qr-file.helpers.ts",
+      "role": "uploadQrFile: file QR upload from an n8n binary property: type/size pre-check, POST /api/qr-code/file/upload-url, PUT to the signed URL without the API key; returns bucketFilePath"
     },
     {
       "path": "utils/link-tool.helpers.ts",

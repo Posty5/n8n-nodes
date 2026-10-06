@@ -13,7 +13,41 @@ export type QrCodeStatusType = 'new' | 'pending' | 'rejected' | 'approved';
 /**
  * QR Code target type
  */
-export type QrCodeTargetType = 'freeText' | 'email' | 'wifi' | 'call' | 'sms' | 'url' | 'geolocation';
+export type QrCodeTargetType =
+	| 'freeText'
+	| 'email'
+	| 'wifi'
+	| 'call'
+	| 'sms'
+	| 'url'
+	| 'geolocation'
+	| 'vcard'
+	| 'event'
+	| 'whatsapp'
+	| 'review'
+	| 'social'
+	| 'appStore'
+	| 'file';
+
+/** vCard phone kinds. Default `mobile`. */
+export type QrCodeVCardPhoneKind = 'mobile' | 'work' | 'home';
+
+/** Review platforms of a `review` code. */
+export type QrCodeReviewPlatform = 'google' | 'tripadvisor' | 'trustpilot' | 'yelp' | 'facebook' | 'other';
+
+/** Social profile platforms of a `social` code. */
+export type QrCodeSocialPlatform =
+	| 'instagram'
+	| 'facebook'
+	| 'tiktok'
+	| 'x'
+	| 'youtube'
+	| 'linkedin'
+	| 'snapchat'
+	| 'telegram'
+	| 'threads'
+	| 'pinterest'
+	| 'other';
 
 /**
  * Preview reason (moderation score)
@@ -137,6 +171,116 @@ export interface IQRCodeGeolocationTarget {
 	longitude: string | number;
 }
 
+/** One vCard phone. */
+export interface IQRCodeVCardPhone {
+	kind?: QrCodeVCardPhoneKind;
+	number: string;
+}
+
+/** A vCard's work address. */
+export interface IQRCodeVCardAddress {
+	street?: string;
+	city?: string;
+	region?: string;
+	postalCode?: string;
+	country?: string;
+}
+
+/** vCard target: `firstName` or `organization` is required (API 400 otherwise). */
+export interface IQRCodeVCardTarget {
+	firstName?: string;
+	lastName?: string;
+	organization?: string;
+	jobTitle?: string;
+	phones?: IQRCodeVCardPhone[];
+	emails?: string[];
+	website?: string;
+	address?: IQRCodeVCardAddress;
+	note?: string;
+}
+
+/** Calendar event target. ISO strings sent as typed; a wall-clock value is read in `timezone`. */
+export interface IQRCodeEventTarget {
+	title: string;
+	location?: string;
+	description?: string;
+	startsAt: string;
+	endsAt?: string;
+	allDay?: boolean;
+	timezone?: string;
+	url?: string;
+}
+
+/** WhatsApp chat target. */
+export interface IQRCodeWhatsappTarget {
+	phoneNumber: string;
+	message?: string;
+}
+
+/** Review target: Google takes `placeId` or `url`; the others a `url`. */
+export interface IQRCodeReviewTarget {
+	platform: QrCodeReviewPlatform;
+	placeId?: string;
+	url?: string;
+}
+
+/** One social profile: `handle` or `url`. */
+export interface IQRCodeSocialProfile {
+	platform: QrCodeSocialPlatform;
+	handle?: string;
+	url?: string;
+}
+
+/** App store target (dynamic-only): Android and/or iOS store URL, plus a required fallback. */
+export interface IQRCodeAppStoreTarget {
+	androidUrl?: string;
+	iosUrl?: string;
+	fallbackUrl: string;
+}
+
+/**
+ * File target (dynamic-only). `bucketFilePath` comes from the upload-url route;
+ * omitted on update keeps the stored file. `fileURL`, `mimeType`, `sizeBytes`
+ * are server-set (read only).
+ */
+export interface IQRCodeFileTarget {
+	bucketFilePath?: string;
+	fileName?: string;
+	fileURL?: string;
+	mimeType?: string;
+	sizeBytes?: number;
+}
+
+/** `POST /api/qr-code/file/upload-url` body. */
+export interface IQRCodeFileUploadRequest {
+	fileName: string;
+	mimeType: string;
+	sizeBytes: number;
+}
+
+/** What the upload-url route answers: a signed PUT URL valid `expiresInSeconds`. */
+export interface IQRCodeFileUploadTicket {
+	uploadFileURL: string;
+	bucketFilePath: string;
+	expiresInSeconds: number;
+}
+
+/** The node's Social Profiles fixedCollection as n8n hands it over. */
+export interface IQRCodeSocialProfilesParameter {
+	profile?: Array<{ platform?: unknown; handle?: unknown; url?: unknown }>;
+}
+
+/** Social target. A static code takes one profile; 2+ (up to 12) make it dynamic-only. */
+export interface IQRCodeSocialTarget {
+	profiles: IQRCodeSocialProfile[];
+	title?: string;
+}
+
+/** The node's vCard Phones fixedCollection as n8n hands it over. */
+export interface IQRCodeVCardPhonesParameter {
+	phone?: Array<{ kind?: unknown; number?: unknown }>;
+}
+
 /**
  * QR Code target configuration (`qrCodeTarget`). `type` names the one block the
  * API reads; the node sends that block and no other.
@@ -150,6 +294,13 @@ export interface IQRCodeTarget {
 	sms?: IQRCodeSmsTarget;
 	url?: IQRCodeUrlTarget;
 	geolocation?: IQRCodeGeolocationTarget;
+	vcard?: IQRCodeVCardTarget;
+	event?: IQRCodeEventTarget;
+	whatsapp?: IQRCodeWhatsappTarget;
+	review?: IQRCodeReviewTarget;
+	social?: IQRCodeSocialTarget;
+	appStore?: IQRCodeAppStoreTarget;
+	file?: IQRCodeFileTarget;
 }
 
 /** Static: the image encodes the content. Dynamic: it encodes a Posty5 link that redirects. */
