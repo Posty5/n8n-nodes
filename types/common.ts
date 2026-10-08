@@ -131,4 +131,8 @@ export interface IPosty5ApiError extends Error {
 	httpCode?: string;
 	/** The API's `message`, unprefixed, when the answer carried one. */
 	apiMessage?: string;
+	/** The API's stable error `code` (e.g. `VERSION_CONFLICT`), when the answer carried one. */
+	code?: string;
+	/** On a `VERSION_CONFLICT`, the document's stored version. */
+	currentVersion?: number;
 }

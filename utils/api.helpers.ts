@@ -3,8 +3,15 @@
  * Utility functions for making API requests using n8n's native HTTP helpers
  */
 
-import { IExecuteFunctions, IHookFunctions, IHttpRequestOptions, ILoadOptionsFunctions } from 'n8n-workflow';
-import { POSTY5_API_BASE_URL, Posty5ClientConst } from './constants';
+import {
+	IExecuteFunctions,
+	IHookFunctions,
+	IHttpRequestOptions,
+	ILoadOptionsFunctions,
+	JsonObject,
+	NodeApiError,
+} from 'n8n-workflow';
+import { POSTY5_API_BASE_URL, Posty5ClientConst, VERSIONED_WRITES } from './constants';
 import type { IPosty5ApiError } from '../types/common';
 
 export interface IApiRequestOptions {
@@ -20,6 +27,14 @@ export interface IApiRequestOptions {
 	stampCreatedFrom?: boolean;
 	/** Extra request headers (e.g. `Idempotency-Key`), merged over the fixed ones. */
 	headers?: Record<string, string>;
+	/**
+	 * The document version the caller read (`__v`). Sent as `If-Match: "<v>"`
+	 * (optimistic concurrency, D-5), and the answer's envelope `version` is
+	 * copied onto the result as `__v` so the next step can chain it.
+	 */
+	version?: number;
+	/** Return the whole `{ message, result, version }` envelope instead of `result`. */
+	returnEnvelope?: boolean;
 }
 
 /**
@@ -43,6 +58,9 @@ export async function makeApiRequest(
 			'X-API-Key': apiKey,
 			'Content-Type': 'application/json',
 			[Posty5ClientConst.HEADER]: Posty5ClientConst.VALUE,
+			...(typeof options.version === 'number'
+				? { [VERSIONED_WRITES.IF_MATCH_HEADER]: `"${options.version}"` }
+				: {}),
 			...(options.headers || {}),
 		},
 		json: true,
@@ -66,17 +84,57 @@ export async function makeApiRequest(
 
 		// Handle standard Posty5 API response format
 		if (response && typeof response === 'object') {
+			if (options.returnEnvelope) return response;
 			// API returns { success, result, message } format
 			if ('result' in response) {
-				return response.result;
+				return withEnvelopeVersion(response.result, response.version, options.version);
 			}
 			return response;
 		}
 
 		return response;
 	} catch (error: any) {
-		throw toPosty5ApiError(error);
+		throw toPosty5NodeApiError(this, error);
 	}
+}
+
+/**
+ * On a versioned write, the envelope's `version` becomes the result's `__v`
+ * (a DELETE answers without one, so its result is returned as is).
+ */
+function withEnvelopeVersion(result: any, envelopeVersion: unknown, sentVersion?: number): any {
+	if (typeof sentVersion !== 'number' || typeof envelopeVersion !== 'number') return result;
+	if (!result || typeof result !== 'object' || Array.isArray(result)) return result;
+	return { ...result, __v: envelopeVersion };
+}
+
+/**
+ * The `NodeApiError` `makeApiRequest` throws. Its message stays
+ * `Posty5 API Error: <message>` (except a version conflict, which says how to
+ * fix it); `httpCode`, `apiMessage`, the API's `code` and, on a
+ * `VERSION_CONFLICT`, `currentVersion` ride along. A context without
+ * `getNode` (never in n8n) gets the plain error.
+ */
+export function toPosty5NodeApiError(
+	context: IExecuteFunctions | ILoadOptionsFunctions | IHookFunctions,
+	error: any,
+): IPosty5ApiError {
+	const plain = toPosty5ApiError(error);
+	if (typeof (context as any)?.getNode !== 'function') return plain;
+
+	const message = plain.code === VERSIONED_WRITES.CONFLICT_CODE
+		? VERSIONED_WRITES.CONFLICT_MESSAGE(plain.currentVersion)
+		: plain.message;
+	const apiError = new NodeApiError(
+		context.getNode(),
+		{ message, httpCode: plain.httpCode ?? null, code: plain.code ?? null } as JsonObject,
+		{ message, ...(plain.httpCode ? { httpCode: plain.httpCode } : {}), description: plain.apiMessage },
+	) as unknown as IPosty5ApiError;
+	if (plain.httpCode) apiError.httpCode = plain.httpCode;
+	if (plain.apiMessage) apiError.apiMessage = plain.apiMessage;
+	if (plain.code) apiError.code = plain.code;
+	if (plain.currentVersion !== undefined) apiError.currentVersion = plain.currentVersion;
+	return apiError;
 }
 
 /**
@@ -93,6 +151,12 @@ export function toPosty5ApiError(error: any): IPosty5ApiError {
 	const status = error?.response?.status ?? error?.response?.statusCode ?? error?.statusCode ?? error?.httpCode;
 	if (status !== undefined && status !== null) apiError.httpCode = String(status);
 	if (apiMessage) apiError.apiMessage = apiMessage;
+	const body = error?.response?.data ?? error?.response?.body;
+	if (body && typeof body === 'object') {
+		if (typeof body.code === 'string') apiError.code = body.code;
+		const currentVersion = body.result?.currentVersion ?? body.currentVersion;
+		if (typeof currentVersion === 'number') apiError.currentVersion = currentVersion;
+	}
 	return apiError;
 }
 

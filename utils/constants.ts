@@ -242,3 +242,26 @@ export const SHORT_LINK_CONTROLS_MESSAGES = {
 	CAMPAIGN_NAME_REQUIRED: 'Campaign Name is required',
 	ID_REQUIRED: (field: string) => `${field} is required`,
 } as const;
+
+/**
+ * Optimistic concurrency (optimistic-concurrency feature, D-5/D-6/D-18). v2 of
+ * the nodes with update/delete operations sends the Version field as
+ * `If-Match`; v1 keeps last-write-wins by reading the item's `__v` first.
+ */
+export const VERSIONED_WRITES = {
+	IF_MATCH_HEADER: 'If-Match',
+	CONFLICT_CODE: 'VERSION_CONFLICT',
+	/** The node version that carries the Version field. */
+	FIRST_VERSIONED_NODE_VERSION: 2,
+	VERSION_PARAMETER: 'expectedVersion',
+	OPTIONS_PARAMETER: 'versionOptions',
+	ON_UNKNOWN_FAIL: 'fail',
+	ON_UNKNOWN_USE_LATEST: 'useLatest',
+	DEFAULT_VERSION_EXPRESSION: '={{ $json.__v }}',
+	CONFLICT_MESSAGE: (currentVersion?: number) =>
+		`The item changed since it was read${typeof currentVersion === 'number' ? ` (current version ${currentVersion})` : ''}. Get it again, then update.`,
+	UNKNOWN_VERSION_MESSAGE:
+		'Version is required: map the __v of a Get step, or set Version Options > On Unknown Version to Use Latest (Overwrite).',
+	V1_DEPRECATION_NOTE:
+		'Version 1 of this node is legacy: its update and delete operations read the item first and overwrite it (last write wins). Add the node again to get version 2, which fails on a conflict instead.',
+} as const;

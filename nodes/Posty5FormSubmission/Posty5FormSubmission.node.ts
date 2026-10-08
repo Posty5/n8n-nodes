@@ -5,6 +5,7 @@ import {
 	INodeTypeDescription,
 } from 'n8n-workflow';
 import { makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
+import { buildVersionedWriteProperties, resolveWriteVersion } from '../../utils/versioned-write.helpers';
 import { API_ENDPOINTS } from '../../utils/constants';
 import type { IFormStatusType, IListParams } from '../../types/form-submission.types';
 
@@ -14,9 +15,10 @@ export class Posty5FormSubmission implements INodeType {
 		name: 'posty5FormSubmission',
 		icon: 'file:posty5.svg',
 		group: ['transform'],
-		version: 1,
+		version: [1, 2],
+		defaultVersion: 2,
 		subtitle: '={{$parameter["operation"]}}',
-		description: 'Manage form submissions from HTML pages',
+		description: 'Manage form submissions from HTML pages. v1 is legacy: update and delete overwrite (last write wins)',
 		defaults: {
 			name: 'Posty5 Form Submission',
 		},
@@ -215,6 +217,7 @@ export class Posty5FormSubmission implements INodeType {
 					},
 				],
 			},
+			...buildVersionedWriteProperties(['changeStatus']),
 		],
 	};
 
@@ -256,6 +259,7 @@ export class Posty5FormSubmission implements INodeType {
 						method: 'PUT',
 						endpoint: `${API_ENDPOINTS.FORM_SUBMISSION}/${submissionId}/status`,
 						body,
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.FORM_SUBMISSION}/${submissionId}`),
 					});
 				} else if (operation === 'list') {
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;

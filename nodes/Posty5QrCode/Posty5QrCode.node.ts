@@ -6,6 +6,7 @@ import {
 	INodeTypeDescription,
 } from 'n8n-workflow';
 import { makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
+import { buildVersionedWriteProperties, resolveWriteVersion } from '../../utils/versioned-write.helpers';
 import { executeGetAnalytics, executeGetStatistics } from '../../utils/analytics.helpers';
 import { LINK_ANALYTICS_PROPERTIES, LINK_STATISTICS_PROPERTIES } from '../../utils/analytics.properties';
 import { API_ENDPOINTS } from '../../utils/constants';
@@ -106,9 +107,10 @@ export class Posty5QrCode implements INodeType {
 		name: 'posty5QrCode',
 		icon: 'file:posty5.svg',
 		group: ['transform'],
-		version: 1,
+		version: [1, 2],
+		defaultVersion: 2,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["qrType"]}}',
-		description: 'Create and manage QR codes with Posty5',
+		description: 'Create and manage QR codes with Posty5. v1 is legacy: update and delete overwrite (last write wins)',
 		defaults: {
 			name: 'Posty5 QR Code',
 		},
@@ -1190,6 +1192,7 @@ export class Posty5QrCode implements INodeType {
 
 			// Create Many operation fields (shared with the other link-tool node)
 			...buildLinkBulkProperties(false),
+			...buildVersionedWriteProperties(['update', 'delete']),
 		],
 	};
 
@@ -1331,12 +1334,14 @@ export class Posty5QrCode implements INodeType {
 						method: 'PUT',
 						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrType}/${qrCodeId}`,
 						body,
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`, stored),
 					});
 				} else if (operation === 'delete') {
 					const qrCodeId = this.getNodeParameter('qrCodeId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'DELETE',
 						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`,
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`),
 					});
 				} else if (operation === 'list') {
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;

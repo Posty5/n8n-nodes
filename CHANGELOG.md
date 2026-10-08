@@ -1,9 +1,39 @@
 # Changelog
 
-## 4.7.0 - Unreleased
+## 5.0.0 - Unreleased
 
-Not yet published. Node versions stay 1: optimistic-concurrency's node v2
-(`versioned-writes-node-v2`) has not started.
+Not yet published (it also carries the unreleased 4.7.0 work below). Publish
+date: _to be recorded at publish_.
+
+### Breaking changes
+
+- **Errors are `NodeApiError`.** Every failed API request now throws n8n's
+  `NodeApiError` with `httpCode`, the API's `code`, `apiMessage` and, on a
+  `409 VERSION_CONFLICT`, `currentVersion`. The message keeps the
+  `Posty5 API Error: <message>` text, except a conflict, which reads
+  "The item changed since it was read (current version N). Get it again, then
+  update."
+- **Node version 2** of Short Link, QR Code, HTML Hosting, Form Submission and
+  Social Publisher Post. Update, delete, change status and reschedule gain a
+  required **Version** field (default `{{ $json.__v }}`) sent as
+  `If-Match: "<v>"`; a write that answers a new `version` returns it as `__v`.
+  **Version Options > On Unknown Version**: Fail (default) or Use Latest
+  (Overwrite), which reads the item and uses its `__v`.
+
+### v1 legacy behaviour
+
+Saved v1 nodes keep working unchanged: their update and delete operations read
+the item first and send its `__v` (last write wins, as before). v1 is
+deprecated.
+
+### Migration
+
+Add a Get step before the write and map its `__v` to Version (the default does
+this when the Get is the previous step), or set On Unknown Version to Use
+Latest. A catch that matched the old `Error` keeps working on the message; read
+`httpCode` / `code` instead of parsing it.
+
+## 4.7.0 - folded into 5.0.0
 
 ### Short link controls
 

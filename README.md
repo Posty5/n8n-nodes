@@ -661,6 +661,24 @@ scheduledPublishTime: 'now';
 scheduledPublishTime: new Date('2024-12-31T10:00:00Z');
 ```
 
+## 🔒 Versioned writes (5.0.0)
+
+Version 2 of the Short Link, QR Code, HTML Hosting, Form Submission and Social
+Publisher Post nodes protects updates and deletes from overwriting someone
+else's change:
+
+- **Version** (required on update, delete, change status, reschedule): the
+  `__v` of the item as you read it. It defaults to `{{ $json.__v }}`, so a
+  Get → Update chain works as is. It is sent as `If-Match`.
+- If the item changed since, the node fails with a `409` conflict:
+  *"The item changed since it was read (current version N). Get it again, then
+  update."*
+- **Version Options > On Unknown Version**: `Fail` (default) or
+  `Use Latest (Overwrite)`, which reads the item and uses its current version
+  (last write wins, your explicit choice).
+- **v1 nodes (legacy, deprecated)** show no new field: they read the item first
+  and overwrite it, exactly as before.
+
 ## 🐛 Error Handling
 
 All nodes support N8N's "Continue on Fail" option:

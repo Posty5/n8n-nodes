@@ -5,6 +5,7 @@ import {
 	INodeTypeDescription,
 } from 'n8n-workflow';
 import { makeApiRequest, makePaginatedRequest, uploadFile } from '../../utils/api.helpers';
+import { buildVersionedWriteProperties, resolveWriteVersion } from '../../utils/versioned-write.helpers';
 import { API_ENDPOINTS } from '../../utils/constants';
 import { supportsResumableUpload, uploadResumable } from '../../utils/resumable-upload';
 import { buildCommentsPayload } from '../../utils/post-comments';
@@ -15,10 +16,11 @@ export class Posty5SocialPublisherPost implements INodeType {
 		name: 'posty5SocialPublisherPost',
 		icon: 'file:posty5.svg',
 		group: ['transform'],
-		version: 1,
+		version: [1, 2],
+		defaultVersion: 2,
 		subtitle: '={{$parameter["operation"]}}',
 		description:
-			'Publish videos to social media platforms. Supports up to five post-publish comments (25 credits each) for YouTube, Facebook and Instagram — TikTok is not supported.',
+			'Publish videos to social media platforms. Supports up to five post-publish comments (25 credits each) for YouTube, Facebook and Instagram — TikTok is not supported. v1 is legacy: reschedule and delete overwrite (last write wins).',
 		defaults: {
 			name: 'Posty5 Social Publisher Post',
 		},
@@ -872,6 +874,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				},
 				default: '',
 			},
+			...buildVersionedWriteProperties(['reschedulePost', 'deletePost']),
 		],
 	};
 
@@ -1298,6 +1301,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 						method: 'PUT',
 						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${reschedulePostId}`,
 						body: rescheduleBody,
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${reschedulePostId}`),
 					});
 				} else if (operation === 'deletePost') {
 					// Free, and irreversible for the caller: the post is gone and its
@@ -1306,6 +1310,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'DELETE',
 						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${deletePostId}`,
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${deletePostId}`),
 					});
 				} else if (operation === 'getPostStatus') {
 					const postId = this.getNodeParameter('postId', i) as string;

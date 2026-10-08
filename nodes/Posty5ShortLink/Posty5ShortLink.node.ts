@@ -6,6 +6,7 @@ import {
 	INodeTypeDescription,
 } from 'n8n-workflow';
 import { makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
+import { buildVersionedWriteProperties, resolveWriteVersion } from '../../utils/versioned-write.helpers';
 import { executeGetAnalytics, executeGetStatistics } from '../../utils/analytics.helpers';
 import { LINK_ANALYTICS_PROPERTIES, LINK_STATISTICS_PROPERTIES } from '../../utils/analytics.properties';
 import { API_ENDPOINTS } from '../../utils/constants';
@@ -51,9 +52,10 @@ export class Posty5ShortLink implements INodeType {
 		name: 'posty5ShortLink',
 		icon: 'file:posty5.svg',
 		group: ['transform'],
-		version: 1,
+		version: [1, 2],
+		defaultVersion: 2,
 		subtitle: '={{$parameter["operation"]}}',
-		description: 'Create and manage short links with Posty5',
+		description: 'Create and manage short links with Posty5. v1 is legacy: update and delete overwrite (last write wins)',
 		defaults: {
 			name: 'Posty5 Short Link',
 		},
@@ -455,6 +457,7 @@ export class Posty5ShortLink implements INodeType {
 			...SHORT_LINK_SET_RULES_PROPERTIES,
 			...SHORT_LINK_LIST_TAGS_PROPERTIES,
 			...LINK_CAMPAIGN_PROPERTIES,
+			...buildVersionedWriteProperties(['update', 'delete']),
 		],
 	};
 
@@ -561,12 +564,15 @@ export class Posty5ShortLink implements INodeType {
 						method: 'PUT',
 						endpoint,
 						body,
+						version: await resolveWriteVersion(this, apiKey, i, endpoint, stored),
 					});
 				} else if (operation === 'delete') {
 					const shortLinkId = this.getNodeParameter('shortLinkId', i) as string;
+					const endpoint = `${API_ENDPOINTS.SHORT_LINK}/${shortLinkId}`;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'DELETE',
-						endpoint: `${API_ENDPOINTS.SHORT_LINK}/${shortLinkId}`,
+						endpoint,
+						version: await resolveWriteVersion(this, apiKey, i, endpoint),
 					});
 				} else if (operation === 'setRules') {
 					// The update requires baseUrl and templateId, so the link is read first;

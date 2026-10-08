@@ -5,6 +5,7 @@ import {
 	INodeTypeDescription,
 } from 'n8n-workflow';
 import { makeApiRequest, makePaginatedRequest, uploadFile } from '../../utils/api.helpers';
+import { buildVersionedWriteProperties, resolveWriteVersion } from '../../utils/versioned-write.helpers';
 import { API_ENDPOINTS } from '../../utils/constants';
 import type { IListParams } from '../../types/html-hosting.types';
 
@@ -14,9 +15,10 @@ export class Posty5HtmlHosting implements INodeType {
 		name: 'posty5HtmlHosting',
 		icon: 'file:posty5.svg',
 		group: ['transform'],
-		version: 1,
+		version: [1, 2],
+		defaultVersion: 2,
 		subtitle: '={{$parameter["operation"]}}',
-		description: 'Host and manage HTML pages with Posty5',
+		description: 'Host and manage HTML pages with Posty5. v1 is legacy: update and delete overwrite (last write wins)',
 		defaults: {
 			name: 'Posty5 HTML Hosting',
 		},
@@ -284,6 +286,7 @@ export class Posty5HtmlHosting implements INodeType {
 					},
 				],
 			},
+			...buildVersionedWriteProperties(['updateFromFile', 'updateFromGithub', 'delete']),
 		],
 	};
 
@@ -361,6 +364,7 @@ export class Posty5HtmlHosting implements INodeType {
 						method: 'PUT',
 						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}/file`,
 						body,
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}`),
 					});
 
 					// Upload file if new file URL is provided
@@ -388,6 +392,7 @@ export class Posty5HtmlHosting implements INodeType {
 						method: 'PUT',
 						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}/github`,
 						body,
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}`),
 					});
 				} else if (operation === 'get') {
 					const htmlHostingId = this.getNodeParameter('htmlHostingId', i) as string;
@@ -400,6 +405,7 @@ export class Posty5HtmlHosting implements INodeType {
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'DELETE',
 						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}`,
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}`),
 					});
 				} else if (operation === 'clearCache') {
 					const htmlHostingId = this.getNodeParameter('htmlHostingId', i) as string;
