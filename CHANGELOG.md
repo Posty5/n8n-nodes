@@ -14,17 +14,23 @@ date: _to be recorded at publish_.
   "The item changed since it was read (current version N). Get it again, then
   update."
 - **Node version 2** of Short Link, QR Code, HTML Hosting, Form Submission and
-  Social Publisher Post. Update, delete, change status and reschedule gain a
-  required **Version** field (default `{{ $json.__v }}`) sent as
-  `If-Match: "<v>"`; a write that answers a new `version` returns it as `__v`.
+  Social Publisher Post. Update, delete, change status and reschedule (and, on
+  Short Link, Set Rules, Update Campaign and Delete Campaign) gain a required
+  **Version** field (default `{{ $json.__v }}`) sent as `If-Match: "<v>"`; a
+  write that answers a new `version` returns it as `__v` (HTML Hosting's file
+  update puts it on the returned details).
   **Version Options > On Unknown Version**: Fail (default) or Use Latest
-  (Overwrite), which reads the item and uses its `__v`.
+  (Overwrite), which reads the item and uses its `__v` (a social post is read
+  through `GET /api/social-publisher-post/:id/status`).
+- **Every request** carries `X-Posty5-Client: posty5-n8n/<package version>`.
+- **Posty5 Trigger** deactivation reads its webhook endpoint and deletes it with
+  that `__v` as `If-Match` (a `404` still counts as already gone).
 
 ### v1 legacy behaviour
 
 Saved v1 nodes keep working unchanged: their update and delete operations read
 the item first and send its `__v` (last write wins, as before). v1 is
-deprecated.
+deprecated: its write operations show a notice saying so (no new input).
 
 ### Migration
 

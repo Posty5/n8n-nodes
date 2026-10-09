@@ -255,6 +255,8 @@ export const VERSIONED_WRITES = {
 	FIRST_VERSIONED_NODE_VERSION: 2,
 	VERSION_PARAMETER: 'expectedVersion',
 	OPTIONS_PARAMETER: 'versionOptions',
+	/** The v1-only legacy notice (display only, no value). */
+	V1_NOTICE_PARAMETER: 'legacyVersionNotice',
 	ON_UNKNOWN_FAIL: 'fail',
 	ON_UNKNOWN_USE_LATEST: 'useLatest',
 	DEFAULT_VERSION_EXPRESSION: '={{ $json.__v }}',

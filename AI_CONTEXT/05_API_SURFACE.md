@@ -3,7 +3,7 @@
 | Public surface | Behavior | Source |
 | --- | --- | --- |
 | `posty5Api` | Credential with apiKey; authenticates using X-API-Key. Test: `GET /api/api-key/current` on `POSTY5_API_BASE_URL` (since 4.5.0). | `credentials/Posty5Api.credentials.ts` |
-| `posty5ShortLink` | create/delete/get/getAnalytics/getStatistics/list/update, plus short-link controls: setRules (GET then PUT with only added rule sections), listTags (`GET /api/short-link/tags`), checkHealth (`POST /api/short-link/:id/health-check`), create/get/list/update/deleteCampaign (`/api/link-campaign`, delete `?detach=true`). Control fields (tags, campaignId via `getCampaigns`, access, password/removePassword, utm, routing/variants JSON, pixels, health) built by `utils/short-link-controls.helpers.ts`, params in `utils/short-link-controls.properties.ts`; `tag` kept, deprecated; node stays v1 (no `resource` switch). Template dropdown (`methods.loadOptions.getQrTemplates`) required on create, optional on update. Update is fetch-then-put (GET, then PUT with `baseUrl`, never `customLandingId`). S13 fields: Landing Page, Page Title/Description, Android/iOS URL, Tag, Reference ID. List: Search = name, Destination URL Contains, Landing Page Enabled. getAnalytics: `GET /api/short-link/:id/analytics` (see below). | `nodes/Posty5ShortLink/Posty5ShortLink.node.ts` |
+| `posty5ShortLink` | create/delete/get/getAnalytics/getStatistics/list/update, plus short-link controls: setRules (GET then PUT with only added rule sections), listTags (`GET /api/short-link/tags`), checkHealth (`POST /api/short-link/:id/health-check`), create/get/list/update/deleteCampaign (`/api/link-campaign`, delete `?detach=true`). Control fields (tags, campaignId via `getCampaigns`, access, password/removePassword, utm, routing/variants JSON, pixels, health) built by `utils/short-link-controls.helpers.ts`, params in `utils/short-link-controls.properties.ts`; `tag` kept, deprecated; node versions `[1, 2]` (see Versioned writes; no `resource` switch). Template dropdown (`methods.loadOptions.getQrTemplates`) required on create, optional on update. Update is fetch-then-put (GET, then PUT with `baseUrl`, never `customLandingId`). S13 fields: Landing Page, Page Title/Description, Android/iOS URL, Tag, Reference ID. List: Search = name, Destination URL Contains, Landing Page Enabled. getAnalytics: `GET /api/short-link/:id/analytics` (see below). | `nodes/Posty5ShortLink/Posty5ShortLink.node.ts` |
 | `posty5QrCode` | create/delete/get/getAnalytics/getStatistics/list/update across 14 QR types (pass 2 adds `appStore` and `file`, dynamic-only; `file` uploads an input binary via `POST /api/qr-code/file/upload-url` then a PUT to the signed URL without the API key, and is not in Create Many). Sends `qrCodeTarget: { type, <type>: {...} }` and `options: {}` (no `options.text`, the server builds it); same Template dropdown; update is fetch-then-put. getAnalytics: `GET /api/qr-code/:id/analytics`. | `nodes/Posty5QrCode/Posty5QrCode.node.ts` |
 | `posty5HtmlHosting` | file/GitHub create/update, get/list/delete, cache/forms. | `nodes/Posty5HtmlHosting/Posty5HtmlHosting.node.ts` |
 | `posty5FormSubmission` | get/get-adjacent/change-status/list. | `nodes/Posty5FormSubmission/Posty5FormSubmission.node.ts` |
@@ -14,6 +14,28 @@
 This is a compatibility surface. Treat exported names, operations, parameter values, types, and behavior as semver-sensitive.
 
 Machine-readable routing metadata lives in [ROUTE_INDEX.json](ROUTE_INDEX.json).
+
+## Versioned writes (5.0.0, feature `optimistic-concurrency`, D18)
+
+Short Link, QR Code, HTML Hosting, Form Submission and Social Publisher Post are
+`version: [1, 2]`, `defaultVersion: 2`. Shared code: `utils/versioned-write.helpers.ts`
+(`resolveWriteVersion`, `buildVersionedWriteProperties`), constants `VERSIONED_WRITES`.
+
+| Node | Versioned operations (`If-Match`) | Read for v1 / Use Latest |
+| --- | --- | --- |
+| Short Link | update, delete, setRules, updateCampaign, deleteCampaign | `GET /api/short-link/:id` (update/setRules reuse their fetch), `GET /api/link-campaign/:id` |
+| QR Code | update (every type), delete | `GET /api/qr-code/:id` (update reuses its fetch) |
+| HTML Hosting | updateFromFile, updateFromGithub, delete (`clean-cache` is exempt in the API) | `GET /api/html-hosting/:id` |
+| Form Submission | changeStatus | `GET /api/html-hosting-form-submission/:id` |
+| Social Publisher Post | reschedulePost, deletePost | `GET /api/social-publisher-post/:id/status` (no plain `GET /:id`) |
+| Posty5 Trigger (v1 only) | webhook endpoint delete on deactivation | `GET /api/webhook-endpoints/:id` |
+
+v2: required **Version** (`expectedVersion`, default `={{ $json.__v }}`) and **Version
+Options > On Unknown Version** (`fail` | `useLatest`). v1: no input field (a `notice`
+only), reads the item and sends its `__v` (last write wins). `makeApiRequest`
+`version` → `If-Match: "<v>"` and the envelope `version` → result `__v`; errors are
+`NodeApiError` (`httpCode`, `code`, `currentVersion` on `VERSION_CONFLICT`). The tus
+upload is untouched.
 
 ## Get Analytics (4.6.0, feature `link-qr-visit-analytics`)
 

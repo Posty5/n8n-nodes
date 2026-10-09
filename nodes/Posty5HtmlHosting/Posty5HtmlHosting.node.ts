@@ -372,7 +372,12 @@ export class Posty5HtmlHosting implements INodeType {
 						await uploadFile.call(this, updateResponse.uploadFileConfig.uploadUrl, fileBuffer);
 					}
 
-					responseData = updateResponse.details;
+					// The answer's version lands on the wrapper (`{ details, uploadFileConfig }`):
+					// carry it onto `details` so a next step can map `__v`.
+					responseData =
+						typeof updateResponse.__v === 'number' && updateResponse.details && typeof updateResponse.details === 'object'
+							? { ...updateResponse.details, __v: updateResponse.__v }
+							: updateResponse.details;
 				} else if (operation === 'updateFromGithub') {
 					const htmlHostingId = this.getNodeParameter('htmlHostingId', i) as string;
 					const name = this.getNodeParameter('name', i) as string;

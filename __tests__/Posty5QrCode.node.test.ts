@@ -690,8 +690,11 @@ describe('Posty5QrCode', () => {
 				mockResponse1,
 			);
 
+			// v1 (legacy): each delete reads the QR code first, then deletes with its __v.
 			(mockExecuteFunctions.helpers.httpRequest as jest.Mock)
+				.mockResolvedValueOnce({ result: { _id: 'qr123', __v: 1 } })
 				.mockResolvedValueOnce(mockResponse1)
+				.mockResolvedValueOnce({ result: { _id: 'qr456', __v: 2 } })
 				.mockResolvedValueOnce(mockResponse2);
 
 			(mockExecuteFunctions.getNodeParameter as jest.Mock).mockImplementation(
@@ -707,7 +710,10 @@ describe('Posty5QrCode', () => {
 			const result = await qrCodeNode.execute.call(mockExecuteFunctions);
 
 			expect(result[0]).toHaveLength(2);
-			expect(mockExecuteFunctions.helpers.httpRequest).toHaveBeenCalledTimes(2);
+			const calls = (mockExecuteFunctions.helpers.httpRequest as jest.Mock).mock.calls.map(([req]) => req);
+			expect(calls.map((req) => req.method)).toEqual(['GET', 'DELETE', 'GET', 'DELETE']);
+			expect(calls[1].headers['If-Match']).toBe('"1"');
+			expect(calls[3].headers['If-Match']).toBe('"2"');
 		});
 	});
 

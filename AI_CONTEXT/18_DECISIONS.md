@@ -69,3 +69,7 @@ Do not invent historical rationale. Record evidence-based current decisions and 
 ## D17 - Node icon asset is missing (filed, not fixed).
 
 **Status:** open 2026-10-06. Every node, including Posty5 Trigger, references `file:posty5.svg`, but no SVG exists in the repo and the build copies no assets, so n8n shows a default icon. Needs the brand SVG added next to each node (or a copy step in `build`).
+
+## D18 - Versioned writes: node v2 requires the version, v1 keeps last-write-wins (5.0.0).
+
+**Status:** decided 2026-10-06, completed 2026-10-09 (feature `optimistic-concurrency` D-18, task `n8n-nodes/versioned-writes-node-v2`). Mechanism: `version: [1, 2]` with `@version` display rules (n8n-workflow 1.120.x), not `VersionedNodeType`, so one class per node. v2 write operations take a required Version (default `={{ $json.__v }}`) sent as `If-Match`; an empty Version fails unless Version Options > On Unknown Version is Use Latest (explicit, per-node last-write-wins). Saved v1 workflows cannot be edited by the package, so v1 reads the item and sends its `__v` (legacy, documented, shown as a notice). An operation that already fetched the item (Short Link / QR update, Set Rules) reuses that read. The option sits in its own Version Options collection because several write operations have no Additional Fields. The error text keeps `Posty5 API Error: <message>` (now a `NodeApiError`) so catches that matched it still work; a conflict uses the actionable message. The social post has no `GET /:id`, so its version is read from `/:id/status`.

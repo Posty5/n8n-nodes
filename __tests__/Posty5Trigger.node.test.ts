@@ -120,6 +120,21 @@ describe('Posty5Trigger', () => {
 			await expect(methods.delete.call(ctx)).resolves.toBe(true);
 			expect(staticData).toEqual({});
 		});
+
+		it('reads the endpoint, then deletes it with its __v as If-Match', async () => {
+			const staticData = { endpointId: 'e1', secret: 's' };
+			const http = jest
+				.fn()
+				.mockResolvedValueOnce({ result: { _id: 'e1', __v: 3 } })
+				.mockResolvedValueOnce({ result: {} });
+			const ctx = hookContext(PARAMS, staticData, http);
+			await expect(methods.delete.call(ctx)).resolves.toBe(true);
+			const [read, del] = http.mock.calls.map(([req]) => req);
+			expect(read.method).toBe('GET');
+			expect(read.url).toMatch(/\/api\/webhook-endpoints\/e1$/);
+			expect(del.method).toBe('DELETE');
+			expect(del.headers['If-Match']).toBe('"3"');
+		});
 	});
 
 	describe('verifySignature', () => {

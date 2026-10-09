@@ -48,8 +48,8 @@ export async function resolveWriteVersion(
 	stored?: unknown,
 ): Promise<number | undefined> {
 	const readLatest = async (): Promise<number | undefined> => {
-		const fromStored = readStoredVersion(stored);
-		if (fromStored !== undefined) return fromStored;
+		// An item the operation already read is the latest: never read it twice.
+		if (stored !== undefined && stored !== null) return readStoredVersion(stored);
 		const item = await makeApiRequest.call(context, apiKey, { method: 'GET', endpoint: getEndpoint });
 		return readStoredVersion(item);
 	};
@@ -69,7 +69,8 @@ export async function resolveWriteVersion(
 
 /**
  * The v2-only Version field and Version Options for the given operations. A
- * v1 node shows neither (`@version` display rule).
+ * v1 node shows neither (`@version` display rule): it shows only a notice,
+ * not an input, that marks its write operations as legacy (D-18).
  */
 export function buildVersionedWriteProperties(operations: string[]): INodeProperties[] {
 	const show = {
@@ -77,6 +78,13 @@ export function buildVersionedWriteProperties(operations: string[]): INodeProper
 		operation: operations,
 	};
 	return [
+		{
+			displayName: VERSIONED_WRITES.V1_DEPRECATION_NOTE,
+			name: VERSIONED_WRITES.V1_NOTICE_PARAMETER,
+			type: 'notice',
+			default: '',
+			displayOptions: { show: { '@version': [1], operation: operations } },
+		},
 		{
 			displayName: 'Version',
 			name: VERSIONED_WRITES.VERSION_PARAMETER,

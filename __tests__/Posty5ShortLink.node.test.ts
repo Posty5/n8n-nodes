@@ -1032,18 +1032,29 @@ describe('Posty5ShortLink', () => {
 			expect((createFn.helpers.httpRequest as jest.Mock).mock.calls[0][0].url).toMatch(/\/api\/link-campaign$/);
 			expect(requestBody(createFn)).toEqual({ name: 'Fall', color: 'red', utm: { campaign: 'fall' }, createdFrom: 'n8n' });
 
-			const updateFn = mockCall({ operation: 'updateCampaign', campaignId: 'cmp1', campaignFields: { archived: true } });
+			// v1 (legacy): update and delete read the campaign first and send its __v.
+			const updateFn = mockCall({ operation: 'updateCampaign', campaignId: 'cmp1', campaignFields: { archived: true } }, [
+				{ result: { _id: 'cmp1', __v: 4 } },
+				{ result: { _id: 'cmp1' } },
+			]);
 			await shortLinkNode.execute.call(updateFn);
-			const updateCall = (updateFn.helpers.httpRequest as jest.Mock).mock.calls[0][0];
+			const updateCalls = (updateFn.helpers.httpRequest as jest.Mock).mock.calls;
+			expect(updateCalls[0][0].method).toBe('GET');
+			const updateCall = updateCalls[1][0];
 			expect(updateCall.method).toBe('PUT');
 			expect(updateCall.url).toMatch(/\/api\/link-campaign\/cmp1$/);
 			expect(updateCall.body).toEqual({ archived: true });
+			expect(updateCall.headers['If-Match']).toBe('"4"');
 
-			const deleteFn = mockCall({ operation: 'deleteCampaign', campaignId: 'cmp1', detach: true }, [undefined]);
+			const deleteFn = mockCall({ operation: 'deleteCampaign', campaignId: 'cmp1', detach: true }, [
+				{ result: { _id: 'cmp1', __v: 5 } },
+				undefined,
+			]);
 			await shortLinkNode.execute.call(deleteFn);
-			const deleteCall = (deleteFn.helpers.httpRequest as jest.Mock).mock.calls[0][0];
+			const deleteCall = (deleteFn.helpers.httpRequest as jest.Mock).mock.calls[1][0];
 			expect(deleteCall.method).toBe('DELETE');
 			expect(deleteCall.qs).toEqual({ detach: true });
+			expect(deleteCall.headers['If-Match']).toBe('"5"');
 		});
 	});
 });

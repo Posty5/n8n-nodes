@@ -457,7 +457,7 @@ export class Posty5ShortLink implements INodeType {
 			...SHORT_LINK_SET_RULES_PROPERTIES,
 			...SHORT_LINK_LIST_TAGS_PROPERTIES,
 			...LINK_CAMPAIGN_PROPERTIES,
-			...buildVersionedWriteProperties(['update', 'delete']),
+			...buildVersionedWriteProperties(['update', 'delete', 'setRules', 'updateCampaign', 'deleteCampaign']),
 		],
 	};
 
@@ -588,7 +588,12 @@ export class Posty5ShortLink implements INodeType {
 						baseUrl: stored.baseUrl || '',
 						templateId: stored.templateId || stored.template?._id || '',
 					};
-					responseData = await makeApiRequest.call(this, apiKey, { method: 'PUT', endpoint, body });
+					responseData = await makeApiRequest.call(this, apiKey, {
+						method: 'PUT',
+						endpoint,
+						body,
+						version: await resolveWriteVersion(this, apiKey, i, endpoint, stored),
+					});
 				} else if (operation === 'listTags') {
 					const term = firstText(this.getNodeParameter('term', i, ''));
 					const tags = (await makeApiRequest.call(this, apiKey, {
@@ -635,10 +640,12 @@ export class Posty5ShortLink implements INodeType {
 						responseData = await makeApiRequest.call(this, apiKey, { method: 'GET', endpoint });
 					} else if (operation === 'updateCampaign') {
 						const fields = this.getNodeParameter('campaignFields', i, {}) as ILinkCampaignFields & { name?: string };
+						const body = buildCampaignBody(firstText(fields.name) || '', fields, 'update');
 						responseData = await makeApiRequest.call(this, apiKey, {
 							method: 'PUT',
 							endpoint,
-							body: buildCampaignBody(firstText(fields.name) || '', fields, 'update'),
+							body,
+							version: await resolveWriteVersion(this, apiKey, i, endpoint),
 						});
 					} else {
 						const detach = this.getNodeParameter('detach', i, false) as boolean;
@@ -646,6 +653,7 @@ export class Posty5ShortLink implements INodeType {
 							method: 'DELETE',
 							endpoint,
 							qs: detach ? { detach: true } : undefined,
+							version: await resolveWriteVersion(this, apiKey, i, endpoint),
 						});
 						responseData = deleted || { campaignId, deleted: true };
 					}

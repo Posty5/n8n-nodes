@@ -1301,7 +1301,8 @@ export class Posty5SocialPublisherPost implements INodeType {
 						method: 'PUT',
 						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${reschedulePostId}`,
 						body: rescheduleBody,
-						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${reschedulePostId}`),
+						// The post has no plain `GET /:id`: its `/status` read carries `__v`.
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${reschedulePostId}/status`),
 					});
 				} else if (operation === 'deletePost') {
 					// Free, and irreversible for the caller: the post is gone and its
@@ -1310,7 +1311,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'DELETE',
 						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${deletePostId}`,
-						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${deletePostId}`),
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${deletePostId}/status`),
 					});
 				} else if (operation === 'getPostStatus') {
 					const postId = this.getNodeParameter('postId', i) as string;

@@ -667,7 +667,8 @@ Version 2 of the Short Link, QR Code, HTML Hosting, Form Submission and Social
 Publisher Post nodes protects updates and deletes from overwriting someone
 else's change:
 
-- **Version** (required on update, delete, change status, reschedule): the
+- **Version** (required on update, delete, change status, reschedule, and on
+  Short Link's Set Rules, Update Campaign and Delete Campaign): the
   `__v` of the item as you read it. It defaults to `{{ $json.__v }}`, so a
   Get → Update chain works as is. It is sent as `If-Match`.
 - If the item changed since, the node fails with a `409` conflict:
@@ -676,8 +677,10 @@ else's change:
 - **Version Options > On Unknown Version**: `Fail` (default) or
   `Use Latest (Overwrite)`, which reads the item and uses its current version
   (last write wins, your explicit choice).
-- **v1 nodes (legacy, deprecated)** show no new field: they read the item first
-  and overwrite it, exactly as before.
+- **v1 nodes (legacy, deprecated)** show no new field, only a notice on their
+  write operations: they read the item first and overwrite it, exactly as
+  before.
+- Every request identifies itself with `X-Posty5-Client: posty5-n8n/<version>`.
 
 ## 🐛 Error Handling
 

@@ -7,6 +7,7 @@ import {
 	NodeOperationError,
 } from 'n8n-workflow';
 import { makeApiRequest } from '../../utils/api.helpers';
+import { readStoredVersion } from '../../utils/versioned-write.helpers';
 import { API_ENDPOINTS } from '../../utils/constants';
 import { TRIGGER_CONFIG, TRIGGER_MESSAGES, TRIGGER_SIGNATURE } from './config';
 import { POSTY5_TRIGGER_PROPERTIES } from './descriptions';
@@ -38,10 +39,16 @@ function readSubscription(ctx: IHookFunctions): { events: WebhookEventType[]; ta
 	};
 }
 
-/** Delete an endpoint; a 404 (already gone) is success. */
+/**
+ * Delete an endpoint; a 404 (already gone) is success. The endpoint is the
+ * node's own, so it is read first and its `__v` sent as `If-Match`
+ * (optimistic concurrency: the delete is a versioned write).
+ */
 async function removeEndpoint(ctx: IHookFunctions, apiKey: string, id: string): Promise<void> {
+	const endpoint = `${API_ENDPOINTS.WEBHOOK_ENDPOINTS}/${id}`;
 	try {
-		await makeApiRequest.call(ctx, apiKey, { method: 'DELETE', endpoint: `${API_ENDPOINTS.WEBHOOK_ENDPOINTS}/${id}` });
+		const stored = await makeApiRequest.call(ctx, apiKey, { method: 'GET', endpoint });
+		await makeApiRequest.call(ctx, apiKey, { method: 'DELETE', endpoint, version: readStoredVersion(stored) });
 	} catch (error) {
 		if ((error as IPosty5ApiError).httpCode !== TRIGGER_CONFIG.NOT_FOUND_HTTP_CODE) throw error;
 	}
