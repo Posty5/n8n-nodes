@@ -10,6 +10,8 @@
 | social-workspace; Get/list/get-for-new-post workspace operations. | `04_MODULES.md`, `15_RISKY_AREAS.md` | `nodes/Posty5SocialPublisherWorkspace/Posty5SocialPublisherWorkspace.node.ts` |
 | social-post; Publish video/image, inspect status/list/default | `04_MODULES.md`, `15_RISKY_AREAS.md` | `nodes/Posty5SocialPublisherPost/Posty5SocialPublisherPost.node.ts` |
 | api-utils; HTTP envelope handling, pagination, | `04_MODULES.md`, `15_RISKY_AREAS.md` | `utils/api.helpers.ts` |
+| template dropdown, qrCodeTarget, fetch-then-put update, landing page, deep links | `04_MODULES.md`, `18_DECISIONS.md` | `utils/link-tool.helpers.ts`, `utils/qr-templates.helpers.ts`, `utils/qr-target.helpers.ts` |
+| analytics, get analytics, get statistics, visits, breakdowns, series as items | `05_API_SURFACE.md`, `18_DECISIONS.md` (D12-D14) | `utils/analytics.helpers.ts`, `utils/analytics.properties.ts`, `utils/date.helpers.ts` |
 | routes, navigation, public API, exports | `05_API_SURFACE.md`, `ROUTE_INDEX.json` | `credentials/Posty5Api.credentials.ts` |
 | config, environment, credentials | `10_ENV_CONFIG.md`, `ENV_INDEX.json` | `credentials/Posty5Api.credentials.ts` |
 | build, tests, debugging | `11_LOCAL_DEVELOPMENT.md`, `12_TESTING_DEBUGGING.md` | `package.json` |

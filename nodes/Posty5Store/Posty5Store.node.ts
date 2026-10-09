@@ -27,8 +27,10 @@ import { supplierProductFields, supplierProductOperations } from './descriptions
  * Posty5 Store — dropshipping workflows over `/api/store-suppliers` and the
  * order parts on `/api/store-orders`.
  *
- * No trigger: the api pushes nothing to merchants, so a trigger would poll —
- * which Schedule Trigger + Supplier Order → Get Many already does. Connecting and
+ * No store trigger yet: the api pushes no store-order events, so a trigger would
+ * poll — which Schedule Trigger + Supplier Order → Get Many already does. Push
+ * events (link visits, QR scans, milestones) arrive through Posty5 Trigger;
+ * store orders become one more event there when the API adds them. Connecting and
  * configuring suppliers stays in the store's control panel: a supplier
  * credential in a node parameter would sit in plain text in the workflow JSON.
  */

@@ -13,7 +13,41 @@ export type QrCodeStatusType = 'new' | 'pending' | 'rejected' | 'approved';
 /**
  * QR Code target type
  */
-export type QrCodeTargetType = 'freeText' | 'email' | 'wifi' | 'call' | 'sms' | 'url' | 'geolocation';
+export type QrCodeTargetType =
+	| 'freeText'
+	| 'email'
+	| 'wifi'
+	| 'call'
+	| 'sms'
+	| 'url'
+	| 'geolocation'
+	| 'vcard'
+	| 'event'
+	| 'whatsapp'
+	| 'review'
+	| 'social'
+	| 'appStore'
+	| 'file';
+
+/** vCard phone kinds. Default `mobile`. */
+export type QrCodeVCardPhoneKind = 'mobile' | 'work' | 'home';
+
+/** Review platforms of a `review` code. */
+export type QrCodeReviewPlatform = 'google' | 'tripadvisor' | 'trustpilot' | 'yelp' | 'facebook' | 'other';
+
+/** Social profile platforms of a `social` code. */
+export type QrCodeSocialPlatform =
+	| 'instagram'
+	| 'facebook'
+	| 'tiktok'
+	| 'x'
+	| 'youtube'
+	| 'linkedin'
+	| 'snapchat'
+	| 'telegram'
+	| 'threads'
+	| 'pinterest'
+	| 'other';
 
 /**
  * Preview reason (moderation score)
@@ -137,8 +171,119 @@ export interface IQRCodeGeolocationTarget {
 	longitude: string | number;
 }
 
+/** One vCard phone. */
+export interface IQRCodeVCardPhone {
+	kind?: QrCodeVCardPhoneKind;
+	number: string;
+}
+
+/** A vCard's work address. */
+export interface IQRCodeVCardAddress {
+	street?: string;
+	city?: string;
+	region?: string;
+	postalCode?: string;
+	country?: string;
+}
+
+/** vCard target: `firstName` or `organization` is required (API 400 otherwise). */
+export interface IQRCodeVCardTarget {
+	firstName?: string;
+	lastName?: string;
+	organization?: string;
+	jobTitle?: string;
+	phones?: IQRCodeVCardPhone[];
+	emails?: string[];
+	website?: string;
+	address?: IQRCodeVCardAddress;
+	note?: string;
+}
+
+/** Calendar event target. ISO strings sent as typed; a wall-clock value is read in `timezone`. */
+export interface IQRCodeEventTarget {
+	title: string;
+	location?: string;
+	description?: string;
+	startsAt: string;
+	endsAt?: string;
+	allDay?: boolean;
+	timezone?: string;
+	url?: string;
+}
+
+/** WhatsApp chat target. */
+export interface IQRCodeWhatsappTarget {
+	phoneNumber: string;
+	message?: string;
+}
+
+/** Review target: Google takes `placeId` or `url`; the others a `url`. */
+export interface IQRCodeReviewTarget {
+	platform: QrCodeReviewPlatform;
+	placeId?: string;
+	url?: string;
+}
+
+/** One social profile: `handle` or `url`. */
+export interface IQRCodeSocialProfile {
+	platform: QrCodeSocialPlatform;
+	handle?: string;
+	url?: string;
+}
+
+/** App store target (dynamic-only): Android and/or iOS store URL, plus a required fallback. */
+export interface IQRCodeAppStoreTarget {
+	androidUrl?: string;
+	iosUrl?: string;
+	fallbackUrl: string;
+}
+
 /**
- * QR Code target configuration
+ * File target (dynamic-only). `bucketFilePath` comes from the upload-url route;
+ * omitted on update keeps the stored file. `fileURL`, `mimeType`, `sizeBytes`
+ * are server-set (read only).
+ */
+export interface IQRCodeFileTarget {
+	bucketFilePath?: string;
+	fileName?: string;
+	fileURL?: string;
+	mimeType?: string;
+	sizeBytes?: number;
+}
+
+/** `POST /api/qr-code/file/upload-url` body. */
+export interface IQRCodeFileUploadRequest {
+	fileName: string;
+	mimeType: string;
+	sizeBytes: number;
+}
+
+/** What the upload-url route answers: a signed PUT URL valid `expiresInSeconds`. */
+export interface IQRCodeFileUploadTicket {
+	uploadFileURL: string;
+	bucketFilePath: string;
+	expiresInSeconds: number;
+}
+
+/** The node's Social Profiles fixedCollection as n8n hands it over. */
+export interface IQRCodeSocialProfilesParameter {
+	profile?: Array<{ platform?: unknown; handle?: unknown; url?: unknown }>;
+}
+
+/** Social target. A static code takes one profile; 2+ (up to 12) make it dynamic-only. */
+export interface IQRCodeSocialTarget {
+	profiles: IQRCodeSocialProfile[];
+	title?: string;
+}
+
+/** The node's vCard Phones fixedCollection as n8n hands it over. */
+export interface IQRCodeVCardPhonesParameter {
+	phone?: Array<{ kind?: unknown; number?: unknown }>;
+}
+
+/**
+ * QR Code target configuration (`qrCodeTarget`). `type` names the one block the
+ * API reads; the node sends that block and no other.
  */
 export interface IQRCodeTarget {
 	type: QrCodeTargetType;
@@ -147,7 +292,42 @@ export interface IQRCodeTarget {
 	wifi?: IQRCodeWifiTarget;
 	call?: IQRCodeCallTarget;
 	sms?: IQRCodeSmsTarget;
+	url?: IQRCodeUrlTarget;
 	geolocation?: IQRCodeGeolocationTarget;
+	vcard?: IQRCodeVCardTarget;
+	event?: IQRCodeEventTarget;
+	whatsapp?: IQRCodeWhatsappTarget;
+	review?: IQRCodeReviewTarget;
+	social?: IQRCodeSocialTarget;
+	appStore?: IQRCodeAppStoreTarget;
+	file?: IQRCodeFileTarget;
+}
+
+/** Static: the image encodes the content. Dynamic: it encodes a Posty5 link that redirects. */
+export type QrCodeMode = 'static' | 'dynamic';
+
+/**
+ * Scan rules of a dynamic QR code (Starter plan and above). Each value or null;
+ * all empty means never gated. A sent object replaces the stored rules whole.
+ */
+export interface IQRCodeAccess {
+	/** ISO date-time; scans before it are gated. */
+	activeFrom?: string | null;
+	/** ISO date-time, after activeFrom; scans from it are gated. */
+	expiresAt?: string | null;
+	/** Integer ≥ 1; scans beyond it are gated. */
+	maxVisits?: number | null;
+	/** http(s) URL (≤ 2048) that gated scans go to. */
+	fallbackUrl?: string | null;
+}
+
+/** The node's Scan Rules collection as n8n hands it over. */
+export interface IQRCodeScanRulesParameter {
+	activeFrom?: unknown;
+	expiresAt?: unknown;
+	maxVisits?: unknown;
+	fallbackUrl?: unknown;
+	clearScanRules?: unknown;
 }
 
 /**
@@ -163,7 +343,6 @@ export interface IQRCode {
 	lastVisitorDate?: string;
 	refId?: string;
 	tag?: string;
-	isEnableMonetization?: boolean;
 	pageInfo?: IQRCodePageInfo;
 	qrCodeTarget?: IQRCodeTarget;
 	status: QrCodeStatusType;
@@ -172,6 +351,12 @@ export interface IQRCode {
 	updatedAt?: string;
 	qrCodeLandingPageURL?: string;
 	qrCodeDownloadURL?: string;
+	/** `static` when absent (codes stored before dynamic QR codes existed). */
+	mode?: QrCodeMode;
+	/** When the code last became dynamic; `null` for a static code. */
+	dynamicSince?: string | null;
+	/** Scan rules; `null` when the code has none. */
+	access?: IQRCodeAccess | null;
 }
 
 /**
@@ -182,85 +367,40 @@ export interface IQRCodeFullDetailsResponse extends IQRCode {
 	template?: IQRCodeTemplate;
 	templateType?: string;
 	options?: IQRCodeOptions;
+	createdFrom?: string;
 }
 
 /**
- * Base request interface for creating/updating QR codes
+ * Body of `POST /api/qr-code/:type` and `PUT /api/qr-code/:type/:id`.
+ *
+ * `options` is required by the API but the node sends it empty: the template
+ * supplies the design, and the server builds `options.text` from
+ * `qrCodeTarget`, so nothing a client puts there changes what the image encodes.
  */
-export interface IQRCodeRequest {
+export interface IQRCodeWriteRequest {
 	name?: string;
+	/** Required for every API-key call. */
 	templateId: string;
+	templateType?: string;
 	refId?: string;
 	tag?: string;
-	customLandingId?: string;
-	isEnableMonetization?: boolean;
+	isEnableLandingPage?: boolean;
 	pageInfo?: IQRCodePageInfo;
-}
-
-export interface ICreateFreeTextQRCodeRequest extends IQRCodeRequest {
-	text: string;
-}
-
-export interface ICreateEmailQRCodeRequest extends IQRCodeRequest {
-	email: IQRCodeEmailTarget;
-}
-
-export interface ICreateWifiQRCodeRequest extends IQRCodeRequest {
-	wifi: IQRCodeWifiTarget;
-}
-
-export interface ICreateCallQRCodeRequest extends IQRCodeRequest {
-	call: IQRCodeCallTarget;
-}
-
-export interface ICreateSMSQRCodeRequest extends IQRCodeRequest {
-	sms: IQRCodeSmsTarget;
-}
-
-export interface ICreateURLQRCodeRequest extends IQRCodeRequest {
-	url: IQRCodeUrlTarget;
-}
-
-export interface ICreateGeolocationQRCodeRequest extends IQRCodeRequest {
-	geolocation: IQRCodeGeolocationTarget;
+	createdFrom?: string;
+	qrCodeTarget: IQRCodeTarget;
+	options: IQRCodeOptions;
+	/** Absent: static on create, unchanged on update. Wi-Fi cannot be dynamic (API 400). */
+	mode?: QrCodeMode;
+	/** Absent: unchanged on update. `null`: clear every scan rule. Dynamic codes only. */
+	access?: IQRCodeAccess | null;
 }
 
 /**
- * Request interface for updating a QR code
+ * Reads one node parameter for the QR target builder. The node passes
+ * `(name, fallback) => this.getNodeParameter(name, itemIndex, fallback)`;
+ * tests pass a plain lookup.
  */
-export interface IUpdateQRCodeRequest extends IQRCodeRequest {
-	name: string;
-}
-
-export interface IUpdateFreeTextQRCodeRequest extends IUpdateQRCodeRequest {
-	qrCodeTarget: {
-		text: string;
-	};
-}
-
-export interface IUpdateEmailQRCodeRequest extends IUpdateQRCodeRequest {
-	email: IQRCodeEmailTarget;
-}
-
-export interface IUpdateWifiQRCodeRequest extends IUpdateQRCodeRequest {
-	wifi: IQRCodeWifiTarget;
-}
-
-export interface IUpdateCallQRCodeRequest extends IUpdateQRCodeRequest {
-	call: IQRCodeCallTarget;
-}
-
-export interface IUpdateSMSQRCodeRequest extends IUpdateQRCodeRequest {
-	sms: IQRCodeSmsTarget;
-}
-
-export interface IUpdateURLQRCodeRequest extends IUpdateQRCodeRequest {
-	url: IQRCodeUrlTarget;
-}
-
-export interface IUpdateGeolocationQRCodeRequest extends IUpdateQRCodeRequest {
-	geolocation: IQRCodeGeolocationTarget;
-}
+export type QrParameterReader = (name: string, fallback?: unknown) => unknown;
 
 /**
  * List parameters for searching QR codes
@@ -271,9 +411,10 @@ export interface IListParams {
 	templateId?: string;
 	tag?: string;
 	refId?: string;
-	isEnableMonetization?: boolean;
+	isEnableLandingPage?: boolean;
 	status?: QrCodeStatusType;
 	createdFrom?: string;
+	mode?: QrCodeMode;
 }
 
 /**
@@ -282,6 +423,24 @@ export interface IListParams {
 export interface IQRCodeLookupItem {
 	_id: string;
 	name: string;
+}
+
+/**
+ * One row of `GET /api/qr-code-template/user-lookup` or `/public-lookup`
+ * (both select only `name`).
+ */
+export interface IQRCodeTemplateLookupItem {
+	_id: string;
+	name?: string;
+}
+
+/** The cursor-paged envelope both template lookups answer with. */
+export interface IQRCodeTemplateLookupPage {
+	items?: IQRCodeTemplateLookupItem[];
+	pagination?: {
+		nextCursor?: string | null;
+		hasMore?: boolean;
+	};
 }
 
 // Response type aliases

@@ -348,6 +348,8 @@ describe('Posty5HtmlHosting', () => {
 			);
 
 			(mockExecuteFunctions.helpers.httpRequest as jest.Mock)
+				// v1 reads the page first (legacy last write wins), then writes with its __v.
+				.mockResolvedValueOnce({ result: { _id: 'hh123', __v: 3 } })
 				.mockResolvedValueOnce(mockResponse)
 				.mockResolvedValueOnce({});
 
@@ -414,6 +416,8 @@ describe('Posty5HtmlHosting', () => {
 			);
 
 			(mockExecuteFunctions.helpers.httpRequest as jest.Mock)
+				// v1 reads the page first (legacy last write wins), then writes with its __v.
+				.mockResolvedValueOnce({ result: { _id: 'hh123', __v: 3 } })
 				.mockResolvedValueOnce(mockResponse)
 				.mockResolvedValueOnce({});
 

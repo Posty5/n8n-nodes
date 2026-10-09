@@ -48,6 +48,46 @@
       "role": "Store node order/part types and the cursor list envelope"
     },
     {
+      "path": "utils/qr-templates.helpers.ts",
+      "role": "Template field of the Short Link and QR Code nodes: getQrTemplates loadOptions (user-lookup then public-lookup), requireTemplateId (field, legacy collection value, stored)"
+    },
+    {
+      "path": "utils/qr-target.helpers.ts",
+      "role": "buildQrCodeTarget: qrCodeTarget { type, <type>: {...} } for all 14 QR types (incl. vcard, event, whatsapp, review, social 1-12 profiles, appStore, file without bucketFilePath); requiredQrMode (dynamic for appStore/file/2+ social); no options.text"
+    },
+    {
+      "path": "utils/qr-content.config.ts",
+      "role": "QR content option lists and limits (vCard, review, social up to 12, dynamic-only + bulk-excluded types, file MIME types and 10 MB cap), event time zones, QR_FILE_MESSAGES"
+    },
+    {
+      "path": "utils/qr-file.helpers.ts",
+      "role": "uploadQrFile: file QR upload from an n8n binary property: type/size pre-check, POST /api/qr-code/file/upload-url, PUT to the signed URL without the API key; returns bucketFilePath"
+    },
+    {
+      "path": "utils/link-tool.helpers.ts",
+      "role": "Short Link + QR Code body pieces: create fields, fetch-then-put update merge, page info, Android/iOS URL fields"
+    },
+    {
+      "path": "utils/analytics.helpers.ts",
+      "role": "Get Analytics + Get Statistics (Short Link + QR Code): executeGetAnalytics, executeGetStatistics, workflow time zone (resolveAnalyticsTimeZone), range presets -> from/to day keys, C2 query (breakdown=all / comma list), Series as Items output, 403 -> NodeApiError"
+    },
+    {
+      "path": "utils/analytics.properties.ts",
+      "role": "Get Analytics and Get Statistics parameters shared by the Short Link and QR Code nodes (LINK_ANALYTICS_PROPERTIES, LINK_STATISTICS_PROPERTIES)"
+    },
+    {
+      "path": "utils/date.helpers.ts",
+      "role": "Day keys (YYYY-MM-DD): toDayKey in an IANA zone, shiftDayKey, parseDayKey of a dateTime value, isKnownTimeZone"
+    },
+    {
+      "path": "types/link-analytics.types.ts",
+      "role": "Get Analytics parameters, query and the C2 answer (totals, series, breakdowns, meta)"
+    },
+    {
+      "path": "__tests__/link-analytics.shared.ts",
+      "role": "Get Analytics node suite run by both the Short Link and QR Code test files"
+    },
+    {
       "path": "nodes",
       "role": "Nodes"
     },
@@ -78,6 +118,46 @@
     {
       "path": "__mocks__",
       "role": "n8n-workflow test mock."
+    },
+    {
+      "path": "utils/link-bulk.helpers.ts",
+      "role": "Create Many: row preparation, chunking, Idempotency-Key, per-item output"
+    },
+    {
+      "path": "utils/link-bulk.properties.ts",
+      "role": "Create Many shared properties (template, row fields, defaults, options)"
+    },
+    {
+      "path": "types/link-bulk.types.ts",
+      "role": "Bulk create row/result interfaces (mirror API + SDK)"
+    },
+    {
+      "path": "nodes/Posty5ShortLink/helpers.ts",
+      "role": "Short Link bulk row mapping + bulk route body"
+    },
+    {
+      "path": "nodes/Posty5QrCode/helpers.ts",
+      "role": "QR Code bulk row mapping (buildQrCodeTarget) + bulk route body"
+    },
+    {
+      "path": "nodes/Posty5Trigger/Posty5Trigger.node.ts",
+      "role": "Trigger node: webhookMethods (checkExists/create/delete) + webhook()"
+    },
+    {
+      "path": "nodes/Posty5Trigger/helpers.ts",
+      "role": "Trigger: endpoint body, endpoint match, Standard Webhooks verify, batch split"
+    },
+    {
+      "path": "nodes/Posty5Trigger/config.ts",
+      "role": "Trigger: static event list, tolerance, messages"
+    },
+    {
+      "path": "nodes/Posty5Trigger/descriptions.ts",
+      "role": "Trigger properties"
+    },
+    {
+      "path": "types/webhook.types.ts",
+      "role": "Webhook endpoint/envelope interfaces"
     }
   ]
 }

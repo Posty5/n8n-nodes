@@ -281,7 +281,7 @@ describe('Posty5Store', () => {
 
 	describe('createdFrom stamp', () => {
 		it('is still added for the existing nodes', async () => {
-			const fns = createMockExecuteFunctions({ operation: 'create', url: 'https://posty5.com' }, undefined, { apiKey: 'k' }, { result: {} });
+			const fns = createMockExecuteFunctions({ operation: 'create', url: 'https://posty5.com', templateId: 'tpl-1' }, undefined, { apiKey: 'k' }, { result: {} });
 			await new Posty5ShortLink().execute.call(fns);
 			const [options] = (fns.helpers.httpRequest as jest.Mock).mock.calls[0];
 			expect(options.body.createdFrom).toBe('n8n');

@@ -41,31 +41,61 @@ npm install n8n-nodes-posty5
 
 1. Add **Posty5 API** credentials
 2. Paste your API key
-3. (Optional) Set custom base URL (default: `https://api.posty5.com`)
+3. Click **Test**. It asks the API which key this is (`GET /api/api-key/current`):
+   a good key passes, a wrong or revoked one fails with "Invalid or revoked API
+   key". Requests go to `https://api.posty5.com`; there is no base URL to set.
+
+Every request the nodes send carries `X-Posty5-Client: posty5-n8n/<package version>`
+(from 4.5.0), which the API uses to tell n8n traffic apart. It is not a
+credential and needs no setup.
 
 ## 📋 Available Nodes
 
 ### 1. Posty5 Short Link
 
-Create and manage shortened URLs with analytics.
+Create and manage shortened URLs. Each link counts its visits.
 
 **Operations:**
 
-- Create - Generate short links with custom slugs
-- Get - Retrieve link details
-- List - List all links with filters
-- Update - Modify existing links
-- Delete - Remove links
+| Operation | What it sends |
+| --- | --- |
+| Create | Destination URL and **Template** (required), plus Name, Custom Slug and Additional Fields: Tag, Reference ID, Landing Page with its Page Title and Page Description, Android URL, iOS URL. |
+| Get | Retrieve link details, including its visit count and Android/iOS URLs. |
+| Get Analytics | Visits, unique visitors and bot visits over a range, a series by day/week/month, and breakdowns (country, device, OS, browser, referrer, channel = click or scan, language). See [Get Analytics](#get-analytics-short-link-and-qr-code). |
+| Get Statistics | Counts over all your short links: totals, visits per day, links created per day, top 10 links by visits. See [Get Statistics](#get-statistics-short-link-and-qr-code). |
+| List | Filters: Search (name), Destination URL Contains, Tag, Reference ID, Landing Page Enabled. |
+| Update | Reads the link, then saves it with your changes on top: anything you leave alone keeps its stored value. Template may stay empty to keep the current one. Destination URL is under Additional Fields. The Custom Slug cannot be changed. |
+| Create Many | One short link per input item in batched calls (up to 100 rows per request): Destination URL, Name, Custom Slug, Template, Row Fields (Tag, Reference ID), **Defaults** (Template ID, Tag, Reference ID) and Options (Batch Size, Fetch Page Metadata, Fail on Any Row Error). See [Create Many](#create-many-short-link-and-qr-code). |
+| Delete | Remove links. |
+| Set Rules | Changes only the rule sections you add: access (Active From, Expires At, Max Visits, Fallback URL, Password / Remove Password), Routing Rules, Variants, UTM, Pixels. Empty clears a section. |
+| List Tags | Your links' distinct tags (optional Starts With), one item per tag. |
+| Check Health | Queues one destination check of a link (once per 10 minutes; plan-gated). |
+| Create / Get / List / Update / Delete Campaign | Link campaigns (`/api/link-campaign`): name, description, color, UTM, archived. Delete Campaign with *Detach Links* detaches the campaign's links first. |
+
+Create and Update also take, under Additional Fields: **Tags** (comma-separated;
+*Tag* is deprecated but still works), **Campaign**, the access fields above,
+**UTM**, **Routing Rules (JSON)**, **Variants (JSON)**, **Pixels** with **Pixels
+Consent Acknowledged** (required the first time), and **Health Monitor**. List
+filters gain Tags and Campaign.
+
+> **Secrets:** the Password field is masked in the editor, but n8n stores node
+> parameters inside the workflow. Put the password in an expression that reads
+> a secret (environment variable or a credential-backed node) rather than
+> typing it in, and never share the workflow JSON with a literal password.
+
+**Template** is a dropdown of your QR code templates and the public ones; the
+Posty5 API requires one on every API-key create and update. On Update, a Tag,
+Reference ID, Android URL or iOS URL you add but leave empty clears it.
 
 **Use Cases:**
 
 - Generate tracking links for marketing campaigns
 - Create QR-friendly short URLs
-- Monitor click analytics
+- Send app users to the app (Android/iOS URLs) and everyone else to the web page
 
 ### 2. Posty5 QR Code
 
-Generate QR codes for 7 different types.
+Generate QR codes for 14 different types.
 
 **QR Types:**
 
@@ -76,14 +106,113 @@ Generate QR codes for 7 different types.
 - Phone Call - tel: links
 - SMS - Pre-filled text messages
 - Geolocation - GPS coordinates
+- Business Card (vCard) - Name, organization, up to 3 phones, 2 emails, website, address, note
+- Calendar Event - Title, start/end, all day, timezone, location, description, URL
+- WhatsApp - Chat with a pre-filled message
+- Review Link - Google (Place ID or URL), Tripadvisor, Trustpilot, Yelp, Facebook, other
+- Social Profile - 1 profile, or 2-12 profiles on a list page (always dynamic)
+- App Store Links - Android URL and/or iOS URL plus a required Fallback URL (dynamic only)
+- File (PDF or Image) - A PDF, JPEG, PNG or WebP of up to 10 MB from an input binary property (dynamic only, not in Create Many)
 
 **Operations:**
 
-- Create - Generate new QR codes
-- Get - Retrieve QR code details
-- List - List all QR codes
-- Update - Modify QR code content
-- Delete - Remove QR codes
+| Operation | What it sends |
+| --- | --- |
+| Create | QR Type, its content fields and **Template** (required), plus Name, **Mode** and Additional Fields: Tag, Reference ID, Landing Page with its Page Title and Page Description. |
+| Get | Retrieve QR code details. |
+| Get Analytics | Scans, unique visitors and bot visits over a range, a series and breakdowns, as on the Short Link node. See [Get Analytics](#get-analytics-short-link-and-qr-code). |
+| Get Statistics | Counts over all your QR codes, as on the Short Link node (top list `topQRCodes`). See [Get Statistics](#get-statistics-short-link-and-qr-code). |
+| List | Filters: Search (name), Tag, Reference ID, Mode. |
+| Update | Reads the QR code, then saves the content you enter with everything else kept. Template may stay empty to keep the current one; Mode defaults to Keep Current. |
+| Create Many | One QR code per input item in batched calls (up to 100 rows per request): QR Type and its fields, Name, Mode, Template, Row Fields (Tag, Reference ID), **Defaults** and Options (Batch Size, Fail on Any Row Error). See [Create Many](#create-many-short-link-and-qr-code). |
+| Delete | Remove QR codes. |
+
+The design comes from the template, and Posty5 builds the encoded text from the
+content fields: the node sends the content as `qrCodeTarget` and nothing else.
+
+**Mode.** Static (the default) encodes the content in the image. Dynamic: the
+image points to a Posty5 link, so you can change where it goes later without
+reprinting. Mode is hidden for WiFi, which cannot be dynamic (the API answers
+400). Create sends `mode` only for Dynamic, so saved workflows keep producing
+static codes; Update sends it only when you pick one. Outputs carry `mode` and
+`dynamicSince` (null for a static code).
+
+**Scan Rules** (dynamic codes, Starter plan and above): Active From, Expires At,
+Max Scans and Fallback URL (where gated scans go). Shown on Create for Dynamic
+and on Update. On Update, leave it empty to keep the current rules; any rule set
+replaces all of them, and Clear Scan Rules removes them. Outputs carry `access`.
+
+**Dynamic-only types.** App Store Links and File have no static form: Mode is
+hidden and the node always sends `mode: dynamic` (Scan Rules are shown on
+Create). A Social Profile code with 2 or more profiles is sent as dynamic too.
+
+**File QR codes.** Set *Binary Property* (default `data`) to the input binary
+holding the file, e.g. from an HTTP Request or Read Binary File node. The node
+checks the type and size, asks Posty5 for a signed upload URL
+(`POST /api/qr-code/file/upload-url`), uploads the bytes there (no API key is
+sent to the storage URL), then creates the code with the returned
+`bucketFilePath`. *File Name* overrides the binary's name. On Update, leave
+Binary Property empty to keep the stored file. Create Many does not offer File:
+the bulk route cannot upload.
+
+### Create Many (Short Link and QR Code)
+
+*Create Many* turns every input item into one row and sends them to
+`POST /api/short-link/bulk` / `POST /api/qr-code/bulk` in chunks of
+**Batch Size** (default and maximum 100): 250 items are 3 requests. Each chunk
+carries `Idempotency-Key: n8n-<executionId>-<nodeName>-<chunk>`, so retrying the
+same execution is not charged twice; a new run creates new records.
+
+- Output: one item per input item, in order, paired to it: `status`
+  (`created` / `failed`), `id`, `shortUrl` or `qrCodeDownloadURL`, `errors`.
+- A row Posty5 refuses is an output item with `status: "failed"`. Turn on
+  **Fail on Any Row Error** to stop the workflow instead (rows already created
+  stay created).
+- An item with no Template and no **Defaults → Template ID** fails locally and
+  is not sent.
+- A whole-request error (plan gate, credits) stops the node, or with *Continue
+  On Fail* is output as `error` on every item of that chunk.
+- QR *Type* and every field are per item, so one run can mix types. Landing
+  page and Android/iOS fields are not part of a bulk row.
+
+### Get Analytics (Short Link and QR Code)
+
+`GET /api/short-link/:id/analytics` or `GET /api/qr-code/:id/analytics`, the
+same numbers the dashboard's Analytics tab and the Posty5 SDKs read. Reading
+analytics costs no credits.
+
+| Parameter | What it sends |
+| --- | --- |
+| Short Link ID / QR Code ID | The record to read. |
+| Range | *Last 7 / 30 / 90 Days* (today included, "today" counted in the Time Zone option, else the workflow's time zone) or *Custom* with **From** and **To** dates (both days included). Sent as `from` / `to`, `YYYY-MM-DD`. Default: last 30 days. |
+| Interval | `day` (default), `week` (points start on Monday) or `month` (points start on the 1st). |
+| All Breakdowns My Plan Allows | On (default): `breakdown=all`. Breakdowns your plan does not include are listed in `meta.locked` with the plan that adds them, instead of failing. |
+| Breakdowns | Off the toggle: the ones you pick, comma-joined. None picked: `breakdown` is left out and the API returns every breakdown your plan allows. |
+| Output | *Full Response* (one item, the API answer unchanged) or *Series as Items* (one item per series point, each with `meta`, handy for Google Sheets). |
+| Options → Breakdown Rows | Rows per breakdown, 1–50 (API default 10); the rest is summed into an `other` row. |
+| Options → Time Zone | IANA name, e.g. `Africa/Cairo`. Empty: the workflow's time zone (Workflow Settings → Timezone, default the instance's `GENERIC_TIMEZONE`). Always sent as `tz`, so the API counts days in the same zone the presets use. |
+
+The answer is `{ totals: { visits, uniqueVisitors, botVisits }, series: [{ date,
+visits, uniqueVisitors }], breakdowns: { <name>: [{ key, visits, uniqueVisitors }] },
+meta: { from, to, interval, timezone, source, analyticsStartedAt, locked,
+maxHistoryDays } }`. Bots and link-preview fetchers count only in `botVisits`;
+`uniqueVisitors` over several days is the sum of each day's unique visitors.
+Naming a breakdown your plan does not include, or a range further back than it
+allows, fails with the API's own plan message (HTTP 403). An unknown ID fails
+with the API's 400 "The Short Link Is Not Found" / "The QR Code Is Not Found".
+
+### Get Statistics (Short Link and QR Code)
+
+`GET /api/short-link/statistics` or `GET /api/qr-code/statistics`: counts over
+all your links (or QR codes), with no ID. **Period** is *Today*, *Last 7 Days*,
+*Last 30 Days* (default), *This Month* or *Custom* with **From** / **To**
+(`YYYY-MM-DD`); sent as the API's `period` (`today`, `7d`, `30d`, `month`,
+`custom`). Days are UTC days. The answer is one item, unchanged: `{ range: {
+from, to, period }, data: { totals, daily: [{ _id, createdCount, visitorsSum }],
+topLinks | topQRCodes } }`. `totals` holds the lifetime `totalVisitors` counter
+(it includes visits from before visit analytics launched) and the in-range
+`visitsInRange`, `uniqueVisitorsInRange` and `botVisitsInRange`; `visitorsSum`
+is visits by people that day. Reading statistics costs no credits.
 
 ### 3. Posty5 HTML Hosting
 
@@ -272,8 +401,9 @@ paused one, import supplier products and follow each part of an order.
 - Import supplier products from a spreadsheet of product IDs
 - Push tracking numbers of shipped parts to a sheet or a customer message
 
-> **No trigger.** The API does not push supplier-order events to merchants, so a
-> trigger would only poll. Use a **Schedule Trigger** with **Supplier Order → Get
+> **No store trigger yet.** The API does not push supplier-order events to
+> merchants (Posty5 Trigger covers link visits, QR scans and milestones), so a
+> store trigger would only poll. Use a **Schedule Trigger** with **Supplier Order → Get
 > Many** (Example 5) — every 15 minutes matches how often Posty5 itself checks
 > suppliers for updates.
 >
@@ -305,6 +435,32 @@ moment ago…` (an HTTP 400, not a 429) — wait a minute and run again. A 403 o
 `suppliers.orders.manage`; elsewhere, check that the store's plan includes
 dropshipping. **Supplier Product → Get Many** takes at most 48 rows a page and
 **Supplier Order → Get Many** at most 100; the API refuses a larger Limit.
+
+### 9. Posty5 Trigger
+
+Starts a workflow when a short link is visited, a QR code is scanned or a
+visit/scan milestone is reached. Activating the workflow registers a Posty5
+webhook endpoint for the node's URL; deactivating it removes the endpoint.
+
+| Setting | Meaning |
+| --- | --- |
+| Events | *Short Link Visited*, *QR Code Scanned*, *Short Link Visit Milestone*, *QR Code Scan Milestone* |
+| Links | All my links and QR codes, or specific short link / QR code IDs (comma-separated) |
+| Options | Include Bot Visits (off), Milestones (`100,1000`, up to 10), Delivery (each event, or batched every 1 min / 5 min / 1 h), Split Batches Into Items (on) |
+
+- **n8n must be reachable over public HTTPS**: n8n Cloud, or self-hosted with
+  `WEBHOOK_URL` set to a public HTTPS address (or a tunnel). Posty5 refuses
+  private or plain-HTTP URLs.
+- Every request is verified (Standard Webhooks signature, 5-minute replay
+  window) before the workflow runs; a forged one gets 401.
+- **Static QR codes never produce events** — the image holds the content
+  itself. A scan of a short link's QR image arrives as *Short Link Visited* with
+  `channel: "qr"`; dynamic QR codes send *QR Code Scanned*.
+- Each item is the event envelope (`id`, `type`, `createdAt`, `data`) plus
+  `webhookId` for de-duplication.
+- Rotating the endpoint's secret in the dashboard breaks verification: rotate
+  by deactivating and re-activating the workflow. An endpoint Posty5 disabled
+  after repeated failures is recreated on the next activation.
 
 ## 💡 Workflow Examples
 
@@ -405,7 +561,17 @@ IF (jobId is set) → Wait → Posty5 Store (Supplier Product → Get Import Sta
 Email (rows with state = failed)
 ```
 
-### Example 7: Tracking Updates Per Part
+### Example 7: Weekly Top Countries to Slack
+
+```
+Schedule Trigger (every Monday)
+  ↓
+Posty5 Short Link (Get Analytics: Last 7 Days, Breakdowns = Country, Breakdown Rows = 5)
+  ↓
+Slack (post totals.visits and breakdowns.country)
+```
+
+### Example 8: Tracking Updates Per Part
 
 ```
 Schedule Trigger (hourly)
@@ -421,6 +587,24 @@ Google Sheets (append order number, part label, tracking number)
 
 A supplier order carries the delivery address only when the API key's owner may
 see customer data. Forwarding the output to a third-party channel forwards it too.
+
+### Example 9: Slack Message on Click
+
+```
+Posty5 Trigger (Short Link Visited, specific short link)
+  ↓
+Slack → Send Message ("{{$json.data.target.name}} opened from {{$json.data.visit.country}}")
+```
+
+### Example 10: Sheet Rows → Short Links (Create Many)
+
+```
+Google Sheets → Get Rows (800 rows)
+  ↓
+Posty5 Short Link → Create Many (Destination URL = {{$json.url}}, Defaults → Template ID)
+  ↓   8 API calls, one output item per row
+Google Sheets → Update Row (shortUrl, status)
+```
 
 ## 🔧 Advanced Features
 
@@ -477,6 +661,27 @@ scheduledPublishTime: 'now';
 scheduledPublishTime: new Date('2024-12-31T10:00:00Z');
 ```
 
+## 🔒 Versioned writes (5.0.0)
+
+Version 2 of the Short Link, QR Code, HTML Hosting, Form Submission and Social
+Publisher Post nodes protects updates and deletes from overwriting someone
+else's change:
+
+- **Version** (required on update, delete, change status, reschedule, and on
+  Short Link's Set Rules, Update Campaign and Delete Campaign): the
+  `__v` of the item as you read it. It defaults to `{{ $json.__v }}`, so a
+  Get → Update chain works as is. It is sent as `If-Match`.
+- If the item changed since, the node fails with a `409` conflict:
+  *"The item changed since it was read (current version N). Get it again, then
+  update."*
+- **Version Options > On Unknown Version**: `Fail` (default) or
+  `Use Latest (Overwrite)`, which reads the item and uses its current version
+  (last write wins, your explicit choice).
+- **v1 nodes (legacy, deprecated)** show no new field, only a notice on their
+  write operations: they read the item first and overwrite it, exactly as
+  before.
+- Every request identifies itself with `X-Posty5-Client: posty5-n8n/<version>`.
+
 ## 🐛 Error Handling
 
 All nodes support N8N's "Continue on Fail" option:
@@ -492,7 +697,8 @@ All nodes support N8N's "Continue on Fail" option:
 Common errors:
 
 - **401 Unauthorized** - Invalid API key
-- **404 Not Found** - Resource doesn't exist
+- **403 Forbidden** - On Get Analytics: a breakdown or range your plan does not include (the API's message is shown as is)
+- **404 Not Found** - Resource doesn't exist (Get Analytics answers an unknown ID with a 400 and the API's not-found message)
 - **429 Too Many Requests** - Rate limit exceeded
 - **422 Validation Error** - Invalid parameters
 

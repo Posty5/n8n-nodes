@@ -1,6 +1,6 @@
 {
     "name": "@posty5/n8n-nodes-posty5",
-    "version": "4.4.0",
+    "version": "5.0.0",
     "description": "N8N community nodes for Posty5 - URL shortening, QR codes, HTML hosting, social media publishing and online-store dropshipping",
     "keywords": [
         "n8n-community-node-package",
@@ -55,7 +55,8 @@
             "dist/nodes/Posty5FormSubmission/Posty5FormSubmission.node.js",
             "dist/nodes/Posty5SocialPublisherWorkspace/Posty5SocialPublisherWorkspace.node.js",
             "dist/nodes/Posty5SocialPublisherPost/Posty5SocialPublisherPost.node.js",
-            "dist/nodes/Posty5Store/Posty5Store.node.js"
+            "dist/nodes/Posty5Store/Posty5Store.node.js",
+            "dist/nodes/Posty5Trigger/Posty5Trigger.node.js"
         ]
     },
     "devDependencies": {

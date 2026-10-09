@@ -18,6 +18,8 @@ describe('Posty5SocialPublisherPost — long video', () => {
 	/** Pull the request options passed to each makeApiRequest-driven httpRequest call. */
 	const requests = (mock: any) =>
 		(mock.helpers.httpRequest as jest.Mock).mock.calls.map((c: any[]) => c[0]);
+	/** The writes only: a v1 node reads the post (`/status`) before each write (legacy, D-18). */
+	const writes = (mock: any) => requests(mock).filter((req: any) => req.method !== 'GET');
 
 	describe('node description', () => {
 		it('offers the long video operations', () => {
@@ -281,12 +283,11 @@ describe('Posty5SocialPublisherPost — long video', () => {
 
 			await node.execute.call(mock);
 
-			const [req] = requests(mock);
+			const [req] = writes(mock);
 			expect(req.method).toBe('PUT');
 			expect(req.url).toContain('/api/social-publisher-post/post_1');
-			expect(req.body).toEqual({
-				schedule: { type: 'schedule', scheduledAt: '2026-09-20T08:00:00.000Z' },
-			});
+			// The edit route's schema takes scheduleType + scheduledAt flat and refuses unknown keys.
+			expect(req.body).toEqual({ scheduleType: 'schedule', scheduledAt: '2026-09-20T08:00:00.000Z' });
 		});
 
 		it('can flip a scheduled post to publish now', async () => {
@@ -304,7 +305,7 @@ describe('Posty5SocialPublisherPost — long video', () => {
 
 			await node.execute.call(mock);
 
-			expect(requests(mock)[0].body.schedule).toEqual({ type: 'now' });
+			expect(writes(mock)[0].body).toEqual({ scheduleType: 'now' });
 		});
 
 		it('sends a replacement caption only when one was typed', async () => {
@@ -320,7 +321,7 @@ describe('Posty5SocialPublisherPost — long video', () => {
 				{ result: {} },
 			);
 			await node.execute.call(withCaption);
-			expect(requests(withCaption)[0].body.caption).toBe('Updated caption');
+			expect(writes(withCaption)[0].body.caption).toBe('Updated caption');
 
 			const blank = createMockExecuteFunctions(
 				{
@@ -334,7 +335,7 @@ describe('Posty5SocialPublisherPost — long video', () => {
 				{ result: {} },
 			);
 			await node.execute.call(blank);
-			expect('caption' in requests(blank)[0].body).toBe(false);
+			expect('caption' in writes(blank)[0].body).toBe(false);
 		});
 	});
 
@@ -349,9 +350,27 @@ describe('Posty5SocialPublisherPost — long video', () => {
 
 			await node.execute.call(mock);
 
-			const [req] = requests(mock);
+			const [req] = writes(mock);
 			expect(req.method).toBe('DELETE');
 			expect(req.url).toContain('/api/social-publisher-post/post_1');
+		});
+
+		it('v1 reads the post status for its __v, then deletes with If-Match', async () => {
+			const mock = createMockExecuteFunctions(
+				{ operation: 'deletePost', deletePostId: 'post_1' },
+				[{ json: {} }],
+				undefined,
+				{ result: { _id: 'post_1' } },
+			);
+			(mock.helpers.httpRequest as jest.Mock).mockResolvedValueOnce({ result: { _id: 'post_1', __v: 6 } });
+
+			await node.execute.call(mock);
+
+			const [read, del] = requests(mock);
+			expect(read.method).toBe('GET');
+			expect(read.url).toMatch(/\/api\/social-publisher-post\/post_1\/status$/);
+			expect(del.method).toBe('DELETE');
+			expect(del.headers['If-Match']).toBe('"6"');
 		});
 	});
 

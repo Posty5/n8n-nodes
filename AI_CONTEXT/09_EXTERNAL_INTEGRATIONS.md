@@ -3,7 +3,7 @@
 | System | Purpose | Owner/config source |
 | --- | --- | --- |
 | n8n-workflow | Node/credential interfaces and HTTP helpers | `package.json` |
-| Posty5 API | All business operations | `utils/api.helpers.ts` |
+| Posty5 API | All business operations; the credential test needs `GET /api/api-key/current` | `utils/api.helpers.ts`, `credentials/Posty5Api.credentials.ts` |
 | Signed object-storage URLs | Direct binary upload for hosting/social operations | `utils/api.helpers.ts` |
 
 ## Change rule
