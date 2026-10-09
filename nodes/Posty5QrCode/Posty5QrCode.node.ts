@@ -1298,6 +1298,8 @@ export class Posty5QrCode implements INodeType {
 						method: 'GET',
 						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`,
 					})) as IQRCodeFullDetailsResponse;
+					// Resolved before the file upload: a missing version fails with no side effect.
+					const version = await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`, stored);
 
 					const body: IQRCodeWriteRequest = {
 						...buildCommonUpdateFields(additionalFields, stored),
@@ -1334,7 +1336,7 @@ export class Posty5QrCode implements INodeType {
 						method: 'PUT',
 						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrType}/${qrCodeId}`,
 						body,
-						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`, stored),
+						version,
 					});
 				} else if (operation === 'delete') {
 					const qrCodeId = this.getNodeParameter('qrCodeId', i) as string;
