@@ -18,6 +18,11 @@
       "source": "nodes/Posty5QrCode/Posty5QrCode.node.ts"
     },
     {
+      "name": "QR render (binary PNG/SVG/PDF), scannability check, template list",
+      "owner": "qr-code",
+      "source": "utils/qr-render.helpers.ts"
+    },
+    {
       "name": "Link + QR visit analytics (Get Analytics)",
       "owner": "short-link",
       "source": "utils/analytics.helpers.ts"

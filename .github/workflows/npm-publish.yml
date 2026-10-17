@@ -30,26 +30,15 @@ jobs:
         run: npm run build
 
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        # A version already on npm is skipped, so a shared release tag (pushed to
+        # every SDK repo at once) does not fail here when this package is unchanged.
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "$NAME@$VERSION is already on npm - skipped"
+          else
+            npm publish --provenance --access public
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: 📧 Send publish email notification
-        if: always() # if the publish succeeds or fails
-        uses: dawidd6/action-send-mail@v18
-        with:
-          server_address: ${{ secrets.SMTP_SERVER }}
-          server_port: ${{ secrets.SMTP_PORT }}
-          username: ${{ secrets.SMTP_USER }}
-          password: ${{ secrets.SMTP_PASS }}
-          from: "Posty5 Deploy Bot <${{ secrets.SMTP_USER }}>"
-          to: ${{ secrets.NOTIFY_EMAIL }}
-          subject: |
-            [${{ github.repository }}] 📦 Publish ${{ job.status }} — ${{ github.ref_name }}
-          body: |
-            Repository: ${{ github.repository }}
-            Ref: ${{ github.ref_name }}
-            Status: ${{ job.status }}
-            Commit: ${{ github.sha }}
-            Author: ${{ github.actor }}
-            Run URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

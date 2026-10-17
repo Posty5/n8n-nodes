@@ -12,7 +12,7 @@ import {
 	NodeApiError,
 } from 'n8n-workflow';
 import { POSTY5_API_BASE_URL, Posty5ClientConst, VERSIONED_WRITES } from './constants';
-import type { IPosty5ApiError } from '../types/common';
+import type { IPosty5ApiError, IPosty5BinaryResponse } from '../types/common';
 
 export interface IApiRequestOptions {
 	method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -158,6 +158,98 @@ export function toPosty5ApiError(error: any): IPosty5ApiError {
 		if (typeof currentVersion === 'number') apiError.currentVersion = currentVersion;
 	}
 	return apiError;
+}
+
+/**
+ * A GET whose answer is a file (`/api/qr-code/:id/render`): same base URL and
+ * headers as `makeApiRequest`, but the body is kept as bytes. The file name
+ * comes from `Content-Disposition`, the type from `Content-Type`. A failed
+ * request's JSON error body (also bytes) is decoded first, so the error keeps
+ * the API's message — the plan gate's 403 text unchanged (C4).
+ */
+export async function makeBinaryApiRequest(
+	this: IExecuteFunctions,
+	apiKey: string,
+	endpoint: string,
+	qs?: object,
+): Promise<IPosty5BinaryResponse> {
+	const requestOptions: IHttpRequestOptions = {
+		method: 'GET',
+		url: `${POSTY5_API_BASE_URL}${endpoint}`,
+		headers: {
+			'X-API-Key': apiKey,
+			[Posty5ClientConst.HEADER]: Posty5ClientConst.VALUE,
+		},
+		encoding: 'arraybuffer',
+		json: false,
+		returnFullResponse: true,
+	};
+	if (qs) requestOptions.qs = qs as IHttpRequestOptions['qs'];
+
+	try {
+		const response = await this.helpers.httpRequest(requestOptions);
+		const headers = (response?.headers || {}) as Record<string, unknown>;
+		return {
+			data: toBuffer(response?.body),
+			mimeType: String(headers['content-type'] ?? '').split(';')[0].trim().toLowerCase(),
+			fileName: parseContentDispositionFileName(headers['content-disposition']),
+		};
+	} catch (error: any) {
+		throw toPosty5NodeApiError(this, withDecodedErrorBody(error));
+	}
+}
+
+/**
+ * The file name of a `Content-Disposition` header: the RFC 5987
+ * `filename*=UTF-8''…` form when present, else `filename="…"`. Empty when
+ * there is none. Path separators are dropped, so the name is a bare file name.
+ */
+export function parseContentDispositionFileName(header: unknown): string {
+	const value = Array.isArray(header) ? String(header[0] ?? '') : String(header ?? '');
+	if (!value) return '';
+
+	let name = '';
+	const extended = /filename\*\s*=\s*([^']*)'[^']*'([^;]+)/i.exec(value);
+	if (extended) {
+		try {
+			name = decodeURIComponent(extended[2].trim().replace(/^"|"$/g, ''));
+		} catch {
+			name = '';
+		}
+	}
+	if (!name) {
+		const plain = /filename\s*=\s*("([^"]*)"|[^;]+)/i.exec(value);
+		if (plain) name = (plain[2] ?? plain[1]).trim();
+	}
+	return name.replace(/[\\/]/g, '_').trim();
+}
+
+/** A response body as a Buffer (n8n hands back a Buffer, an ArrayBuffer or, from mocks, a string). */
+function toBuffer(body: unknown): Buffer {
+	if (Buffer.isBuffer(body)) return body;
+	if (body instanceof ArrayBuffer) return Buffer.from(body);
+	if (ArrayBuffer.isView(body)) return Buffer.from(body.buffer, body.byteOffset, body.byteLength);
+	if (typeof body === 'string') return Buffer.from(body);
+	return Buffer.alloc(0);
+}
+
+/**
+ * The error of a bytes request with its body parsed as JSON where it is JSON,
+ * so `toPosty5ApiError` reads the API's `message` and `code` as for any request.
+ */
+function withDecodedErrorBody(error: any): any {
+	for (const key of ['data', 'body'] as const) {
+		const body = error?.response?.[key];
+		if (body === undefined || body === null || (typeof body === 'object' && !ArrayBuffer.isView(body) && !(body instanceof ArrayBuffer))) {
+			continue;
+		}
+		try {
+			error.response[key] = JSON.parse(toBuffer(body).toString('utf8'));
+		} catch {
+			// Not JSON: the error keeps its own message.
+		}
+	}
+	return error;
 }
 
 /**

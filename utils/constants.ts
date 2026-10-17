@@ -79,6 +79,53 @@ export const QR_TEMPLATE_LOOKUP = {
 } as const;
 
 /**
+ * QR Code *Render*, *Check Scannability* and *List Templates* (QR design and
+ * export, K6): `GET /api/qr-code/:id/render`, `POST /api/qr-code/scannability-check`,
+ * the two template lookups, and the print presets of
+ * `GET /api/qr-code-template/design-catalogue`. Values mirror the API's schemas.
+ * SVG, PDF, a preset, a DPI or a PNG over 2048 px need a paid plan; the API's
+ * 403 text is shown unchanged.
+ */
+export const QR_RENDER = {
+	RENDER_PATH_SEGMENT: 'render',
+	SCANNABILITY_PATH: '/scannability-check',
+	CATALOGUE_PATH: '/design-catalogue',
+	FORMATS: ['png', 'svg', 'pdf'] as const,
+	DEFAULT_FORMAT: 'png',
+	/** The API's MIME type per format, used when the answer carries none. */
+	MIME_TYPES: {
+		png: 'image/png',
+		svg: 'image/svg+xml',
+		pdf: 'application/pdf',
+	} as Record<string, string>,
+	DPI_VALUES: [150, 300, 600] as const,
+	DEFAULT_DPI: 300,
+	/** `presetId` value that takes a width in mm (`customMm`). */
+	CUSTOM_PRESET_ID: 'custom',
+	CUSTOM_MM_MIN: 20,
+	CUSTOM_MM_MAX: 500,
+	DEFAULT_CUSTOM_MM: 50,
+	SIZE_PX_MIN: 64,
+	SIZE_PX_MAX: 6000,
+	DEFAULT_SIZE_PX: 1024,
+	DEFAULT_BINARY_PROPERTY: 'data',
+	/** Any value: the API answers an attachment named `<name>-<preset|size>.<ext>`. */
+	DOWNLOAD_FLAG: '1',
+	/** File name when the answer has no `Content-Disposition`: `qr-code-<id>.<ext>`. */
+	FALLBACK_FILE_NAME_PREFIX: 'qr-code-',
+	/** The "no preset" option of the Print Preset dropdown. */
+	NO_PRESET_LABEL: 'None (Size in Pixels)',
+	LIST_TEMPLATES_DEFAULT_LIMIT: 50,
+	LIST_TEMPLATES_MAX_LIMIT: 100,
+} as const;
+
+/** Errors the QR render operations raise before any request. */
+export const QR_RENDER_MESSAGES = {
+	unknownFormat: (format: string) => `Unknown format "${format}". Use png, svg or pdf.`,
+	idRequired: (what: string) => `${what} is required`,
+} as const;
+
+/**
  * The QR types the API validates (`/api/qr-code/:type`). The node's QR Type
  * values are these, and `qrCodeTarget.type` is always one of them.
  */

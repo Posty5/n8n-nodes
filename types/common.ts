@@ -136,3 +136,12 @@ export interface IPosty5ApiError extends Error {
 	/** On a `VERSION_CONFLICT`, the document's stored version. */
 	currentVersion?: number;
 }
+
+/** What `makeBinaryApiRequest` answers: the file's bytes and how the API named it. */
+export interface IPosty5BinaryResponse {
+	data: Buffer;
+	/** `Content-Type` without parameters (`image/png`), or empty when the answer had none. */
+	mimeType: string;
+	/** From `Content-Disposition`, or empty when the answer had none. */
+	fileName: string;
+}

@@ -18,6 +18,13 @@ import { buildCommonCreateFields, buildCommonUpdateFields, firstText, toText } f
 import { buildQrAccess, buildQrCodeTarget, readQrMode, requiredQrMode } from '../../utils/qr-target.helpers';
 import { uploadQrFile } from '../../utils/qr-file.helpers';
 import { getQrTemplates, requireTemplateId } from '../../utils/qr-templates.helpers';
+import {
+	executeListQrTemplates,
+	executeQrRender,
+	executeQrScannabilityCheck,
+	getQrPrintPresets,
+} from '../../utils/qr-render.helpers';
+import { QR_RENDER_PROPERTIES } from '../../utils/qr-render.properties';
 import { QR_CONTENT_CONFIG, QR_EVENT_TIMEZONES, toNodeOptions } from '../../utils/qr-content.config';
 import type { ILinkToolAdditionalFields } from '../../types/common';
 import type {
@@ -110,7 +117,7 @@ export class Posty5QrCode implements INodeType {
 		version: [1, 2],
 		defaultVersion: 2,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["qrType"]}}',
-		description: 'Create and manage QR codes with Posty5. v1 is legacy: update and delete overwrite (last write wins)',
+		description: 'Create, manage and render QR codes with Posty5. v1 is legacy: update and delete overwrite (last write wins)',
 		defaults: {
 			name: 'Posty5 QR Code',
 		},
@@ -129,6 +136,12 @@ export class Posty5QrCode implements INodeType {
 				type: 'options',
 				noDataExpression: true,
 				options: [
+					{
+						name: 'Check Scannability',
+						value: 'checkScannability',
+						description: 'Check whether a QR code or template will scan, optionally at a print size',
+						action: 'Check scannability of a QR code',
+					},
 					{
 						name: 'Create',
 						value: 'create',
@@ -170,6 +183,18 @@ export class Posty5QrCode implements INodeType {
 						value: 'list',
 						description: 'List all QR codes',
 						action: 'List QR codes',
+					},
+					{
+						name: 'List Templates',
+						value: 'listTemplates',
+						description: 'List your QR templates or the public ones, for the Template field',
+						action: 'List QR code templates',
+					},
+					{
+						name: 'Render',
+						value: 'render',
+						description: 'Download a QR code as a PNG, SVG or PDF file (binary)',
+						action: 'Render a QR code',
 					},
 					{
 						name: 'Update',
@@ -1100,7 +1125,7 @@ export class Posty5QrCode implements INodeType {
 				required: true,
 				displayOptions: {
 					show: {
-						operation: ['get', 'getAnalytics', 'update', 'delete'],
+						operation: ['get', 'getAnalytics', 'render', 'update', 'delete'],
 					},
 				},
 				default: '',
@@ -1193,12 +1218,16 @@ export class Posty5QrCode implements INodeType {
 			// Create Many operation fields (shared with the other link-tool node)
 			...buildLinkBulkProperties(false),
 			...buildVersionedWriteProperties(['update', 'delete']),
+
+			// Render, Check Scannability and List Templates operation fields
+			...QR_RENDER_PROPERTIES,
 		],
 	};
 
 	methods = {
 		loadOptions: {
 			getQrTemplates,
+			getQrPrintPresets,
 		},
 	};
 
@@ -1223,7 +1252,17 @@ export class Posty5QrCode implements INodeType {
 			try {
 				let responseData: any = {};
 
-				if (operation === 'create') {
+				// Render answers a file: its item carries the binary, not a json array.
+				if (operation === 'render') {
+					returnData.push(await executeQrRender(this, apiKey, i));
+					continue;
+				}
+
+				if (operation === 'checkScannability') {
+					responseData = await executeQrScannabilityCheck(this, apiKey, i);
+				} else if (operation === 'listTemplates') {
+					responseData = await executeListQrTemplates(this, apiKey, i);
+				} else if (operation === 'create') {
 					const qrType = this.getNodeParameter('qrType', i) as string;
 					const additionalFields = this.getNodeParameter('additionalFields', i, {}) as ILinkToolAdditionalFields;
 					const name = firstText(this.getNodeParameter('name', i, ''));
