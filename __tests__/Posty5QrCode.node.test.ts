@@ -515,13 +515,13 @@ describe('Posty5QrCode', () => {
 			);
 		}
 
-		it('should offer Mode on Create (default static) and Update (default keep), hidden for Wi-Fi', () => {
+		it('should offer Mode on Create (default static) and Update (default keep), hidden for Wi-Fi and the dynamic-only types', () => {
 			const modes = qrCodeNode.description.properties.filter((p) => p.name === 'mode');
 			expect(modes.map((p) => [p.displayOptions?.show?.operation, p.default])).toEqual([
 				[['create', 'createMany'], 'static'],
 				[['update'], ''],
 			]);
-			for (const mode of modes) expect(mode.displayOptions?.hide?.qrType).toEqual(['wifi']);
+			for (const mode of modes) expect(mode.displayOptions?.hide?.qrType).toEqual(['wifi', 'appStore', 'file']);
 		});
 
 		it('should not send mode on Create when it is unset (saved workflows) or static', async () => {
@@ -591,13 +591,20 @@ describe('Posty5QrCode', () => {
 			return mockExecuteFunctions;
 		}
 
-		it('should show Scan Rules on Create only for Dynamic, on Update always, never for Wi-Fi', () => {
+		it('should show Scan Rules on Create for Dynamic or a dynamic-only type, on Update always, never for Wi-Fi', () => {
 			const props = qrCodeNode.description.properties.filter((p) => p.name === 'scanRules');
-			expect(props.map((p) => [p.displayOptions?.show?.operation, p.displayOptions?.show?.mode])).toEqual([
-				[['create'], ['dynamic']],
-				[['update'], undefined],
+			expect(
+				props.map((p) => [
+					p.displayOptions?.show?.operation,
+					p.displayOptions?.show?.mode,
+					p.displayOptions?.show?.qrType,
+					p.displayOptions?.hide?.qrType,
+				]),
+			).toEqual([
+				[['create'], ['dynamic'], undefined, ['wifi', 'appStore', 'file']],
+				[['create'], undefined, ['appStore', 'file'], undefined],
+				[['update'], undefined, undefined, ['wifi']],
 			]);
-			for (const prop of props) expect(prop.displayOptions?.hide?.qrType).toEqual(['wifi']);
 		});
 
 		it('should send access on a dynamic Create', async () => {

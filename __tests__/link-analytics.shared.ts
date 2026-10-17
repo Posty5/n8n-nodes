@@ -192,7 +192,7 @@ export function describeGetAnalyticsOperation({
 			});
 
 			const failure = node.execute!.call(mockExecuteFunctions as any);
-			await expect(failure).rejects.not.toBeInstanceOf(NodeApiError);
+			await expect(failure).rejects.toMatchObject({ httpCode: '400',apiMessage: notFoundMessage });
 			await expect(failure).rejects.toThrow(`Posty5 API Error: ${notFoundMessage}`);
 		});
 
