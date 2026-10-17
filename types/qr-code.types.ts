@@ -443,6 +443,67 @@ export interface IQRCodeTemplateLookupPage {
 	};
 }
 
+/** Query of `GET /api/qr-code/:id/render`. */
+export interface IQRCodeRenderQuery {
+	format: string;
+	presetId?: string;
+	customMm?: number;
+	dpi?: number;
+	sizePx?: number;
+	download?: string;
+}
+
+/** Body of `POST /api/qr-code/scannability-check` from the node: one saved source. */
+export interface IQRCodeScannabilityRequest {
+	qrCodeId?: string;
+	templateId?: string;
+	text?: string;
+	presetId?: string;
+	customMm?: number;
+}
+
+/** One check of the scannability report (K5). */
+export interface IQRCodeScannabilityCheck {
+	code: string;
+	status: 'good' | 'warning' | 'poor';
+	value: number;
+	thresholds: { warning: number | null; poor: number | null };
+	messageKey: string;
+	message: string;
+}
+
+/** `POST /api/qr-code/scannability-check` result (K5). */
+export interface IQRCodeScannabilityReport {
+	verdict: 'good' | 'warning' | 'poor';
+	checks: IQRCodeScannabilityCheck[];
+	symbol: { version: number; size: number; ecLevel: string; quietZoneModules: number; moduleSizeMm?: number };
+}
+
+/** One print preset of the design catalogue: a fixed `mm`, or `custom` with a range. */
+export interface IQRPrintPreset {
+	id: string;
+	labelKey?: string;
+	mm?: number;
+	minMm?: number;
+	maxMm?: number;
+}
+
+/** The part of `GET /api/qr-code-template/design-catalogue` the node reads. */
+export interface IQRDesignCatalogue {
+	printPresets?: IQRPrintPreset[];
+}
+
+/** The json of a *Render* output item (the file is in its binary property). */
+export interface IQRCodeRenderOutput {
+	qrCodeId: string;
+	format: string;
+	presetId: string | null;
+	fileName: string;
+	mimeType: string;
+	fileSize: number;
+	binaryProperty: string;
+}
+
 // Response type aliases
 export type ICreateQRCodeResponse = IQRCode;
 export type IUpdateQRCodeResponse = IQRCode;

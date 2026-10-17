@@ -1,5 +1,28 @@
 # Changelog
 
+## 5.1.0 - Unreleased
+
+Additive (QR design and export). Publish date: _to be recorded at publish_.
+
+### Added
+
+- **Posty5 QR Code › Render** (v1 and v2): `GET /api/qr-code/:id/render` →
+  the QR code as a PNG, SVG or PDF **binary** (default field `data`) the next
+  node can attach, upload or post. Format, Print Preset (loaded from
+  `GET /api/qr-code-template/design-catalogue`, incl. Custom width in mm), DPI
+  (PNG at a preset) and Size (Px) (no preset). File name from the API's
+  `Content-Disposition`; json `{ qrCodeId, format, presetId, fileName,
+  mimeType, fileSize, binaryProperty }`. SVG/PDF/presets/DPI/PNG over 2048 px
+  need a paid plan: the API's 403 text is shown unchanged.
+- **Posty5 QR Code › Check Scannability**: `POST /api/qr-code/scannability-check`
+  for a saved QR code or a template (optional sample text and print preset) →
+  the `{ verdict, checks, symbol }` report.
+- **Posty5 QR Code › List Templates**: My Templates (`user-lookup`) or Public
+  Templates (`public-lookup`), Search and Limit → `{ _id, name }` rows.
+- `makeBinaryApiRequest` and `parseContentDispositionFileName`
+  (`utils/api.helpers.ts`): a GET kept as bytes; a failed request's JSON body is
+  decoded so the error keeps the API message.
+
 ## 5.0.0 - Unreleased
 
 Not yet published (it also carries the unreleased 4.7.0 work below). Publish

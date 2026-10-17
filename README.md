@@ -126,6 +126,9 @@ Generate QR codes for 14 different types.
 | Update | Reads the QR code, then saves the content you enter with everything else kept. Template may stay empty to keep the current one; Mode defaults to Keep Current. |
 | Create Many | One QR code per input item in batched calls (up to 100 rows per request): QR Type and its fields, Name, Mode, Template, Row Fields (Tag, Reference ID), **Defaults** and Options (Batch Size, Fail on Any Row Error). See [Create Many](#create-many-short-link-and-qr-code). |
 | Delete | Remove QR codes. |
+| Render | Downloads a QR code as a **file** in a binary field (default `data`) for the next node to email, upload or post. **Format** PNG / SVG / PDF; **Print Preset** (loaded from the design catalogue: Sticker 3cm, Business Card, Flyer 5cm, Table Tent 8cm, Poster 15cm, Custom 20–500 mm) with **DPI** 150 / 300 / 600 for PNG; with no preset, **Size (Px)** for PNG and SVG. The json carries `qrCodeId`, `format`, `presetId`, `fileName`, `mimeType`, `fileSize`. |
+| Check Scannability | A report on whether a saved QR code (as rendered) or a template will scan: `verdict` (`good` / `warning` / `poor`), `checks` (contrast, inverted colours, logo coverage, quiet zone, module size, dot scale) and `symbol`. A Print Preset adds the module size in mm. It only warns. |
+| List Templates | `{ _id, name }` rows of **My Templates** or **Public Templates**, filtered by Search, up to Limit: the IDs the Template field takes. |
 
 The design comes from the template, and Posty5 builds the encoded text from the
 content fields: the node sends the content as `qrCodeTarget` and nothing else.
@@ -154,6 +157,13 @@ sent to the storage URL), then creates the code with the returned
 `bucketFilePath`. *File Name* overrides the binary's name. On Update, leave
 Binary Property empty to keep the stored file. Create Many does not offer File:
 the bulk route cannot upload.
+
+**Render and plans.** Plain PNG up to 2048 px works on every plan. SVG, PDF, a
+print preset, a DPI or a PNG over 2048 px need Starter or higher; otherwise the
+node fails with the API's message (*This feature is not available on your
+current plan.*), or outputs it as `error` with *Continue On Fail*. Rendering
+costs no credits. PDF with no preset prints at Flyer 5cm. The file is named by
+the API (`<name>-<preset or size>.<ext>`).
 
 ### Create Many (Short Link and QR Code)
 
@@ -475,7 +485,9 @@ Posty5 Short Link (Create)
   ↓
 Posty5 QR Code (Create URL type)
   ↓
-Send Email (with QR code)
+Posty5 QR Code (Render, Format PDF, Print Preset Flyer 5cm; QR Code ID = {{ $json._id }})
+  ↓
+Send Email (Attachments: data)
 ```
 
 ### Example 2: Form Submission → Email Notification

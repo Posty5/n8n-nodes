@@ -64,6 +64,14 @@
       "role": "uploadQrFile: file QR upload from an n8n binary property: type/size pre-check, POST /api/qr-code/file/upload-url, PUT to the signed URL without the API key; returns bucketFilePath"
     },
     {
+      "path": "utils/qr-render.helpers.ts",
+      "role": "QR Code Render (binary PNG/SVG/PDF via makeBinaryApiRequest + prepareBinaryData), Check Scannability (POST /api/qr-code/scannability-check), List Templates (user-lookup / public-lookup), getQrPrintPresets loadOptions (design-catalogue printPresets)"
+    },
+    {
+      "path": "utils/qr-render.properties.ts",
+      "role": "QR_RENDER_PROPERTIES: Render / Check Scannability / List Templates parameters of the QR Code node"
+    },
+    {
       "path": "utils/link-tool.helpers.ts",
       "role": "Short Link + QR Code body pieces: create fields, fetch-then-put update merge, page info, Android/iOS URL fields"
     },
