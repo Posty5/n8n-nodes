@@ -63,7 +63,7 @@ Create and manage shortened URLs. Each link counts its visits.
 | Get | Retrieve link details, including its visit count and Android/iOS URLs. |
 | Get Analytics | Visits, unique visitors and bot visits over a range, a series by day/week/month, and breakdowns (country, device, OS, browser, referrer, channel = click or scan, language). See [Get Analytics](#get-analytics-short-link-and-qr-code). |
 | Get Statistics | Counts over all your short links: totals, visits per day, links created per day, top 10 links by visits. See [Get Statistics](#get-statistics-short-link-and-qr-code). |
-| List | Filters: Search (name), Destination URL Contains, Tag, Reference ID, Landing Page Enabled. |
+| List | Filters: Search (name), Destination URL Contains, Tag, Reference ID, Landing Page Enabled, Created From Date / Created To Date (`YYYY-MM-DD`, applied only as a pair, whole UTC days). |
 | Update | Reads the link, then saves it with your changes on top: anything you leave alone keeps its stored value. Template may stay empty to keep the current one. Destination URL is under Additional Fields. The Custom Slug cannot be changed. |
 | Create Many | One short link per input item in batched calls (up to 100 rows per request): Destination URL, Name, Custom Slug, Template, Row Fields (Tag, Reference ID), **Defaults** (Template ID, Tag, Reference ID) and Options (Batch Size, Fetch Page Metadata, Fail on Any Row Error). See [Create Many](#create-many-short-link-and-qr-code). |
 | Delete | Remove links. |
@@ -122,7 +122,7 @@ Generate QR codes for 14 different types.
 | Get | Retrieve QR code details. |
 | Get Analytics | Scans, unique visitors and bot visits over a range, a series and breakdowns, as on the Short Link node. See [Get Analytics](#get-analytics-short-link-and-qr-code). |
 | Get Statistics | Counts over all your QR codes, as on the Short Link node (top list `topQRCodes`). See [Get Statistics](#get-statistics-short-link-and-qr-code). |
-| List | Filters: Search (name), Tag, Reference ID, Mode. |
+| List | Filters: Search (name), Tag, Reference ID, Mode, Created From Date / Created To Date (`YYYY-MM-DD`, applied only as a pair, whole UTC days). |
 | Update | Reads the QR code, then saves the content you enter with everything else kept. Template may stay empty to keep the current one; Mode defaults to Keep Current. |
 | Create Many | One QR code per input item in batched calls (up to 100 rows per request): QR Type and its fields, Name, Mode, Template, Row Fields (Tag, Reference ID), **Defaults** and Options (Batch Size, Fail on Any Row Error). See [Create Many](#create-many-short-link-and-qr-code). |
 | Delete | Remove QR codes. |
@@ -235,7 +235,7 @@ Host static HTML pages with CDN delivery.
 - Update from File - Update with new file
 - Update from GitHub - Sync from GitHub
 - Get - Retrieve page details
-- List - List all pages
+- List - List all pages (Filters: Search, Tag, Reference ID, Created From Date / Created To Date (`YYYY-MM-DD`, applied only as a pair, whole UTC days).)
 - Delete - Remove pages
 - Clear Cache - Purge CDN cache
 - Get Form IDs - Extract form IDs from page
@@ -309,7 +309,7 @@ Publish creator-owned videos to connected social media platforms. TikTok publish
 - Quote Long Video - Price a video before publishing it
 - Reschedule Post - Move a not-yet-published post, or send it now (free)
 - Get Post Status - Check publishing progress
-- List Posts - View all posts
+- List Posts - View a workspace's posts (Filters: Created From Date / Created To Date (`YYYY-MM-DD`, applied only as a pair, whole UTC days).)
 - Get Default Settings - Retrieve platform defaults
 
 **Long video (up to 60 minutes):**

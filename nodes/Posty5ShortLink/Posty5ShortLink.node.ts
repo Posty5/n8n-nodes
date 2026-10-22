@@ -10,6 +10,8 @@ import { buildVersionedWriteProperties, resolveWriteVersion } from '../../utils/
 import { executeGetAnalytics, executeGetStatistics } from '../../utils/analytics.helpers';
 import { LINK_ANALYTICS_PROPERTIES, LINK_STATISTICS_PROPERTIES } from '../../utils/analytics.properties';
 import { API_ENDPOINTS } from '../../utils/constants';
+import { createdAtRangeQuery } from '../../utils/date.helpers';
+import { CREATED_AT_RANGE_FILTERS } from '../../utils/list-date-filter.properties';
 import { executeBulkCreate, prepareBulkRows, readBulkDefaults } from '../../utils/link-bulk.helpers';
 import { buildLinkBulkProperties } from '../../utils/link-bulk.properties';
 import { buildShortLinkBulkRow, shortLinkBulkRoute } from './helpers';
@@ -441,6 +443,7 @@ export class Posty5ShortLink implements INodeType {
 						description: 'Filter by one tag. Kept for saved workflows: use Tags.',
 					},
 					...SHORT_LINK_CONTROL_LIST_FILTERS,
+					...CREATED_AT_RANGE_FILTERS,
 				],
 			},
 
@@ -681,7 +684,7 @@ export class Posty5ShortLink implements INodeType {
 
 					// Each filter narrows the list (the API ANDs them), so Search matches
 					// the name only and the destination URL has a filter of its own.
-					const qs: IListParams = {};
+					const qs: IListParams = createdAtRangeQuery(filters);
 					const tag = firstText(filters.tag);
 					const refId = firstText(filters.refId);
 					const name = firstText(filters.search);

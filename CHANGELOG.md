@@ -1,5 +1,32 @@
 # Changelog
 
+## 5.2.0 - Unreleased
+
+Additive (list date filters, redesign-dashboards SDK-03). Needs the API release
+with the list date filters (API-03) for Short Link, QR Code and HTML Hosting;
+the post list has always accepted them. Publish date: _to be recorded at
+publish_.
+
+### Added
+
+- **Created From Date** / **Created To Date** in the **Filters** of
+  *Posty5 Short Link › List*, *Posty5 QR Code › List* and *Posty5 HTML Hosting ›
+  List*, and in a new **Filters** collection on *Posty5 Social Publisher Post ›
+  List Posts* (alongside the unchanged Workspace ID, Return All and Limit).
+  `YYYY-MM-DD` text fields (`type: 'string'`, as on the Store node, so no time
+  is added); a date value from an expression is sent as its day. Sent as
+  `fromDate` / `toDate` only when set; the API applies the created-at window
+  only when both are sent, in whole UTC days.
+- `CREATED_AT_RANGE_FILTERS` (`utils/list-date-filter.properties.ts`) and
+  `createdAtRangeQuery` (`utils/date.helpers.ts`), shared by the four nodes.
+
+### Node versions
+
+No node version bump: the fields are optional collection entries, so saved
+workflows load and run unchanged (same defaults, nothing new required). This
+follows 5.1.0's QR Code *Render*, added to v1 and v2 alike; v2 exists only for
+the versioned-writes behaviour change.
+
 ## 5.1.0 - Unreleased
 
 Additive (QR design and export). Publish date: _to be recorded at publish_.

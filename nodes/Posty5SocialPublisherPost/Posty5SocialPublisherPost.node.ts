@@ -7,6 +7,9 @@ import {
 import { makeApiRequest, makePaginatedRequest, uploadFile } from '../../utils/api.helpers';
 import { buildVersionedWriteProperties, resolveWriteVersion } from '../../utils/versioned-write.helpers';
 import { API_ENDPOINTS } from '../../utils/constants';
+import { createdAtRangeQuery } from '../../utils/date.helpers';
+import { CREATED_AT_RANGE_FILTERS } from '../../utils/list-date-filter.properties';
+import type { ICreatedAtRangeFilters } from '../../types/common';
 import { supportsResumableUpload, uploadResumable } from '../../utils/resumable-upload';
 import { buildCommentsPayload } from '../../utils/post-comments';
 
@@ -777,6 +780,19 @@ export class Posty5SocialPublisherPost implements INodeType {
 				description: 'Max number of results to return',
 			},
 			{
+				displayName: 'Filters',
+				name: 'listFilters',
+				type: 'collection',
+				placeholder: 'Add Filter',
+				default: {},
+				displayOptions: {
+					show: {
+						operation: ['listPosts'],
+					},
+				},
+				options: [...CREATED_AT_RANGE_FILTERS],
+			},
+			{
 				displayName: 'Post ID',
 				name: 'deletePostId',
 				type: 'string',
@@ -1322,20 +1338,22 @@ export class Posty5SocialPublisherPost implements INodeType {
 				} else if (operation === 'listPosts') {
 					const workspaceId = this.getNodeParameter('listWorkspaceId', i) as string;
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
+					const listFilters = this.getNodeParameter('listFilters', i, {}) as ICreatedAtRangeFilters;
+					const qs = { workspaceId, ...createdAtRangeQuery(listFilters) };
 
 					if (returnAll) {
 						responseData = await makePaginatedRequest.call(
 							this,
 							apiKey,
 							API_ENDPOINTS.SOCIAL_PUBLISHER_POST,
-							{ workspaceId },
+							qs,
 						);
 					} else {
 						const limit = this.getNodeParameter('limit', i, 50) as number;
 						const result: any = await makeApiRequest.call(this, apiKey, {
 							method: 'GET',
 							endpoint: API_ENDPOINTS.SOCIAL_PUBLISHER_POST,
-							qs: { workspaceId, page: 1, pageSize: limit },
+							qs: { ...qs, page: 1, pageSize: limit },
 						});
 						responseData = result.items;
 					}

@@ -4,6 +4,7 @@
  * through here (AI_RULES §3).
  */
 
+import type { ICreatedAtRangeFilters } from '../types/common';
 import { DAY_KEY_PATTERN, MS_PER_DAY } from './constants';
 
 /**
@@ -59,4 +60,28 @@ export function parseDayKey(value: unknown): string | undefined {
 		return isoDate ? parseDayKey(isoDate) : undefined;
 	}
 	return undefined;
+}
+
+/**
+ * The list operations' *Created From Date* / *Created To Date* filters as query
+ * keys: each one only when it is set. A value that names a day (see
+ * `parseDayKey`) is sent as that day key; any other text is sent as typed, so
+ * the API, not the node, decides what it accepts. The pair is not enforced:
+ * the API ignores a lone bound.
+ */
+export function createdAtRangeQuery(filters: ICreatedAtRangeFilters | undefined): ICreatedAtRangeFilters {
+	const query: ICreatedAtRangeFilters = {};
+	const fromDate = toQueryDay(filters?.fromDate);
+	const toDate = toQueryDay(filters?.toDate);
+	if (fromDate) query.fromDate = fromDate;
+	if (toDate) query.toDate = toDate;
+	return query;
+}
+
+/** A date filter's value as sent: its day key, else its trimmed text; `undefined` when empty. */
+function toQueryDay(value: unknown): string | undefined {
+	const dayKey = parseDayKey(value);
+	if (dayKey) return dayKey;
+	const text = typeof value === 'string' ? value.trim() : '';
+	return text || undefined;
 }

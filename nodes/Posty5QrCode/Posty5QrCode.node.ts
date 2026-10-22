@@ -10,6 +10,8 @@ import { buildVersionedWriteProperties, resolveWriteVersion } from '../../utils/
 import { executeGetAnalytics, executeGetStatistics } from '../../utils/analytics.helpers';
 import { LINK_ANALYTICS_PROPERTIES, LINK_STATISTICS_PROPERTIES } from '../../utils/analytics.properties';
 import { API_ENDPOINTS } from '../../utils/constants';
+import { createdAtRangeQuery } from '../../utils/date.helpers';
+import { CREATED_AT_RANGE_FILTERS } from '../../utils/list-date-filter.properties';
 import { executeBulkCreate, prepareBulkRows, readBulkDefaults } from '../../utils/link-bulk.helpers';
 import { buildLinkBulkProperties } from '../../utils/link-bulk.properties';
 import { buildQrCodeBulkRow, QR_CODE_BULK_ROUTE } from './helpers';
@@ -1206,6 +1208,7 @@ export class Posty5QrCode implements INodeType {
 						default: '',
 						description: 'Search term',
 					},
+					...CREATED_AT_RANGE_FILTERS,
 				],
 			},
 
@@ -1388,7 +1391,7 @@ export class Posty5QrCode implements INodeType {
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
 					const filters = this.getNodeParameter('filters', i, {}) as any;
 
-					const qs: IListParams = {};
+					const qs: IListParams = createdAtRangeQuery(filters);
 					if (filters.tag) qs.tag = filters.tag;
 					if (filters.refId) qs.refId = filters.refId;
 					const modeFilter = readQrMode(filters.mode);

@@ -3,7 +3,7 @@
  * Type definitions for Short Link operations
  */
 
-import { ILinkToolAdditionalFields, IPaginationResponse } from './common';
+import { ICreatedAtRangeFilters, ILinkToolAdditionalFields, IPaginationResponse } from './common';
 import type { IShortLinkControlBody, IShortLinkControlFields } from './short-link-controls.types';
 
 /**
@@ -18,7 +18,7 @@ export interface IShortLinkAdditionalFields extends ILinkToolAdditionalFields, I
 }
 
 /** The Short Link node's List filters. */
-export interface IShortLinkListFilters {
+export interface IShortLinkListFilters extends ICreatedAtRangeFilters {
 	tag?: string;
 	/** Comma-separated. */
 	tags?: string;
@@ -191,9 +191,10 @@ export interface IUpdateShortLinkRequest extends IShortLinkControlBody {
 }
 
 /**
- * List parameters for filtering
+ * List parameters for filtering. `fromDate` / `toDate` are the created-at window (`YYYY-MM-DD`,
+ * applied by the API only as a pair).
  */
-export interface IListParams {
+export interface IListParams extends ICreatedAtRangeFilters {
 	baseUrl?: string;
 	name?: string;
 	'pageInfo.title'?: string;

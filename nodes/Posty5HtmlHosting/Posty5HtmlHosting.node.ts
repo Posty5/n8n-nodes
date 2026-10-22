@@ -7,6 +7,8 @@ import {
 import { makeApiRequest, makePaginatedRequest, uploadFile } from '../../utils/api.helpers';
 import { buildVersionedWriteProperties, resolveWriteVersion } from '../../utils/versioned-write.helpers';
 import { API_ENDPOINTS } from '../../utils/constants';
+import { createdAtRangeQuery } from '../../utils/date.helpers';
+import { CREATED_AT_RANGE_FILTERS } from '../../utils/list-date-filter.properties';
 import type { IListParams } from '../../types/html-hosting.types';
 
 export class Posty5HtmlHosting implements INodeType {
@@ -284,6 +286,7 @@ export class Posty5HtmlHosting implements INodeType {
 						default: '',
 						description: 'Search term',
 					},
+					...CREATED_AT_RANGE_FILTERS,
 				],
 			},
 			...buildVersionedWriteProperties(['updateFromFile', 'updateFromGithub', 'delete']),
@@ -428,7 +431,7 @@ export class Posty5HtmlHosting implements INodeType {
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
 					const filters = this.getNodeParameter('filters', i, {}) as any;
 
-					const qs: IListParams = {};
+					const qs: IListParams = createdAtRangeQuery(filters);
 					if (filters.tag) qs.tag = filters.tag;
 					if (filters.refId) qs.refId = filters.refId;
 					if (filters.search) {

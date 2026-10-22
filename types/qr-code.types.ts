@@ -3,7 +3,7 @@
  * Type definitions for QR Code operations
  */
 
-import { IPaginationResponse } from './common';
+import { ICreatedAtRangeFilters, IPaginationResponse } from './common';
 
 /**
  * QR Code status type
@@ -403,9 +403,10 @@ export interface IQRCodeWriteRequest {
 export type QrParameterReader = (name: string, fallback?: unknown) => unknown;
 
 /**
- * List parameters for searching QR codes
+ * List parameters for searching QR codes. `fromDate` / `toDate` are the created-at window (`YYYY-MM-DD`,
+ * applied by the API only as a pair).
  */
-export interface IListParams {
+export interface IListParams extends ICreatedAtRangeFilters {
 	name?: string;
 	qrCodeId?: string;
 	templateId?: string;
