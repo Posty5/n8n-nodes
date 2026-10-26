@@ -35,6 +35,22 @@ The other nodes and the *Posty5 API* credential are unchanged.
 - `package-lock.json`: `npm audit fix` updates of development dependencies
   (n8n-workflow 1.120.33, lodash, form-data, handlebars, js-yaml, flatted and
   others). The package still has no runtime dependencies.
+- Development toolchain: `@typescript-eslint` 8 and `eslint-plugin-n8n-nodes-base`
+  2 (the 1.x plugin pulled in the vulnerable `@typescript-eslint` 6), and an
+  `overrides` pin of `form-data` to `^4.0.6`. What `npm audit` still reports is
+  one zod advisory inside the `n8n-workflow` types package, which tests replace
+  with a mock; n8n-workflow 2.x does not clear it and needs Node 24 to build.
+- The publish workflow pins `actions/checkout` and `actions/setup-node` to
+  commit SHAs, and build tarballs (`*.tgz`) are no longer tracked.
+
+### Changed
+
+- n8n lint clean (0 errors): option and collection lists alphabetized,
+  *Create From File* / *Create From GitHub* / *Update From File* / *Update From
+  GitHub* (HTML Hosting) and *Get post status* / *List posts* (Social Publisher
+  Post) relabelled, an email placeholder on the QR Code *Email Address*, and the
+  credential's API key description links to Posty5 Studio. Labels only: saved
+  workflows keep their values.
 
 ## 5.2.0 - Unreleased
 

@@ -230,10 +230,10 @@ Host static HTML pages with CDN delivery.
 
 **Operations:**
 
-- Create from File - Upload HTML file
-- Create from GitHub - Deploy from GitHub URL
-- Update from File - Update with new file
-- Update from GitHub - Sync from GitHub
+- Create From File - Upload HTML file
+- Create From GitHub - Deploy from GitHub URL
+- Update From File - Update with new file
+- Update From GitHub - Sync from GitHub
 - Get - Retrieve page details
 - List - List all pages (Filters: Search, Tag, Reference ID, Created From Date / Created To Date (`YYYY-MM-DD`, applied only as a pair, whole UTC days).)
 - Delete - Remove pages

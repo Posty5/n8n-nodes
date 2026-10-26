@@ -122,6 +122,7 @@ export const LINK_ANALYTICS_PROPERTIES: INodeProperties[] = [
 					maxValue: LINK_ANALYTICS.LIMIT_MAX,
 				},
 				default: LINK_ANALYTICS.LIMIT_DEFAULT,
+				// eslint-disable-next-line n8n-nodes-base/node-param-description-wrong-for-limit -- a per-breakdown row limit, not a result count
 				description: 'Rows per breakdown, 1 to 50 (API default 10); the rest is summed into an "other" row',
 			},
 			{

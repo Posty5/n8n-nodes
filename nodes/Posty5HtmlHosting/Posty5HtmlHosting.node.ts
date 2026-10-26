@@ -40,40 +40,23 @@ export class Posty5HtmlHosting implements INodeType {
 				noDataExpression: true,
 				options: [
 					{
-						name: 'Create from File',
+						name: 'Clear Cache',
+						value: 'clearCache',
+						description: 'Clear CDN cache for page',
+						action: 'Clear page cache',
+					},
+					{
+						name: 'Create From File',
 						value: 'createFromFile',
 						description: 'Create HTML page from file upload',
 						action: 'Create HTML page from file',
 					},
 					{
-						name: 'Create from GitHub',
+						name: 'Create From GitHub',
 						value: 'createFromGithub',
 						description: 'Create HTML page from GitHub URL',
+						// eslint-disable-next-line n8n-nodes-base/node-param-operation-option-action-miscased -- proper noun
 						action: 'Create HTML page from GitHub',
-					},
-					{
-						name: 'Update from File',
-						value: 'updateFromFile',
-						description: 'Update HTML page with new file',
-						action: 'Update HTML page from file',
-					},
-					{
-						name: 'Update from GitHub',
-						value: 'updateFromGithub',
-						description: 'Update HTML page from GitHub URL',
-						action: 'Update HTML page from GitHub',
-					},
-					{
-						name: 'Get',
-						value: 'get',
-						description: 'Get HTML page details',
-						action: 'Get HTML page',
-					},
-					{
-						name: 'List',
-						value: 'list',
-						description: 'List all HTML pages',
-						action: 'List HTML pages',
 					},
 					{
 						name: 'Delete',
@@ -82,16 +65,36 @@ export class Posty5HtmlHosting implements INodeType {
 						action: 'Delete HTML page',
 					},
 					{
-						name: 'Clear Cache',
-						value: 'clearCache',
-						description: 'Clear CDN cache for page',
-						action: 'Clear page cache',
+						name: 'Get',
+						value: 'get',
+						description: 'Get HTML page details',
+						action: 'Get HTML page',
 					},
 					{
 						name: 'Get Form IDs',
 						value: 'getFormIds',
 						description: 'Get all form IDs from a page',
+						// eslint-disable-next-line n8n-nodes-base/node-param-operation-option-action-miscased -- proper noun
 						action: 'Get form IDs',
+					},
+					{
+						name: 'List',
+						value: 'list',
+						description: 'List all HTML pages',
+						action: 'List HTML pages',
+					},
+					{
+						name: 'Update From File',
+						value: 'updateFromFile',
+						description: 'Update HTML page with new file',
+						action: 'Update HTML page from file',
+					},
+					{
+						name: 'Update From GitHub',
+						value: 'updateFromGithub',
+						description: 'Update HTML page from GitHub URL',
+						// eslint-disable-next-line n8n-nodes-base/node-param-operation-option-action-miscased -- proper noun
+						action: 'Update HTML page from GitHub',
 					},
 				],
 				default: 'createFromFile',
