@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-19",
+  "generated_at": "2026-10-26",
   "project": "n8n-nodes",
   "modules": [
     {
@@ -36,11 +36,6 @@
       "name": "social-post",
       "purpose": "Publish video/image, inspect status/list/default settings.",
       "primary_path": "nodes/Posty5SocialPublisherPost/Posty5SocialPublisherPost.node.ts"
-    },
-    {
-      "name": "store",
-      "purpose": "Dropshipping: suppliers, supplier products and imports, product links, supplier orders, order parts. Properties split per resource under descriptions/.",
-      "primary_path": "nodes/Posty5Store/Posty5Store.node.ts"
     },
     {
       "name": "api-utils",

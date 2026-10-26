@@ -4,7 +4,7 @@
  * Post `listPosts`), spread into each node's Filters collection. Read by
  * `createdAtRangeQuery` in `date.helpers.ts`.
  *
- * `type: 'string'`, as on the Store node, so n8n's date picker adds no time.
+ * `type: 'string'`, so n8n's date picker adds no time.
  */
 
 import type { INodeProperties } from 'n8n-workflow';

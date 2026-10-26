@@ -391,62 +391,7 @@ The older single **Comment** collection still works and is marked deprecated. It
 is mapped into the first entry of **Comments** when that is empty, and the two
 are never sent together — the API refuses a request carrying both.
 
-### 8. Posty5 Store
-
-Dropshipping with a Posty5 store: watch the orders sent to suppliers, act on a
-paused one, import supplier products and follow each part of an order.
-
-**Resources and operations:**
-
-- **Supplier** — Get Catalogue, Get Many (connections), Test, Get Balance
-- **Supplier Product** — Get Many (browse), Get, Resolve URL, Preview Import, Import, Get Import Status
-- **Product Link** — Get Many, Sync
-- **Supplier Order** — Get Many (Return All or Limit; filters Needs Review, Status, Order ID, Supplier Connection ID, Cursor), Get, Retry (option Accept New Cost), Pay, Cancel
-- **Fulfilment Group** (an order part, addressed by order ID + part key) — Submit (option Pay Now), Fulfil Manually
-- **Order** — Get (option **Split Parts**: one item per part, with its supplier order), Get Many (filter Needs Attention)
-
-**Use Cases:**
-
-- Alert a channel when a supplier order needs attention, and retry it automatically when the cause is fixable
-- Import supplier products from a spreadsheet of product IDs
-- Push tracking numbers of shipped parts to a sheet or a customer message
-
-> **No store trigger yet.** The API does not push supplier-order events to
-> merchants (Posty5 Trigger covers link visits, QR scans and milestones), so a
-> store trigger would only poll. Use a **Schedule Trigger** with **Supplier Order → Get
-> Many** (Example 5) — every 15 minutes matches how often Posty5 itself checks
-> suppliers for updates.
->
-> **What the node will not do:** connect a supplier, change its credentials or
-> automation, or build a product link. Those stay in the store's control panel —
-> a supplier credential in a node parameter would sit in plain text in the
-> workflow JSON.
-
-**Money and permissions:** **Pay** and **Submit → Pay Now** spend the merchant's
-balance at the supplier and need `suppliers.orders.manage`. A second **Submit**
-finds the first supplier order instead of creating another; **Pay** on an order
-already paid at the supplier records it and does not pay again. **Import** is
-charged like adding products; nothing else here is charged. **Retry**, **Pay** and
-**Submit** answer a paused outcome as an error — use *Continue On Fail* to keep
-the reason in the item.
-
-**Pagination:** each **Get Many** outputs one item per row. **Supplier Product
-→ Get Many** (the supplier's catalogue) takes **Page** and **Limit**.
-**Supplier Order → Get Many** and **Order → Get Many** page by cursor: they take
-a **Limit** (sent as `pageSize`) and a **Cursor** filter, and put `nextCursor`
-on the last row they return, so the next run can continue from it. **Supplier
-Order → Get Many** also has **Return All**, which follows `nextCursor` 100 rows
-at a time until the API says there is no more (`hasMore` false).
-
-**Errors:** **Product Link → Sync** runs at most once a minute per link; a second
-run inside that minute fails with `Posty5 API Error: This product was synced a
-moment ago…` (an HTTP 400, not a 429) — wait a minute and run again. A 403 on
-**Pay** or **Submit → Pay Now** means the API key lacks
-`suppliers.orders.manage`; elsewhere, check that the store's plan includes
-dropshipping. **Supplier Product → Get Many** takes at most 48 rows a page and
-**Supplier Order → Get Many** at most 100; the API refuses a larger Limit.
-
-### 9. Posty5 Trigger
+### 8. Posty5 Trigger
 
 Starts a workflow when a short link is visited, a QR code is scanned or a
 visit/scan milestone is reached. Activating the workflow registers a Posty5
@@ -539,41 +484,7 @@ Posty5 Short Link (Create)
 Slack Notification (with short URL)
 ```
 
-### Example 5: Needs-Attention Alerts
-
-Hear about a paused supplier order, and retry the fixable ones:
-
-```
-Schedule Trigger (every 15 minutes)
-  ↓
-Posty5 Store (Supplier Order → Get Many, Needs Review = true)
-  ↓
-Filter (updatedAt within the last 15 minutes)
-  ↓
-Slack (order number, reviewReason, reviewMessage)
-  ↓
-IF (reviewReason = connectionUnhealthy)
-  ↓
-Posty5 Store (Supplier Order → Retry)
-```
-
-### Example 6: Import From a Spreadsheet
-
-```
-Google Sheets (rows of supplier product IDs)
-  ↓
-Posty5 Store (Supplier Product → Preview Import)
-  ↓
-IF (no row has duplicateOf)
-  ↓
-Posty5 Store (Supplier Product → Import)
-  ↓
-IF (jobId is set) → Wait → Posty5 Store (Supplier Product → Get Import Status)
-  ↓
-Email (rows with state = failed)
-```
-
-### Example 7: Weekly Top Countries to Slack
+### Example 5: Weekly Top Countries to Slack
 
 ```
 Schedule Trigger (every Monday)
@@ -583,24 +494,7 @@ Posty5 Short Link (Get Analytics: Last 7 Days, Breakdowns = Country, Breakdown R
 Slack (post totals.visits and breakdowns.country)
 ```
 
-### Example 8: Tracking Updates Per Part
-
-```
-Schedule Trigger (hourly)
-  ↓
-Posty5 Store (Order → Get Many, Status = processing)
-  ↓
-Posty5 Store (Order → Get, Split Parts = true)
-  ↓
-IF (status = shipped and shipment.trackingNumber is set)
-  ↓
-Google Sheets (append order number, part label, tracking number)
-```
-
-A supplier order carries the delivery address only when the API key's owner may
-see customer data. Forwarding the output to a third-party channel forwards it too.
-
-### Example 9: Slack Message on Click
+### Example 6: Slack Message on Click
 
 ```
 Posty5 Trigger (Short Link Visited, specific short link)
@@ -608,7 +502,7 @@ Posty5 Trigger (Short Link Visited, specific short link)
 Slack → Send Message ("{{$json.data.target.name}} opened from {{$json.data.visit.country}}")
 ```
 
-### Example 10: Sheet Rows → Short Links (Create Many)
+### Example 7: Sheet Rows → Short Links (Create Many)
 
 ```
 Google Sheets → Get Rows (800 rows)

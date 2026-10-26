@@ -40,26 +40,12 @@ export const API_ENDPOINTS = {
 	FORM_SUBMISSION: '/api/html-hosting-form-submission',
 	SOCIAL_PUBLISHER_WORKSPACE: '/api/social-publisher-workspace',
 	SOCIAL_PUBLISHER_POST: '/api/social-publisher-post',
-	STORE_SUPPLIERS: '/api/store-suppliers',
-	STORE_ORDERS: '/api/store-orders',
 	WEBHOOK_ENDPOINTS: '/api/webhook-endpoints',
 } as const;
 
 export const DEFAULT_PAGINATION = {
 	page: 1,
 	pageSize: 50,
-} as const;
-
-/**
- * Page sizes the `/api/store-suppliers` list routes accept. They mirror the api's
- * Joi schemas (`suppliers/schema.ts`): a larger `pageSize` is refused with a 400,
- * not clamped, so the node's Limit fields are capped at the same values.
- */
-export const STORE_SUPPLIER_PAGE_SIZES = {
-	/** Catalogue browse (`GET /:storeId/:id/products`) — the api's `CATALOGUE_MAX_PAGE_SIZE`. */
-	CATALOGUE_MAX: 48,
-	/** Supplier order queue (`GET /:storeId/orders`). */
-	SUPPLIER_ORDERS_MAX: 100,
 } as const;
 
 /**

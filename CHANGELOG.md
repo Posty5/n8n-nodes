@@ -1,5 +1,28 @@
 # Changelog
 
+## 6.0.0 - Unreleased
+
+Breaking: the **Posty5 Store** node is removed. The Online Store Builder left
+Posty5 on 2026-10-26 (owner decision D22): it is now StorVilo (storvilo.com), a
+separate platform, and store automation (suppliers, supplier products and
+imports, product links, supplier orders, order parts, orders) now lives in the
+**`n8n-nodes-storvilo`** package (its *StorVilo* node). Ships with the Posty5 API
+release that removes the store, which waits for StorVilo's production launch.
+Publish date: _to be recorded at publish_.
+
+### Removed
+
+- *Posty5 Store* (`posty5Store`, `nodes/Posty5Store`) and its entry in
+  `package.json`'s `n8n.nodes`. A saved workflow that uses it shows the node as
+  unknown after the upgrade: replace it with the *StorVilo* node from
+  `n8n-nodes-storvilo`.
+- Its store-only code: `utils/store.helpers.ts`, `types/store.types.ts`,
+  `API_ENDPOINTS.STORE_SUPPLIERS` / `STORE_ORDERS` and
+  `STORE_SUPPLIER_PAGE_SIZES` (`utils/constants.ts`).
+- The `online-store` and `dropshipping` package keywords.
+
+The other nodes and the *Posty5 API* credential are unchanged.
+
 ## 5.2.0 - Unreleased
 
 Additive (list date filters, redesign-dashboards SDK-03). Needs the API release

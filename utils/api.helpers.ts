@@ -20,9 +20,9 @@ export interface IApiRequestOptions {
 	body?: any;
 	qs?: any;
 	/**
-	 * Add `createdFrom: 'n8n'` to a POST body (the default). The store node turns
-	 * it off for `/api/store-suppliers`: those bodies are validated by schemas that
-	 * never declared the key, and a body should not carry what its route ignores.
+	 * Add `createdFrom: 'n8n'` to a POST body (the default). Turn it off for a POST
+	 * that creates no record (a health check, an upload URL, a scannability check):
+	 * its schema never declared the key, and a body should not carry what its route ignores.
 	 */
 	stampCreatedFrom?: boolean;
 	/** Extra request headers (e.g. `Idempotency-Key`), merged over the fixed ones. */

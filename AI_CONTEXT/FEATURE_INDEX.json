@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-19",
+  "generated_at": "2026-10-26",
   "project": "n8n-nodes",
   "features": [
     {
@@ -41,11 +41,6 @@
       "name": "Social publishing",
       "owner": "social-post",
       "source": "nodes/Posty5SocialPublisherPost/Posty5SocialPublisherPost.node.ts"
-    },
-    {
-      "name": "Store dropshipping workflows",
-      "owner": "store",
-      "source": "nodes/Posty5Store/Posty5Store.node.ts"
     },
     {
       "name": "Link + QR Create Many (sync bulk create)",
