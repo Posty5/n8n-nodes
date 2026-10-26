@@ -11,7 +11,7 @@ import {
 	JsonObject,
 	NodeApiError,
 } from 'n8n-workflow';
-import { POSTY5_API_BASE_URL, Posty5ClientConst, VERSIONED_WRITES } from './constants';
+import { PATH_SEGMENT_MESSAGES, POSTY5_API_BASE_URL, Posty5ClientConst, VERSIONED_WRITES } from './constants';
 import type { IPosty5ApiError, IPosty5BinaryResponse } from '../types/common';
 
 export interface IApiRequestOptions {
@@ -96,6 +96,18 @@ export async function makeApiRequest(
 	} catch (error: any) {
 		throw toPosty5NodeApiError(this, error);
 	}
+}
+
+/**
+ * A node parameter (an ID, usually mapped from upstream data) as one URL path
+ * segment: escaped, so `/`, `?` or `#` cannot reach another route, and never
+ * `.` or `..`, which the URL parser would resolve to a parent path.
+ * @throws Error on a dot segment.
+ */
+export function encodePathSegment(value: unknown): string {
+	const segment = encodeURIComponent(String(value ?? ''));
+	if (segment === '.' || segment === '..') throw new Error(PATH_SEGMENT_MESSAGES.DOT_SEGMENT(segment));
+	return segment;
 }
 
 /**

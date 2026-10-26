@@ -4,7 +4,7 @@ import {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
+import { encodePathSegment, makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
 import { API_ENDPOINTS } from '../../utils/constants';
 
 export class Posty5SocialPublisherWorkspace implements INodeType {
@@ -120,13 +120,13 @@ export class Posty5SocialPublisherWorkspace implements INodeType {
 					const workspaceId = this.getNodeParameter('workspaceId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'GET',
-						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_WORKSPACE}/${workspaceId}`,
+						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_WORKSPACE}/${encodePathSegment(workspaceId)}`,
 					});
 				} else if (operation === 'getForNewPost') {
 					const workspaceId = this.getNodeParameter('workspaceId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'GET',
-						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_WORKSPACE}/${workspaceId}/for-new-post`,
+						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_WORKSPACE}/${encodePathSegment(workspaceId)}/for-new-post`,
 					});
 				} else if (operation === 'list') {
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;

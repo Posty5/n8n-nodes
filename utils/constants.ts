@@ -43,6 +43,11 @@ export const API_ENDPOINTS = {
 	WEBHOOK_ENDPOINTS: '/api/webhook-endpoints',
 } as const;
 
+/** Errors `encodePathSegment` raises before any request. */
+export const PATH_SEGMENT_MESSAGES = {
+	DOT_SEGMENT: (value: string) => `"${value}" is not a valid ID`,
+} as const;
+
 export const DEFAULT_PAGINATION = {
 	page: 1,
 	pageSize: 50,

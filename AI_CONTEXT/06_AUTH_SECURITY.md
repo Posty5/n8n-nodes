@@ -8,6 +8,8 @@
 - Signed upload URLs are short-lived capabilities and must not be persisted or exposed.
 - Error enhancement must avoid echoing credential headers or sensitive response bodies.
 - Public parameter names and operation values are serialized into saved n8n workflows.
+- A parameter that becomes part of a URL path (an ID) goes through `encodePathSegment` (`utils/api.helpers.ts`): escaped as one segment, `.`/`..` refused. Never interpolate a parameter into an endpoint raw.
+- A parameter holding a secret (a password, a token) carries `typeOptions: { password: true }`.
 
 ## Secret handling
 

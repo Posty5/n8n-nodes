@@ -4,7 +4,7 @@ import {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { makeApiRequest, makePaginatedRequest, uploadFile } from '../../utils/api.helpers';
+import { encodePathSegment, makeApiRequest, makePaginatedRequest, uploadFile } from '../../utils/api.helpers';
 import { buildVersionedWriteProperties, resolveWriteVersion } from '../../utils/versioned-write.helpers';
 import { API_ENDPOINTS } from '../../utils/constants';
 import { createdAtRangeQuery } from '../../utils/date.helpers';
@@ -365,9 +365,9 @@ export class Posty5HtmlHosting implements INodeType {
 
 					const updateResponse = await makeApiRequest.call(this, apiKey, {
 						method: 'PUT',
-						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}/file`,
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${encodePathSegment(htmlHostingId)}/file`,
 						body,
-						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}`),
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.HTML_HOSTING}/${encodePathSegment(htmlHostingId)}`),
 					});
 
 					// Upload file if new file URL is provided
@@ -398,34 +398,34 @@ export class Posty5HtmlHosting implements INodeType {
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'PUT',
-						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}/github`,
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${encodePathSegment(htmlHostingId)}/github`,
 						body,
-						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}`),
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.HTML_HOSTING}/${encodePathSegment(htmlHostingId)}`),
 					});
 				} else if (operation === 'get') {
 					const htmlHostingId = this.getNodeParameter('htmlHostingId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'GET',
-						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}`,
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${encodePathSegment(htmlHostingId)}`,
 					});
 				} else if (operation === 'delete') {
 					const htmlHostingId = this.getNodeParameter('htmlHostingId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'DELETE',
-						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}`,
-						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}`),
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${encodePathSegment(htmlHostingId)}`,
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.HTML_HOSTING}/${encodePathSegment(htmlHostingId)}`),
 					});
 				} else if (operation === 'clearCache') {
 					const htmlHostingId = this.getNodeParameter('htmlHostingId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'PUT',
-						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}/clean-cache`,
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${encodePathSegment(htmlHostingId)}/clean-cache`,
 					});
 				} else if (operation === 'getFormIds') {
 					const htmlHostingId = this.getNodeParameter('htmlHostingId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'GET',
-						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/lookup-froms/${htmlHostingId}`,
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/lookup-froms/${encodePathSegment(htmlHostingId)}`,
 					});
 				} else if (operation === 'list') {
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;

@@ -4,7 +4,7 @@ import {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
+import { encodePathSegment, makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
 import { buildVersionedWriteProperties, resolveWriteVersion } from '../../utils/versioned-write.helpers';
 import { API_ENDPOINTS } from '../../utils/constants';
 import type { IFormStatusType, IListParams } from '../../types/form-submission.types';
@@ -237,13 +237,13 @@ export class Posty5FormSubmission implements INodeType {
 					const submissionId = this.getNodeParameter('submissionId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'GET',
-						endpoint: `${API_ENDPOINTS.FORM_SUBMISSION}/${submissionId}`,
+						endpoint: `${API_ENDPOINTS.FORM_SUBMISSION}/${encodePathSegment(submissionId)}`,
 					});
 				} else if (operation === 'getAdjacent') {
 					const submissionId = this.getNodeParameter('submissionId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'GET',
-						endpoint: `${API_ENDPOINTS.FORM_SUBMISSION}/${submissionId}/next-previous`,
+						endpoint: `${API_ENDPOINTS.FORM_SUBMISSION}/${encodePathSegment(submissionId)}/next-previous`,
 					});
 				} else if (operation === 'changeStatus') {
 					const submissionId = this.getNodeParameter('submissionId', i) as string;
@@ -257,9 +257,9 @@ export class Posty5FormSubmission implements INodeType {
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'PUT',
-						endpoint: `${API_ENDPOINTS.FORM_SUBMISSION}/${submissionId}/status`,
+						endpoint: `${API_ENDPOINTS.FORM_SUBMISSION}/${encodePathSegment(submissionId)}/status`,
 						body,
-						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.FORM_SUBMISSION}/${submissionId}`),
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.FORM_SUBMISSION}/${encodePathSegment(submissionId)}`),
 					});
 				} else if (operation === 'list') {
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;

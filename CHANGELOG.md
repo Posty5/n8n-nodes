@@ -23,6 +23,19 @@ Publish date: _to be recorded at publish_.
 
 The other nodes and the *Posty5 API* credential are unchanged.
 
+### Security
+
+- An ID parameter is escaped as one path segment (`encodePathSegment`,
+  `utils/api.helpers.ts`) on every node and the trigger: a mapped value holding
+  `/`, `?` or `#` can no longer send the request, with the node's API key, to
+  another route, and an ID of `.` or `..` is refused before any request.
+  ObjectIds are unchanged.
+- *Posty5 QR Code* masks the WiFi *Password* field in the editor
+  (`typeOptions.password`). Saved values are kept.
+- `package-lock.json`: `npm audit fix` updates of development dependencies
+  (n8n-workflow 1.120.33, lodash, form-data, handlebars, js-yaml, flatted and
+  others). The package still has no runtime dependencies.
+
 ## 5.2.0 - Unreleased
 
 Additive (list date filters, redesign-dashboards SDK-03). Needs the API release

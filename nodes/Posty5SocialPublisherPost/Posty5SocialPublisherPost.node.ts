@@ -4,7 +4,7 @@ import {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { makeApiRequest, makePaginatedRequest, uploadFile } from '../../utils/api.helpers';
+import { encodePathSegment, makeApiRequest, makePaginatedRequest, uploadFile } from '../../utils/api.helpers';
 import { buildVersionedWriteProperties, resolveWriteVersion } from '../../utils/versioned-write.helpers';
 import { API_ENDPOINTS } from '../../utils/constants';
 import { createdAtRangeQuery } from '../../utils/date.helpers';
@@ -1052,7 +1052,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 					const bySegment = source === 'video-upload' ? 'by-file' : 'by-url';
 					const endpoint =
 						`${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/short-video/${target}/${bySegment}` +
-						(uploadedPostId ? `/${uploadedPostId}` : '');
+						(uploadedPostId ? `/${encodePathSegment(uploadedPostId)}` : '');
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'POST',
@@ -1110,7 +1110,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 
 					const endpoint =
 						`${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/image/${isWorkspace ? 'workspace' : 'account'}` +
-						(uploadedPostId ? `/${uploadedPostId}` : '');
+						(uploadedPostId ? `/${encodePathSegment(uploadedPostId)}` : '');
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'POST',
@@ -1271,7 +1271,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 					const bySegment = source === 'video-file' ? 'by-file' : 'by-url';
 					const longVideoEndpoint =
 						`${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/long-video/${target}/${bySegment}` +
-						(uploadedPostId ? `/${uploadedPostId}` : '');
+						(uploadedPostId ? `/${encodePathSegment(uploadedPostId)}` : '');
 
 					// The response carries the measured duration, the credits
 					// charged and any target dropped for exceeding its own
@@ -1315,10 +1315,10 @@ export class Posty5SocialPublisherPost implements INodeType {
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'PUT',
-						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${reschedulePostId}`,
+						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${encodePathSegment(reschedulePostId)}`,
 						body: rescheduleBody,
 						// The post has no plain `GET /:id`: its `/status` read carries `__v`.
-						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${reschedulePostId}/status`),
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${encodePathSegment(reschedulePostId)}/status`),
 					});
 				} else if (operation === 'deletePost') {
 					// Free, and irreversible for the caller: the post is gone and its
@@ -1326,14 +1326,14 @@ export class Posty5SocialPublisherPost implements INodeType {
 					const deletePostId = this.getNodeParameter('deletePostId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'DELETE',
-						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${deletePostId}`,
-						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${deletePostId}/status`),
+						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${encodePathSegment(deletePostId)}`,
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${encodePathSegment(deletePostId)}/status`),
 					});
 				} else if (operation === 'getPostStatus') {
 					const postId = this.getNodeParameter('postId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'GET',
-						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${postId}/status`,
+						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${encodePathSegment(postId)}/status`,
 					});
 				} else if (operation === 'listPosts') {
 					const workspaceId = this.getNodeParameter('listWorkspaceId', i) as string;

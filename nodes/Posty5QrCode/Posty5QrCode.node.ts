@@ -5,7 +5,7 @@ import {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
+import { encodePathSegment, makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
 import { buildVersionedWriteProperties, resolveWriteVersion } from '../../utils/versioned-write.helpers';
 import { executeGetAnalytics, executeGetStatistics } from '../../utils/analytics.helpers';
 import { LINK_ANALYTICS_PROPERTIES, LINK_STATISTICS_PROPERTIES } from '../../utils/analytics.properties';
@@ -458,6 +458,7 @@ export class Posty5QrCode implements INodeType {
 				displayName: 'Password',
 				name: 'wifiPassword',
 				type: 'string',
+				typeOptions: { password: true },
 				displayOptions: {
 					show: {
 						operation: ['create', 'createMany', 'update'],
@@ -1306,14 +1307,14 @@ export class Posty5QrCode implements INodeType {
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'POST',
-						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrType}`,
+						endpoint: `${API_ENDPOINTS.QR_CODE}/${encodePathSegment(qrType)}`,
 						body,
 					});
 				} else if (operation === 'get') {
 					const qrCodeId = this.getNodeParameter('qrCodeId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'GET',
-						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`,
+						endpoint: `${API_ENDPOINTS.QR_CODE}/${encodePathSegment(qrCodeId)}`,
 					});
 				} else if (operation === 'getAnalytics') {
 					responseData = await executeGetAnalytics(
@@ -1338,10 +1339,10 @@ export class Posty5QrCode implements INodeType {
 					// drops an omitted template type, so the stored record is the base.
 					const stored = (await makeApiRequest.call(this, apiKey, {
 						method: 'GET',
-						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`,
+						endpoint: `${API_ENDPOINTS.QR_CODE}/${encodePathSegment(qrCodeId)}`,
 					})) as IQRCodeFullDetailsResponse;
 					// Resolved before the file upload: a missing version fails with no side effect.
-					const version = await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`, stored);
+					const version = await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.QR_CODE}/${encodePathSegment(qrCodeId)}`, stored);
 
 					const body: IQRCodeWriteRequest = {
 						...buildCommonUpdateFields(additionalFields, stored),
@@ -1376,7 +1377,7 @@ export class Posty5QrCode implements INodeType {
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'PUT',
-						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrType}/${qrCodeId}`,
+						endpoint: `${API_ENDPOINTS.QR_CODE}/${encodePathSegment(qrType)}/${encodePathSegment(qrCodeId)}`,
 						body,
 						version,
 					});
@@ -1384,8 +1385,8 @@ export class Posty5QrCode implements INodeType {
 					const qrCodeId = this.getNodeParameter('qrCodeId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'DELETE',
-						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`,
-						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`),
+						endpoint: `${API_ENDPOINTS.QR_CODE}/${encodePathSegment(qrCodeId)}`,
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.QR_CODE}/${encodePathSegment(qrCodeId)}`),
 					});
 				} else if (operation === 'list') {
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
