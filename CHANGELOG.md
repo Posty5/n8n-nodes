@@ -3,19 +3,19 @@
 ## 6.0.0 - Unreleased
 
 Breaking: the **Posty5 Store** node is removed. The Online Store Builder left
-Posty5 on 2026-10-26 (owner decision D22): it is now StorVilo (storvilo.com), a
+Posty5 on 2026-10-26 (owner decision D22): it is now Storvivo (storvivo.com), a
 separate platform, and store automation (suppliers, supplier products and
 imports, product links, supplier orders, order parts, orders) now lives in the
-**`n8n-nodes-storvilo`** package (its *StorVilo* node). Ships with the Posty5 API
-release that removes the store, which waits for StorVilo's production launch.
+**`n8n-nodes-storvivo`** package (its *Storvivo* node). Ships with the Posty5 API
+release that removes the store, which waits for Storvivo's production launch.
 Publish date: _to be recorded at publish_.
 
 ### Removed
 
 - *Posty5 Store* (`posty5Store`, `nodes/Posty5Store`) and its entry in
   `package.json`'s `n8n.nodes`. A saved workflow that uses it shows the node as
-  unknown after the upgrade: replace it with the *StorVilo* node from
-  `n8n-nodes-storvilo`.
+  unknown after the upgrade: replace it with the *Storvivo* node from
+  `n8n-nodes-storvivo`.
 - Its store-only code: `utils/store.helpers.ts`, `types/store.types.ts`,
   `API_ENDPOINTS.STORE_SUPPLIERS` / `STORE_ORDERS` and
   `STORE_SUPPLIER_PAGE_SIZES` (`utils/constants.ts`).
