@@ -4,9 +4,11 @@ import {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { makeApiRequest, makePaginatedRequest, uploadFile } from '../../utils/api.helpers';
+import { encodePathSegment, makeApiRequest, makePaginatedRequest, uploadFile } from '../../utils/api.helpers';
 import { buildVersionedWriteProperties, resolveWriteVersion } from '../../utils/versioned-write.helpers';
 import { API_ENDPOINTS } from '../../utils/constants';
+import { createdAtRangeQuery } from '../../utils/date.helpers';
+import { CREATED_AT_RANGE_FILTERS } from '../../utils/list-date-filter.properties';
 import type { IListParams } from '../../types/html-hosting.types';
 
 export class Posty5HtmlHosting implements INodeType {
@@ -38,40 +40,23 @@ export class Posty5HtmlHosting implements INodeType {
 				noDataExpression: true,
 				options: [
 					{
-						name: 'Create from File',
+						name: 'Clear Cache',
+						value: 'clearCache',
+						description: 'Clear CDN cache for page',
+						action: 'Clear page cache',
+					},
+					{
+						name: 'Create From File',
 						value: 'createFromFile',
 						description: 'Create HTML page from file upload',
 						action: 'Create HTML page from file',
 					},
 					{
-						name: 'Create from GitHub',
+						name: 'Create From GitHub',
 						value: 'createFromGithub',
 						description: 'Create HTML page from GitHub URL',
+						// eslint-disable-next-line n8n-nodes-base/node-param-operation-option-action-miscased -- proper noun
 						action: 'Create HTML page from GitHub',
-					},
-					{
-						name: 'Update from File',
-						value: 'updateFromFile',
-						description: 'Update HTML page with new file',
-						action: 'Update HTML page from file',
-					},
-					{
-						name: 'Update from GitHub',
-						value: 'updateFromGithub',
-						description: 'Update HTML page from GitHub URL',
-						action: 'Update HTML page from GitHub',
-					},
-					{
-						name: 'Get',
-						value: 'get',
-						description: 'Get HTML page details',
-						action: 'Get HTML page',
-					},
-					{
-						name: 'List',
-						value: 'list',
-						description: 'List all HTML pages',
-						action: 'List HTML pages',
 					},
 					{
 						name: 'Delete',
@@ -80,16 +65,36 @@ export class Posty5HtmlHosting implements INodeType {
 						action: 'Delete HTML page',
 					},
 					{
-						name: 'Clear Cache',
-						value: 'clearCache',
-						description: 'Clear CDN cache for page',
-						action: 'Clear page cache',
+						name: 'Get',
+						value: 'get',
+						description: 'Get HTML page details',
+						action: 'Get HTML page',
 					},
 					{
 						name: 'Get Form IDs',
 						value: 'getFormIds',
 						description: 'Get all form IDs from a page',
+						// eslint-disable-next-line n8n-nodes-base/node-param-operation-option-action-miscased -- proper noun
 						action: 'Get form IDs',
+					},
+					{
+						name: 'List',
+						value: 'list',
+						description: 'List all HTML pages',
+						action: 'List HTML pages',
+					},
+					{
+						name: 'Update From File',
+						value: 'updateFromFile',
+						description: 'Update HTML page with new file',
+						action: 'Update HTML page from file',
+					},
+					{
+						name: 'Update From GitHub',
+						value: 'updateFromGithub',
+						description: 'Update HTML page from GitHub URL',
+						// eslint-disable-next-line n8n-nodes-base/node-param-operation-option-action-miscased -- proper noun
+						action: 'Update HTML page from GitHub',
 					},
 				],
 				default: 'createFromFile',
@@ -284,6 +289,7 @@ export class Posty5HtmlHosting implements INodeType {
 						default: '',
 						description: 'Search term',
 					},
+					...CREATED_AT_RANGE_FILTERS,
 				],
 			},
 			...buildVersionedWriteProperties(['updateFromFile', 'updateFromGithub', 'delete']),
@@ -362,9 +368,9 @@ export class Posty5HtmlHosting implements INodeType {
 
 					const updateResponse = await makeApiRequest.call(this, apiKey, {
 						method: 'PUT',
-						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}/file`,
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${encodePathSegment(htmlHostingId)}/file`,
 						body,
-						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}`),
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.HTML_HOSTING}/${encodePathSegment(htmlHostingId)}`),
 					});
 
 					// Upload file if new file URL is provided
@@ -395,40 +401,40 @@ export class Posty5HtmlHosting implements INodeType {
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'PUT',
-						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}/github`,
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${encodePathSegment(htmlHostingId)}/github`,
 						body,
-						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}`),
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.HTML_HOSTING}/${encodePathSegment(htmlHostingId)}`),
 					});
 				} else if (operation === 'get') {
 					const htmlHostingId = this.getNodeParameter('htmlHostingId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'GET',
-						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}`,
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${encodePathSegment(htmlHostingId)}`,
 					});
 				} else if (operation === 'delete') {
 					const htmlHostingId = this.getNodeParameter('htmlHostingId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'DELETE',
-						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}`,
-						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}`),
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${encodePathSegment(htmlHostingId)}`,
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.HTML_HOSTING}/${encodePathSegment(htmlHostingId)}`),
 					});
 				} else if (operation === 'clearCache') {
 					const htmlHostingId = this.getNodeParameter('htmlHostingId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'PUT',
-						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${htmlHostingId}/clean-cache`,
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/${encodePathSegment(htmlHostingId)}/clean-cache`,
 					});
 				} else if (operation === 'getFormIds') {
 					const htmlHostingId = this.getNodeParameter('htmlHostingId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'GET',
-						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/lookup-froms/${htmlHostingId}`,
+						endpoint: `${API_ENDPOINTS.HTML_HOSTING}/lookup-froms/${encodePathSegment(htmlHostingId)}`,
 					});
 				} else if (operation === 'list') {
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
 					const filters = this.getNodeParameter('filters', i, {}) as any;
 
-					const qs: IListParams = {};
+					const qs: IListParams = createdAtRangeQuery(filters);
 					if (filters.tag) qs.tag = filters.tag;
 					if (filters.refId) qs.refId = filters.refId;
 					if (filters.search) {

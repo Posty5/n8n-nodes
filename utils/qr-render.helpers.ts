@@ -15,7 +15,7 @@ import {
 	type INodeExecutionData,
 	type INodePropertyOptions,
 } from 'n8n-workflow';
-import { makeApiRequest, makeBinaryApiRequest } from './api.helpers';
+import { encodePathSegment, makeApiRequest, makeBinaryApiRequest } from './api.helpers';
 import { API_ENDPOINTS, QR_RENDER, QR_RENDER_MESSAGES, QR_TEMPLATE_LOOKUP } from './constants';
 import { firstText, toText } from './link-tool.helpers';
 import type {
@@ -113,7 +113,7 @@ export async function executeQrRender(
 	const file = await makeBinaryApiRequest.call(
 		ctx,
 		apiKey,
-		`${API_ENDPOINTS.QR_CODE}/${encodeURIComponent(qrCodeId)}/${QR_RENDER.RENDER_PATH_SEGMENT}`,
+		`${API_ENDPOINTS.QR_CODE}/${encodePathSegment(qrCodeId)}/${QR_RENDER.RENDER_PATH_SEGMENT}`,
 		query,
 	);
 	const mimeType = file.mimeType || QR_RENDER.MIME_TYPES[query.format];

@@ -6,7 +6,7 @@ import {
 	IWebhookResponseData,
 	NodeOperationError,
 } from 'n8n-workflow';
-import { makeApiRequest } from '../../utils/api.helpers';
+import { encodePathSegment, makeApiRequest } from '../../utils/api.helpers';
 import { readStoredVersion } from '../../utils/versioned-write.helpers';
 import { API_ENDPOINTS } from '../../utils/constants';
 import { TRIGGER_CONFIG, TRIGGER_MESSAGES, TRIGGER_SIGNATURE } from './config';
@@ -45,7 +45,7 @@ function readSubscription(ctx: IHookFunctions): { events: WebhookEventType[]; ta
  * (optimistic concurrency: the delete is a versioned write).
  */
 async function removeEndpoint(ctx: IHookFunctions, apiKey: string, id: string): Promise<void> {
-	const endpoint = `${API_ENDPOINTS.WEBHOOK_ENDPOINTS}/${id}`;
+	const endpoint = `${API_ENDPOINTS.WEBHOOK_ENDPOINTS}/${encodePathSegment(id)}`;
 	try {
 		const stored = await makeApiRequest.call(ctx, apiKey, { method: 'GET', endpoint });
 		await makeApiRequest.call(ctx, apiKey, { method: 'DELETE', endpoint, version: readStoredVersion(stored) });
@@ -95,7 +95,7 @@ export class Posty5Trigger implements INodeType {
 				try {
 					endpoint = (await makeApiRequest.call(this, apiKey, {
 						method: 'GET',
-						endpoint: `${API_ENDPOINTS.WEBHOOK_ENDPOINTS}/${staticData.endpointId}`,
+						endpoint: `${API_ENDPOINTS.WEBHOOK_ENDPOINTS}/${encodePathSegment(staticData.endpointId)}`,
 					})) as IWebhookEndpoint;
 				} catch (error) {
 					if ((error as IPosty5ApiError).httpCode === TRIGGER_CONFIG.NOT_FOUND_HTTP_CODE) {

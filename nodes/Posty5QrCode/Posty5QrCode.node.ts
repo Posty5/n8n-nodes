@@ -5,11 +5,13 @@ import {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
+import { encodePathSegment, makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
 import { buildVersionedWriteProperties, resolveWriteVersion } from '../../utils/versioned-write.helpers';
 import { executeGetAnalytics, executeGetStatistics } from '../../utils/analytics.helpers';
 import { LINK_ANALYTICS_PROPERTIES, LINK_STATISTICS_PROPERTIES } from '../../utils/analytics.properties';
 import { API_ENDPOINTS } from '../../utils/constants';
+import { createdAtRangeQuery } from '../../utils/date.helpers';
+import { CREATED_AT_RANGE_FILTERS } from '../../utils/list-date-filter.properties';
 import { executeBulkCreate, prepareBulkRows, readBulkDefaults } from '../../utils/link-bulk.helpers';
 import { buildLinkBulkProperties } from '../../utils/link-bulk.properties';
 import { buildQrCodeBulkRow, QR_CODE_BULK_ROUTE } from './helpers';
@@ -382,6 +384,7 @@ export class Posty5QrCode implements INodeType {
 				displayName: 'Email Address',
 				name: 'email',
 				type: 'string',
+				placeholder: 'name@email.com',
 				required: true,
 				displayOptions: {
 					show: {
@@ -390,7 +393,6 @@ export class Posty5QrCode implements INodeType {
 					},
 				},
 				default: '',
-				description: 'The email address',
 			},
 			{
 				displayName: 'Subject',
@@ -456,6 +458,7 @@ export class Posty5QrCode implements INodeType {
 				displayName: 'Password',
 				name: 'wifiPassword',
 				type: 'string',
+				typeOptions: { password: true },
 				displayOptions: {
 					show: {
 						operation: ['create', 'createMany', 'update'],
@@ -906,19 +909,18 @@ export class Posty5QrCode implements INodeType {
 						description: 'Scans before this moment go to the Fallback URL',
 					},
 					{
+						displayName: 'Clear Scan Rules',
+						name: 'clearScanRules',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to remove every scan rule from the code (overrides the other fields)',
+					},
+					{
 						displayName: 'Expires At',
 						name: 'expiresAt',
 						type: 'dateTime',
 						default: '',
 						description: 'Scans from this moment go to the Fallback URL. Must be after Active From.',
-					},
-					{
-						displayName: 'Max Scans',
-						name: 'maxVisits',
-						type: 'number',
-						typeOptions: { minValue: 1, numberPrecision: 0 },
-						default: 1,
-						description: 'Scans allowed; later scans go to the Fallback URL',
 					},
 					{
 						displayName: 'Fallback URL',
@@ -929,11 +931,12 @@ export class Posty5QrCode implements INodeType {
 						description: 'Where gated scans go (http or https)',
 					},
 					{
-						displayName: 'Clear Scan Rules',
-						name: 'clearScanRules',
-						type: 'boolean',
-						default: false,
-						description: 'Whether to remove every scan rule from the code (overrides the other fields)',
+						displayName: 'Max Scans',
+						name: 'maxVisits',
+						type: 'number',
+						typeOptions: { minValue: 1, numberPrecision: 0 },
+						default: 1,
+						description: 'Scans allowed; later scans go to the Fallback URL',
 					},
 				],
 			},
@@ -959,19 +962,18 @@ export class Posty5QrCode implements INodeType {
 						description: 'Scans before this moment go to the Fallback URL',
 					},
 					{
+						displayName: 'Clear Scan Rules',
+						name: 'clearScanRules',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to remove every scan rule from the code (overrides the other fields)',
+					},
+					{
 						displayName: 'Expires At',
 						name: 'expiresAt',
 						type: 'dateTime',
 						default: '',
 						description: 'Scans from this moment go to the Fallback URL. Must be after Active From.',
-					},
-					{
-						displayName: 'Max Scans',
-						name: 'maxVisits',
-						type: 'number',
-						typeOptions: { minValue: 1, numberPrecision: 0 },
-						default: 1,
-						description: 'Scans allowed; later scans go to the Fallback URL',
 					},
 					{
 						displayName: 'Fallback URL',
@@ -982,11 +984,12 @@ export class Posty5QrCode implements INodeType {
 						description: 'Where gated scans go (http or https)',
 					},
 					{
-						displayName: 'Clear Scan Rules',
-						name: 'clearScanRules',
-						type: 'boolean',
-						default: false,
-						description: 'Whether to remove every scan rule from the code (overrides the other fields)',
+						displayName: 'Max Scans',
+						name: 'maxVisits',
+						type: 'number',
+						typeOptions: { minValue: 1, numberPrecision: 0 },
+						default: 1,
+						description: 'Scans allowed; later scans go to the Fallback URL',
 					},
 				],
 			},
@@ -1015,19 +1018,18 @@ export class Posty5QrCode implements INodeType {
 						description: 'Scans before this moment go to the Fallback URL',
 					},
 					{
+						displayName: 'Clear Scan Rules',
+						name: 'clearScanRules',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to remove every scan rule from the code (overrides the other fields)',
+					},
+					{
 						displayName: 'Expires At',
 						name: 'expiresAt',
 						type: 'dateTime',
 						default: '',
 						description: 'Scans from this moment go to the Fallback URL. Must be after Active From.',
-					},
-					{
-						displayName: 'Max Scans',
-						name: 'maxVisits',
-						type: 'number',
-						typeOptions: { minValue: 1, numberPrecision: 0 },
-						default: 1,
-						description: 'Scans allowed; later scans go to the Fallback URL',
 					},
 					{
 						displayName: 'Fallback URL',
@@ -1038,11 +1040,12 @@ export class Posty5QrCode implements INodeType {
 						description: 'Where gated scans go (http or https)',
 					},
 					{
-						displayName: 'Clear Scan Rules',
-						name: 'clearScanRules',
-						type: 'boolean',
-						default: false,
-						description: 'Whether to remove every scan rule from the code (overrides the other fields)',
+						displayName: 'Max Scans',
+						name: 'maxVisits',
+						type: 'number',
+						typeOptions: { minValue: 1, numberPrecision: 0 },
+						default: 1,
+						description: 'Scans allowed; later scans go to the Fallback URL',
 					},
 				],
 			},
@@ -1206,6 +1209,7 @@ export class Posty5QrCode implements INodeType {
 						default: '',
 						description: 'Search term',
 					},
+					...CREATED_AT_RANGE_FILTERS,
 				],
 			},
 
@@ -1303,14 +1307,14 @@ export class Posty5QrCode implements INodeType {
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'POST',
-						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrType}`,
+						endpoint: `${API_ENDPOINTS.QR_CODE}/${encodePathSegment(qrType)}`,
 						body,
 					});
 				} else if (operation === 'get') {
 					const qrCodeId = this.getNodeParameter('qrCodeId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'GET',
-						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`,
+						endpoint: `${API_ENDPOINTS.QR_CODE}/${encodePathSegment(qrCodeId)}`,
 					});
 				} else if (operation === 'getAnalytics') {
 					responseData = await executeGetAnalytics(
@@ -1335,10 +1339,10 @@ export class Posty5QrCode implements INodeType {
 					// drops an omitted template type, so the stored record is the base.
 					const stored = (await makeApiRequest.call(this, apiKey, {
 						method: 'GET',
-						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`,
+						endpoint: `${API_ENDPOINTS.QR_CODE}/${encodePathSegment(qrCodeId)}`,
 					})) as IQRCodeFullDetailsResponse;
 					// Resolved before the file upload: a missing version fails with no side effect.
-					const version = await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`, stored);
+					const version = await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.QR_CODE}/${encodePathSegment(qrCodeId)}`, stored);
 
 					const body: IQRCodeWriteRequest = {
 						...buildCommonUpdateFields(additionalFields, stored),
@@ -1373,7 +1377,7 @@ export class Posty5QrCode implements INodeType {
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'PUT',
-						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrType}/${qrCodeId}`,
+						endpoint: `${API_ENDPOINTS.QR_CODE}/${encodePathSegment(qrType)}/${encodePathSegment(qrCodeId)}`,
 						body,
 						version,
 					});
@@ -1381,14 +1385,14 @@ export class Posty5QrCode implements INodeType {
 					const qrCodeId = this.getNodeParameter('qrCodeId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'DELETE',
-						endpoint: `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`,
-						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.QR_CODE}/${qrCodeId}`),
+						endpoint: `${API_ENDPOINTS.QR_CODE}/${encodePathSegment(qrCodeId)}`,
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.QR_CODE}/${encodePathSegment(qrCodeId)}`),
 					});
 				} else if (operation === 'list') {
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
 					const filters = this.getNodeParameter('filters', i, {}) as any;
 
-					const qs: IListParams = {};
+					const qs: IListParams = createdAtRangeQuery(filters);
 					if (filters.tag) qs.tag = filters.tag;
 					if (filters.refId) qs.refId = filters.refId;
 					const modeFilter = readQrMode(filters.mode);

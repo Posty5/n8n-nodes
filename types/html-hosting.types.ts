@@ -3,7 +3,7 @@
  * Type definitions for HTML Hosting operations
  */
 
-import { IPaginationResponse } from './common';
+import { ICreatedAtRangeFilters, IPaginationResponse } from './common';
 
 /**
  * HTML Hosting status type
@@ -175,9 +175,10 @@ export interface IUpdateHtmlPageRequestWithGithub extends IUpdateHtmlPageRequest
 }
 
 /**
- * List parameters for filtering HTML pages
+ * List parameters for filtering HTML pages. `fromDate` / `toDate` are the created-at window (`YYYY-MM-DD`,
+ * applied by the API only as a pair).
  */
-export interface IListParams {
+export interface IListParams extends ICreatedAtRangeFilters {
 	name?: string;
 	htmlHostingId?: string;
 	tag?: string;

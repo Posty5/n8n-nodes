@@ -9,7 +9,7 @@
 | `form-submission` | Get, adjacent, list, and status-changing operations. | `nodes/Posty5FormSubmission/Posty5FormSubmission.node.ts` |
 | `social-workspace` | Get/list/get-for-new-post workspace operations. | `nodes/Posty5SocialPublisherWorkspace/Posty5SocialPublisherWorkspace.node.ts` |
 | `social-post` | Publish video/image, inspect status/list/default settings. | `nodes/Posty5SocialPublisherPost/Posty5SocialPublisherPost.node.ts` |
-| `api-utils` | HTTP envelope handling, pagination, createdFrom tagging, and signed uploads. | `utils/api.helpers.ts` |
+| `api-utils` | HTTP envelope handling, pagination, createdFrom tagging, signed uploads, and `encodePathSegment` for IDs in request paths. | `utils/api.helpers.ts` |
 | `link-tool-utils` | Shared by Short Link and QR Code: template dropdown and resolution (`qr-templates.helpers.ts`), `qrCodeTarget` builder (`qr-target.helpers.ts`), create/update body pieces (`link-tool.helpers.ts`). `makeBinaryApiRequest` + `parseContentDispositionFileName` in `api.helpers.ts`: a GET answered as bytes (QR render), JSON error bodies decoded so `NodeApiError` keeps the API message. | `utils/link-tool.helpers.ts` |
 
 ## Editing rule

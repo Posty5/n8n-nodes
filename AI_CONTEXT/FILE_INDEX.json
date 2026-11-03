@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-19",
+  "generated_at": "2026-10-26",
   "project": "n8n-nodes",
   "excluded_generated_or_local": [
     "node_modules",
@@ -30,22 +30,6 @@
     {
       "path": "utils/constants.ts",
       "role": "Constants"
-    },
-    {
-      "path": "nodes/Posty5Store/Posty5Store.node.ts",
-      "role": "Store dropshipping node: resource list + execute()"
-    },
-    {
-      "path": "nodes/Posty5Store/descriptions",
-      "role": "Per-resource operation and field properties of the store node"
-    },
-    {
-      "path": "utils/store.helpers.ts",
-      "role": "Store node helpers (endpoint builders, order-part split, empty-filter strip, cursor paging: storeGetAllByCursor / rowsWithNextCursor)"
-    },
-    {
-      "path": "types/store.types.ts",
-      "role": "Store node order/part types and the cursor list envelope"
     },
     {
       "path": "utils/qr-templates.helpers.ts",

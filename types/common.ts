@@ -15,6 +15,17 @@ export interface IResponse<T> {
 }
 
 /**
+ * The created-at window of the list operations (Short Link, QR Code, HTML
+ * Hosting, Social Publisher Post): `YYYY-MM-DD`, applied by the API only when
+ * both are sent, in whole UTC days. Both the Filters collection's values and
+ * the query keys `createdAtRangeQuery` builds.
+ */
+export interface ICreatedAtRangeFilters {
+	fromDate?: string;
+	toDate?: string;
+}
+
+/**
  * Pagination parameters
  */
 export interface IPaginationParams {

@@ -4,9 +4,12 @@ import {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { makeApiRequest, makePaginatedRequest, uploadFile } from '../../utils/api.helpers';
+import { encodePathSegment, makeApiRequest, makePaginatedRequest, uploadFile } from '../../utils/api.helpers';
 import { buildVersionedWriteProperties, resolveWriteVersion } from '../../utils/versioned-write.helpers';
 import { API_ENDPOINTS } from '../../utils/constants';
+import { createdAtRangeQuery } from '../../utils/date.helpers';
+import { CREATED_AT_RANGE_FILTERS } from '../../utils/list-date-filter.properties';
+import type { ICreatedAtRangeFilters } from '../../types/common';
 import { supportsResumableUpload, uploadResumable } from '../../utils/resumable-upload';
 import { buildCommentsPayload } from '../../utils/post-comments';
 
@@ -40,16 +43,35 @@ export class Posty5SocialPublisherPost implements INodeType {
 				noDataExpression: true,
 				options: [
 					{
-						name: 'Publish Video to Workspace',
-						value: 'publishVideo',
-						description: 'Publish a video to social media platforms via workspace',
-						action: 'Publish a video to workspace',
+						name: 'Delete Post',
+						value: 'deletePost',
+						description:
+							'Delete a post that has not published yet and release its uploaded media. Free — nothing was charged for a post that never went out.',
+						action: 'Delete a post',
 					},
 					{
-						name: 'Publish Video to Account',
-						value: 'publishVideoToAccount',
-						description: 'Publish a video to social media platforms via account',
-						action: 'Publish a video to account',
+						name: 'Get Default Settings',
+						value: 'getDefaultSettings',
+						description: 'Get default platform settings',
+						action: 'Get default settings',
+					},
+					{
+						name: 'Get Post Status',
+						value: 'getPostStatus',
+						description: 'Get the status of a publishing post',
+						action: 'Get post status',
+					},
+					{
+						name: 'List Posts',
+						value: 'listPosts',
+						description: 'List all publishing posts',
+						action: 'List posts',
+					},
+					{
+						name: 'Publish Image to Account',
+						value: 'publishImageToAccount',
+						description: 'Publish an image to a single connected account (50 credits, plus 25 per comment)',
+						action: 'Publish an image to account',
 					},
 					{
 						name: 'Publish Image to Workspace',
@@ -58,10 +80,11 @@ export class Posty5SocialPublisherPost implements INodeType {
 						action: 'Publish an image to workspace',
 					},
 					{
-						name: 'Publish Image to Account',
-						value: 'publishImageToAccount',
-						description: 'Publish an image to a single connected account (50 credits, plus 25 per comment)',
-						action: 'Publish an image to account',
+						name: 'Publish Long Video to Account',
+						value: 'publishLongVideoToAccount',
+						description:
+							'Publish a video of up to 60 minutes to a single connected account. Charged by duration: 50 credits per started 5 minutes.',
+						action: 'Publish a long video to account',
 					},
 					{
 						name: 'Publish Long Video to Workspace',
@@ -71,11 +94,16 @@ export class Posty5SocialPublisherPost implements INodeType {
 						action: 'Publish a long video to workspace',
 					},
 					{
-						name: 'Publish Long Video to Account',
-						value: 'publishLongVideoToAccount',
-						description:
-							'Publish a video of up to 60 minutes to a single connected account. Charged by duration: 50 credits per started 5 minutes.',
-						action: 'Publish a long video to account',
+						name: 'Publish Video to Account',
+						value: 'publishVideoToAccount',
+						description: 'Publish a video to social media platforms via account',
+						action: 'Publish a video to account',
+					},
+					{
+						name: 'Publish Video to Workspace',
+						value: 'publishVideo',
+						description: 'Publish a video to social media platforms via workspace',
+						action: 'Publish a video to workspace',
 					},
 					{
 						name: 'Quote Long Video',
@@ -90,31 +118,6 @@ export class Posty5SocialPublisherPost implements INodeType {
 						description:
 							'Move a not-yet-published post to another time, or publish it now. Costs no credits.',
 						action: 'Reschedule a post',
-					},
-					{
-						name: 'Delete Post',
-						value: 'deletePost',
-						description:
-							'Delete a post that has not published yet and release its uploaded media. Free — nothing was charged for a post that never went out.',
-						action: 'Delete a post',
-					},
-					{
-						name: 'Get Post Status',
-						value: 'getPostStatus',
-						description: 'Get the status of a publishing post',
-						action: 'Get Post Status',
-					},
-					{
-						name: 'List Posts',
-						value: 'listPosts',
-						description: 'List all publishing posts',
-						action: 'List Posts',
-					},
-					{
-						name: 'Get Default Settings',
-						value: 'getDefaultSettings',
-						description: 'Get default platform settings',
-						action: 'Get default settings',
 					},
 				],
 				default: 'publishVideo',
@@ -354,16 +357,11 @@ export class Posty5SocialPublisherPost implements INodeType {
 						description: 'Video caption',
 					},
 					{
-						displayName: 'Privacy Level',
-						name: 'privacy_level',
-						type: 'options',
-						options: [
-							{ name: 'Public', value: 'PUBLIC_TO_EVERYONE' },
-							{ name: 'Friends', value: 'MUTUAL_FOLLOW_FRIENDS' },
-							{ name: 'Private', value: 'SELF_ONLY' },
-						],
-						default: 'PUBLIC_TO_EVERYONE',
-						description: 'Video privacy setting',
+						displayName: 'Disable Comment',
+						name: 'disable_comment',
+						type: 'boolean',
+						default: false,
+						description: 'Whether to disable comments',
 					},
 					{
 						displayName: 'Disable Duet',
@@ -380,11 +378,16 @@ export class Posty5SocialPublisherPost implements INodeType {
 						description: 'Whether to disable stitch',
 					},
 					{
-						displayName: 'Disable Comment',
-						name: 'disable_comment',
-						type: 'boolean',
-						default: false,
-						description: 'Whether to disable comments',
+						displayName: 'Privacy Level',
+						name: 'privacy_level',
+						type: 'options',
+						options: [
+							{ name: 'Public', value: 'PUBLIC_TO_EVERYONE' },
+							{ name: 'Friends', value: 'MUTUAL_FOLLOW_FRIENDS' },
+							{ name: 'Private', value: 'SELF_ONLY' },
+						],
+						default: 'PUBLIC_TO_EVERYONE',
+						description: 'Video privacy setting',
 					},
 				],
 			},
@@ -489,15 +492,6 @@ export class Posty5SocialPublisherPost implements INodeType {
 					'DEPRECATED — use Comments instead. Kept so existing workflows keep running; it is mapped into the first entry of Comments when that is empty, and the two are never sent together.',
 				options: [
 					{
-						displayName: 'Text',
-						name: 'text',
-						type: 'string',
-						typeOptions: { rows: 3 },
-						default: '',
-						description:
-							'Comment text (1-2200 characters). Leave empty to skip commenting.',
-					},
-					{
 						displayName: 'Post to Facebook',
 						name: 'postToFacebook',
 						type: 'boolean',
@@ -517,6 +511,15 @@ export class Posty5SocialPublisherPost implements INodeType {
 						type: 'boolean',
 						default: true,
 						description: 'Whether to add the comment under the YouTube post',
+					},
+					{
+						displayName: 'Text',
+						name: 'text',
+						type: 'string',
+						typeOptions: { rows: 3 },
+						default: '',
+						description:
+							'Comment text (1-2200 characters). Leave empty to skip commenting.',
 					},
 					{
 						displayName: 'TikTok',
@@ -551,15 +554,6 @@ export class Posty5SocialPublisherPost implements INodeType {
 						displayName: 'Comment',
 						name: 'comment',
 						values: [
-							{
-								displayName: 'Text',
-								name: 'text',
-								type: 'string',
-								typeOptions: { rows: 3 },
-								default: '',
-								required: true,
-								description: 'Comment text (1-2200 characters)',
-							},
 							{
 								displayName: 'Delay (Minutes)',
 								name: 'delayMinutes',
@@ -597,6 +591,15 @@ export class Posty5SocialPublisherPost implements INodeType {
 								type: 'boolean',
 								default: true,
 								description: 'Whether to add this comment under the YouTube post',
+							},
+							{
+								displayName: 'Text',
+								name: 'text',
+								type: 'string',
+								typeOptions: { rows: 3 },
+								default: '',
+								required: true,
+								description: 'Comment text (1-2200 characters)',
 							},
 						],
 					},
@@ -640,7 +643,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				],
 				default: 'image-url',
 				description:
-					'Where the image lives. "External URL" sends the URL directly; "Uploaded Bucket File" requires uploading via /generate-upload-urls first, and keeping the postId it returns.',
+					'Where the image lives. "External URL" sends the URL directly; "Uploaded Bucket File" needs the image uploaded first through the Generate Upload URLs endpoint, and the postId it returns.',
 			},
 			{
 				displayName: 'Image URL',
@@ -668,7 +671,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 					},
 				},
 				default: '',
-				description: 'fileURL returned by /generate-upload-urls after you uploaded the image',
+				description: 'The fileURL the Generate Upload URLs endpoint returned, once the image is uploaded',
 			},
 			{
 				displayName: 'Upload Post ID',
@@ -705,7 +708,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 				displayOptions: {
 					show: { operation: ['publishImage', 'publishImageToAccount'] },
 				},
-				description: 'Marks the caption as AI-enhanced; surfaces on the status page only',
+				description: 'Whether the caption is marked as AI-enhanced (shown on the status page only)',
 			},
 			{
 				displayName:
@@ -775,6 +778,19 @@ export class Posty5SocialPublisherPost implements INodeType {
 				},
 				default: 50,
 				description: 'Max number of results to return',
+			},
+			{
+				displayName: 'Filters',
+				name: 'listFilters',
+				type: 'collection',
+				placeholder: 'Add Filter',
+				default: {},
+				displayOptions: {
+					show: {
+						operation: ['listPosts'],
+					},
+				},
+				options: [...CREATED_AT_RANGE_FILTERS],
 			},
 			{
 				displayName: 'Post ID',
@@ -1036,7 +1052,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 					const bySegment = source === 'video-upload' ? 'by-file' : 'by-url';
 					const endpoint =
 						`${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/short-video/${target}/${bySegment}` +
-						(uploadedPostId ? `/${uploadedPostId}` : '');
+						(uploadedPostId ? `/${encodePathSegment(uploadedPostId)}` : '');
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'POST',
@@ -1094,7 +1110,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 
 					const endpoint =
 						`${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/image/${isWorkspace ? 'workspace' : 'account'}` +
-						(uploadedPostId ? `/${uploadedPostId}` : '');
+						(uploadedPostId ? `/${encodePathSegment(uploadedPostId)}` : '');
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'POST',
@@ -1255,7 +1271,7 @@ export class Posty5SocialPublisherPost implements INodeType {
 					const bySegment = source === 'video-file' ? 'by-file' : 'by-url';
 					const longVideoEndpoint =
 						`${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/long-video/${target}/${bySegment}` +
-						(uploadedPostId ? `/${uploadedPostId}` : '');
+						(uploadedPostId ? `/${encodePathSegment(uploadedPostId)}` : '');
 
 					// The response carries the measured duration, the credits
 					// charged and any target dropped for exceeding its own
@@ -1299,10 +1315,10 @@ export class Posty5SocialPublisherPost implements INodeType {
 
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'PUT',
-						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${reschedulePostId}`,
+						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${encodePathSegment(reschedulePostId)}`,
 						body: rescheduleBody,
 						// The post has no plain `GET /:id`: its `/status` read carries `__v`.
-						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${reschedulePostId}/status`),
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${encodePathSegment(reschedulePostId)}/status`),
 					});
 				} else if (operation === 'deletePost') {
 					// Free, and irreversible for the caller: the post is gone and its
@@ -1310,32 +1326,34 @@ export class Posty5SocialPublisherPost implements INodeType {
 					const deletePostId = this.getNodeParameter('deletePostId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'DELETE',
-						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${deletePostId}`,
-						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${deletePostId}/status`),
+						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${encodePathSegment(deletePostId)}`,
+						version: await resolveWriteVersion(this, apiKey, i, `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${encodePathSegment(deletePostId)}/status`),
 					});
 				} else if (operation === 'getPostStatus') {
 					const postId = this.getNodeParameter('postId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'GET',
-						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${postId}/status`,
+						endpoint: `${API_ENDPOINTS.SOCIAL_PUBLISHER_POST}/${encodePathSegment(postId)}/status`,
 					});
 				} else if (operation === 'listPosts') {
 					const workspaceId = this.getNodeParameter('listWorkspaceId', i) as string;
 					const returnAll = this.getNodeParameter('returnAll', i, false) as boolean;
+					const listFilters = this.getNodeParameter('listFilters', i, {}) as ICreatedAtRangeFilters;
+					const qs = { workspaceId, ...createdAtRangeQuery(listFilters) };
 
 					if (returnAll) {
 						responseData = await makePaginatedRequest.call(
 							this,
 							apiKey,
 							API_ENDPOINTS.SOCIAL_PUBLISHER_POST,
-							{ workspaceId },
+							qs,
 						);
 					} else {
 						const limit = this.getNodeParameter('limit', i, 50) as number;
 						const result: any = await makeApiRequest.call(this, apiKey, {
 							method: 'GET',
 							endpoint: API_ENDPOINTS.SOCIAL_PUBLISHER_POST,
-							qs: { workspaceId, page: 1, pageSize: limit },
+							qs: { ...qs, page: 1, pageSize: limit },
 						});
 						responseData = result.items;
 					}

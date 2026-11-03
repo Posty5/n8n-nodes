@@ -28,7 +28,7 @@ export class Posty5Api implements ICredentialType {
 			default: '',
 			required: true,
 			description:
-				'Your Posty5 API key. Get it from https://studio.posty5.com/account/settings?tab=APIKeys',
+				'Your Posty5 API key, from <a href="https://studio.posty5.com/account/settings?tab=APIKeys">Posty5 Studio &gt; Account Settings &gt; API Keys</a>',
 		},
 	];
 

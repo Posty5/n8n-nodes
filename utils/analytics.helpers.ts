@@ -10,7 +10,7 @@
 
 import { NodeApiError, NodeOperationError } from 'n8n-workflow';
 import type { IExecuteFunctions, JsonObject } from 'n8n-workflow';
-import { makeApiRequest } from './api.helpers';
+import { encodePathSegment, makeApiRequest } from './api.helpers';
 import { LINK_ANALYTICS, LINK_ANALYTICS_MESSAGES, LINK_STATISTICS } from './constants';
 import { isKnownTimeZone, parseDayKey, shiftDayKey, toDayKey } from './date.helpers';
 import { firstText } from './link-tool.helpers';
@@ -111,7 +111,7 @@ export function buildAnalyticsEndpoint(
 	if (!recordId) {
 		throw new NodeOperationError(context.getNode(), LINK_ANALYTICS_MESSAGES.ID_REQUIRED, { itemIndex });
 	}
-	return `${basePath}/${encodeURIComponent(recordId)}/${LINK_ANALYTICS.PATH_SEGMENT}`;
+	return `${basePath}/${encodePathSegment(recordId)}/${LINK_ANALYTICS.PATH_SEGMENT}`;
 }
 
 /**

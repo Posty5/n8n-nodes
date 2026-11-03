@@ -1,5 +1,84 @@
 # Changelog
 
+## 6.0.0 - Unreleased
+
+Breaking: the **Posty5 Store** node is removed. The Online Store Builder left
+Posty5 on 2026-10-26 (owner decision D22): it is now Storvivo (storvivo.com), a
+separate platform, and store automation (suppliers, supplier products and
+imports, product links, supplier orders, order parts, orders) now lives in the
+**`n8n-nodes-storvivo`** package (its *Storvivo* node). Ships with the Posty5 API
+release that removes the store, which waits for Storvivo's production launch.
+Publish date: _to be recorded at publish_.
+
+### Removed
+
+- *Posty5 Store* (`posty5Store`, `nodes/Posty5Store`) and its entry in
+  `package.json`'s `n8n.nodes`. A saved workflow that uses it shows the node as
+  unknown after the upgrade: replace it with the *Storvivo* node from
+  `n8n-nodes-storvivo`.
+- Its store-only code: `utils/store.helpers.ts`, `types/store.types.ts`,
+  `API_ENDPOINTS.STORE_SUPPLIERS` / `STORE_ORDERS` and
+  `STORE_SUPPLIER_PAGE_SIZES` (`utils/constants.ts`).
+- The `online-store` and `dropshipping` package keywords.
+
+The other nodes and the *Posty5 API* credential are unchanged.
+
+### Security
+
+- An ID parameter is escaped as one path segment (`encodePathSegment`,
+  `utils/api.helpers.ts`) on every node and the trigger: a mapped value holding
+  `/`, `?` or `#` can no longer send the request, with the node's API key, to
+  another route, and an ID of `.` or `..` is refused before any request.
+  ObjectIds are unchanged.
+- *Posty5 QR Code* masks the WiFi *Password* field in the editor
+  (`typeOptions.password`). Saved values are kept.
+- `package-lock.json`: `npm audit fix` updates of development dependencies
+  (n8n-workflow 1.120.33, lodash, form-data, handlebars, js-yaml, flatted and
+  others). The package still has no runtime dependencies.
+- Development toolchain: `@typescript-eslint` 8 and `eslint-plugin-n8n-nodes-base`
+  2 (the 1.x plugin pulled in the vulnerable `@typescript-eslint` 6), and an
+  `overrides` pin of `form-data` to `^4.0.6`. What `npm audit` still reports is
+  one zod advisory inside the `n8n-workflow` types package, which tests replace
+  with a mock; n8n-workflow 2.x does not clear it and needs Node 24 to build.
+- The publish workflow pins `actions/checkout` and `actions/setup-node` to
+  commit SHAs, and build tarballs (`*.tgz`) are no longer tracked.
+
+### Changed
+
+- n8n lint clean (0 errors): option and collection lists alphabetized,
+  *Create From File* / *Create From GitHub* / *Update From File* / *Update From
+  GitHub* (HTML Hosting) and *Get post status* / *List posts* (Social Publisher
+  Post) relabelled, an email placeholder on the QR Code *Email Address*, and the
+  credential's API key description links to Posty5 Studio. Labels only: saved
+  workflows keep their values.
+
+## 5.2.0 - Unreleased
+
+Additive (list date filters, redesign-dashboards SDK-03). Needs the API release
+with the list date filters (API-03) for Short Link, QR Code and HTML Hosting;
+the post list has always accepted them. Publish date: _to be recorded at
+publish_.
+
+### Added
+
+- **Created From Date** / **Created To Date** in the **Filters** of
+  *Posty5 Short Link › List*, *Posty5 QR Code › List* and *Posty5 HTML Hosting ›
+  List*, and in a new **Filters** collection on *Posty5 Social Publisher Post ›
+  List Posts* (alongside the unchanged Workspace ID, Return All and Limit).
+  `YYYY-MM-DD` text fields (`type: 'string'`, as on the Store node, so no time
+  is added); a date value from an expression is sent as its day. Sent as
+  `fromDate` / `toDate` only when set; the API applies the created-at window
+  only when both are sent, in whole UTC days.
+- `CREATED_AT_RANGE_FILTERS` (`utils/list-date-filter.properties.ts`) and
+  `createdAtRangeQuery` (`utils/date.helpers.ts`), shared by the four nodes.
+
+### Node versions
+
+No node version bump: the fields are optional collection entries, so saved
+workflows load and run unchanged (same defaults, nothing new required). This
+follows 5.1.0's QR Code *Render*, added to v1 and v2 alike; v2 exists only for
+the versioned-writes behaviour change.
+
 ## 5.1.0 - Unreleased
 
 Additive (QR design and export). Publish date: _to be recorded at publish_.

@@ -5,11 +5,13 @@ import {
 	NodeOperationError,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
+import { encodePathSegment, makeApiRequest, makePaginatedRequest } from '../../utils/api.helpers';
 import { buildVersionedWriteProperties, resolveWriteVersion } from '../../utils/versioned-write.helpers';
 import { executeGetAnalytics, executeGetStatistics } from '../../utils/analytics.helpers';
 import { LINK_ANALYTICS_PROPERTIES, LINK_STATISTICS_PROPERTIES } from '../../utils/analytics.properties';
 import { API_ENDPOINTS } from '../../utils/constants';
+import { createdAtRangeQuery } from '../../utils/date.helpers';
+import { CREATED_AT_RANGE_FILTERS } from '../../utils/list-date-filter.properties';
 import { executeBulkCreate, prepareBulkRows, readBulkDefaults } from '../../utils/link-bulk.helpers';
 import { buildLinkBulkProperties } from '../../utils/link-bulk.properties';
 import { buildShortLinkBulkRow, shortLinkBulkRoute } from './helpers';
@@ -441,6 +443,7 @@ export class Posty5ShortLink implements INodeType {
 						description: 'Filter by one tag. Kept for saved workflows: use Tags.',
 					},
 					...SHORT_LINK_CONTROL_LIST_FILTERS,
+					...CREATED_AT_RANGE_FILTERS,
 				],
 			},
 
@@ -517,7 +520,7 @@ export class Posty5ShortLink implements INodeType {
 					const shortLinkId = this.getNodeParameter('shortLinkId', i) as string;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'GET',
-						endpoint: `${API_ENDPOINTS.SHORT_LINK}/${shortLinkId}`,
+						endpoint: `${API_ENDPOINTS.SHORT_LINK}/${encodePathSegment(shortLinkId)}`,
 					});
 				} else if (operation === 'getAnalytics') {
 					responseData = await executeGetAnalytics(
@@ -536,7 +539,7 @@ export class Posty5ShortLink implements INodeType {
 						i,
 						{},
 					) as IShortLinkAdditionalFields;
-					const endpoint = `${API_ENDPOINTS.SHORT_LINK}/${shortLinkId}`;
+					const endpoint = `${API_ENDPOINTS.SHORT_LINK}/${encodePathSegment(shortLinkId)}`;
 
 					// Fetch-then-put: the PUT replaces the record and requires `baseUrl`,
 					// so the stored link is the base and the user's fields go on top.
@@ -568,7 +571,7 @@ export class Posty5ShortLink implements INodeType {
 					});
 				} else if (operation === 'delete') {
 					const shortLinkId = this.getNodeParameter('shortLinkId', i) as string;
-					const endpoint = `${API_ENDPOINTS.SHORT_LINK}/${shortLinkId}`;
+					const endpoint = `${API_ENDPOINTS.SHORT_LINK}/${encodePathSegment(shortLinkId)}`;
 					responseData = await makeApiRequest.call(this, apiKey, {
 						method: 'DELETE',
 						endpoint,
@@ -577,7 +580,7 @@ export class Posty5ShortLink implements INodeType {
 				} else if (operation === 'setRules') {
 					// The update requires baseUrl and templateId, so the link is read first;
 					// only the rule sections the user added are sent (absent ones are kept).
-					const endpoint = `${API_ENDPOINTS.SHORT_LINK}/${this.getNodeParameter('shortLinkId', i) as string}`;
+					const endpoint = `${API_ENDPOINTS.SHORT_LINK}/${encodePathSegment(this.getNodeParameter('shortLinkId', i))}`;
 					const stored = (await makeApiRequest.call(this, apiKey, {
 						method: 'GET',
 						endpoint,
@@ -606,7 +609,7 @@ export class Posty5ShortLink implements INodeType {
 					const shortLinkId = this.getNodeParameter('shortLinkId', i) as string;
 					await makeApiRequest.call(this, apiKey, {
 						method: 'POST',
-						endpoint: `${API_ENDPOINTS.SHORT_LINK}/${shortLinkId}${SHORT_LINK_CONTROLS.HEALTH_CHECK_PATH}`,
+						endpoint: `${API_ENDPOINTS.SHORT_LINK}/${encodePathSegment(shortLinkId)}${SHORT_LINK_CONTROLS.HEALTH_CHECK_PATH}`,
 						body: {},
 						stampCreatedFrom: false,
 					});
@@ -635,7 +638,7 @@ export class Posty5ShortLink implements INodeType {
 							itemIndex: i,
 						});
 					}
-					const endpoint = `${API_ENDPOINTS.LINK_CAMPAIGN}/${campaignId}`;
+					const endpoint = `${API_ENDPOINTS.LINK_CAMPAIGN}/${encodePathSegment(campaignId)}`;
 					if (operation === 'getCampaign') {
 						responseData = await makeApiRequest.call(this, apiKey, { method: 'GET', endpoint });
 					} else if (operation === 'updateCampaign') {
@@ -681,7 +684,7 @@ export class Posty5ShortLink implements INodeType {
 
 					// Each filter narrows the list (the API ANDs them), so Search matches
 					// the name only and the destination URL has a filter of its own.
-					const qs: IListParams = {};
+					const qs: IListParams = createdAtRangeQuery(filters);
 					const tag = firstText(filters.tag);
 					const refId = firstText(filters.refId);
 					const name = firstText(filters.search);
